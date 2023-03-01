@@ -679,39 +679,25 @@ def eval_extractor(
     return res
 
 
-def eval_crop(extracted_objs, details, imgs):
-    cropped_imgs = []
-    img_index_to_crop_coords = {}
-    for obj_id, details in details.items():
+def eval_crop(extracted_objs, details_map, imgs):
+    img = imgs[0]
+    cur_coords = None
+    for obj_id, details in details_map.items():
         if obj_id not in extracted_objs:
             continue
-        print(extracted_objs[obj_id])
-        if details["ImgIndex"] not in img_index_to_crop_coords:
-            img_index_to_crop_coords[details["ImgIndex"]] = details["Loc"]
+        if cur_coords is None:
+            cur_coords = details["Loc"]
         else:
-            cur_coords = img_index_to_crop_coords[details["ImgIndex"]]
-            img_index_to_crop_coords[details["ImgIndex"]] = (
+            cur_coords = (
                 min(cur_coords[0], details["Loc"][0]),
                 min(cur_coords[1], details["Loc"][1]),
                 max(cur_coords[2], details["Loc"][2]),
                 max(cur_coords[3], details["Loc"][3]),
             )
-    for i, img in enumerate(imgs):
-        if i not in img_index_to_crop_coords:
-            cropped_imgs.append(img)
-            continue
-        left, top, right, bottom = img_index_to_crop_coords[i]
-        img = img[top:bottom, left:right]
-        cropped_imgs.append(img)
-        for obj_id, details in details.items():
-            cur_left, cur_top, cur_right, cur_bottom = details["Loc"]
-            details["Loc"] = (
-                cur_left - left,
-                cur_top - top,
-                cur_right - right,
-                cur_bottom - bottom,
-            )
-    return cropped_imgs
+    left, top, right, bottom = cur_coords
+    img = img[top:bottom, left:right]
+    return [img]
+
 
 
 def eval_apply_action(

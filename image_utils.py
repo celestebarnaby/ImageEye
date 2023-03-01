@@ -1,4 +1,5 @@
 import boto3
+import copy
 import csv
 import cv2
 import re
@@ -20,10 +21,13 @@ def add_face_hash_id_mapping(hash_code: str, face_id: int):
     face_hash_to_id[hash_code] = face_id
 
 
-def is_contained(bbox1, bbox2):
+def is_contained(bbox1, bbox2, include_edges=False):
     left1, top1, right1, bottom1 = bbox1
     left2, top2, right2, bottom2 = bbox2
-    return left1 > left2 and top1 > top2 and bottom1 < bottom2 and right1 < right2
+    if include_edges:
+        return left1 >= left2 and top1 >= top2 and bottom1 <= bottom2 and right1 <= right2
+    else: 
+        return left1 > left2 and top1 > top2 and bottom1 < bottom2 and right1 < right2
 
 
 def get_iou(bbox1, bbox2):
@@ -199,31 +203,29 @@ def make_sidebar(img):
 
 def annotate_image(img_dir, env):
     print(img_dir)
-    global cur_img
+    global cur_img_with_rectangles
     global inds
     global action_num
     inds = set()
     img = cv2.imread(img_dir, 1)
-    imgs = [draw_rectangles(img, env)]
+    imgs = [(img, env)]
     action_to_objects = []
     sidebar, action_to_bb = make_sidebar(img)
-    first_round = True
+    num_rounds = 0
     while True:
-        cur_img = imgs[-1]
-        cur_img = draw_rectangles(cur_img, env)
-        if first_round:
-            cur_img = np.concatenate((cur_img, sidebar), axis=1)
-            first_round = False
+        cur_img, cur_env = imgs[-1]
+        cur_img_with_rectangles = draw_rectangles(cur_img.copy(), cur_env)
+        # if num_rounds == 0:
+        cur_img_with_rectangles = np.concatenate((cur_img_with_rectangles, sidebar), axis=1)
         # Display image
         while True:
-            cv2.imshow("image", cur_img)
+            cv2.imshow("image", cur_img_with_rectangles)
             cv2.namedWindow('image')
-            cv2.setMouseCallback('image', on_click, (env, action_to_bb))
+            cv2.setMouseCallback('image', on_click, (cur_env, action_to_bb))
             k = cv2.waitKey(1) & 0xFF
-            if k == ord('x'):
+            if k == ord('q'):
                 break
         cv2.destroyAllWindows()
-        # action_num = input("Select action:\n(1) Blur\n(2) Blackout\n(3) Crop\n(4) Undo\n(5) Done\n")
         if int(action_num) == 1:
             action = Blur()
         elif int(action_num) == 2:
@@ -233,23 +235,28 @@ def annotate_image(img_dir, env):
         elif int(action_num) == 4:
             imgs.pop()
             action_to_objects.pop()
+            if num_rounds > 0:
+                num_rounds -= 1
+            inds = set()
+            sidebar, action_to_bb = make_sidebar(imgs[-1][0])
             continue
         elif int(action_num) == 5:
             break
-        # text = input("Select objects:\n")
-        # if not text.strip():
-        #     objects = []
-        # else:
-        #     objects = [int(num) for num in text.split(" ")]
+        num_rounds += 1
         new_img = cur_img.copy()
         if isinstance(action, Crop):
-            new_img = apply_crop(new_img, env, inds)
-        for key, details_map in env.items():
-            if details_map["ObjPosInImgLeftToRight"] not in inds:
-                continue
-            new_img = apply_action_to_object(action, new_img, details_map)
-        imgs.append(new_img)
+            new_img, new_env = apply_crop(new_img, cur_env, inds)
+            sidebar, action_to_bb = make_sidebar(new_img)
+            num_rounds = 0
+        else:
+            for key, details_map in env.items():
+                if details_map["ObjPosInImgLeftToRight"] not in inds:
+                    continue
+                new_img = apply_action_to_object(action, new_img, details_map)
+                new_env = copy.deepcopy(env)
+        imgs.append((new_img, new_env))
         action_to_objects.append((action, list(inds)))
+        inds = set()
     action_to_objects_dict = {}
     for (action, objects) in action_to_objects:
         if action in action_to_objects_dict:
@@ -257,6 +264,8 @@ def annotate_image(img_dir, env):
         else:
             action_to_objects_dict[action] = objects
     return action_to_objects_dict
+
+
 
 def apply_crop(img, details_map, inds):
     cur_coords = None
@@ -274,10 +283,13 @@ def apply_crop(img, details_map, inds):
             )
     left, top, right, bottom = cur_coords
     img = img[top:bottom, left:right]
+    new_details_map = {}
     for obj_id, details in details_map.items():
-        cur_left, cur_top, cur_right, cur_bottom = details["Loc"]
-        details["Loc"] = (cur_left - left, cur_top - top, cur_right - right, cur_bottom - bottom)
-    return img
+        obj_left, obj_top, obj_right, obj_bottom = details["Loc"]
+        if is_contained(details["Loc"], cur_coords, include_edges=True):
+            new_details_map[obj_id] = copy.deepcopy(details)
+            new_details_map[obj_id]["Loc"] = (obj_left - left, obj_top - top, obj_right - left, obj_bottom - top)
+    return img, new_details_map
 
 
 inds = set()
@@ -307,13 +319,13 @@ def on_click(event, x, y, flags, params):
         for i, (action, loc) in enumerate(list(action_to_bb.items())):
             left, top, right, bottom = loc
             if x > left and x < right and y > top and y < bottom:
-                cv2.rectangle(cur_img, (left, top), (right, bottom), red_color, 2)
+                cv2.rectangle(cur_img_with_rectangles, (left, top), (right, bottom), red_color, 2)
                 action_num = i + 1
                 for other_action, other_loc in action_to_bb.items():
                     if action == other_action:
                         continue
                     left, top, right, bottom = other_loc
-                    cv2.rectangle(cur_img, (left, top), (right, bottom), black_color, 2)
+                    cv2.rectangle(cur_img_with_rectangles, (left, top), (right, bottom), black_color, 2)
                 return
         if cur_loc is None:
             return
@@ -321,11 +333,11 @@ def on_click(event, x, y, flags, params):
         if cur_ind not in inds:
             inds.add(cur_ind)
             print("Added " + cur_name)
-            cv2.rectangle(cur_img, (left, top), (right, bottom), green_color, thickness) 
+            cv2.rectangle(cur_img_with_rectangles, (left, top), (right, bottom), green_color, thickness) 
         else:
             inds.remove(cur_ind)
             print("Removed " + cur_name)
-            cv2.rectangle(cur_img, (left, top), (right, bottom), red_color, thickness) 
+            cv2.rectangle(cur_img_with_rectangles, (left, top), (right, bottom), red_color, thickness) 
 
 
 def get_size(loc):
