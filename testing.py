@@ -34,8 +34,8 @@ def test_synthesis(args):
         img_to_environment = preprocess(img_folder, args.max_faces)
         synth.img_to_environment = img_to_environment
         prog = benchmark.gt_prog
-        signal.signal(signal.SIGALRM, handler)
-        signal.alarm(args.time_limit)
+        # signal.signal(signal.SIGALRM, handler)
+        # signal.alarm(args.time_limit)
         start_time = time.perf_counter()
         # try:
         example_imgs = (
@@ -81,8 +81,6 @@ def test_synthesis(args):
             and synth_prog != "TIMEOUT"
             and not synth.get_differing_images(prog, synth_prog)
         )
-        # num_states = len(fta.states) if fta is not None else 0
-        # num_transitions = len(fta.transitions) if fta is not None else 0
         row = (
             str(prog),
             str(synth_prog),
