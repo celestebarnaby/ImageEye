@@ -1,0 +1,7 @@
+
+#!/bin/bash
+
+PYTHONPATH=:/Users/celestebarnaby/Desktop/ImageEye/eusolver/thirdparty/libeusolver/build:$PYTHONPATH python3 src/benchmarks.py $@
+
+# EOF
+
