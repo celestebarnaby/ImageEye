@@ -6,7 +6,6 @@ import random
 import signal
 from utils import *
 from image_utils import *
-from ordered_set import OrderedSet
 from tkinter import *
 from tkinter import filedialog
 

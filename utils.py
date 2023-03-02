@@ -1,13 +1,11 @@
 from dsl import *
 from typing import Any, List, Dict
-from ordered_set import OrderedSet
 from image_utils import *
 import argparse
 import os
 import json
 import csv
 import time
-import matplotlib.pyplot as plt
 import numpy as np
 
 # from typesystem import *
@@ -382,6 +380,30 @@ def get_args():
         default=False,
         help="hand-picked examples versus heuristically chosen examples",
     )
+    parser.add_argument(
+        "--equiv_reduction",
+        type=bool,
+        default=True,
+        help="set to False to turn off equivalence reduction"
+    )
+    parser.add_argument(
+        "--partial_eval",
+        type=bool,
+        default=True,
+        help="set to False to turn off partial evaluation"
+    )
+    parser.add_argument(
+        "--goal_inference",
+        type=bool,
+        default=True,
+        help="set to False to turn off partial evaluation"
+    )
+    parser.add_argument(
+        "--get_dataset_info",
+        type=bool,
+        default=True,
+        help="if True, outputs info about test dataset"
+    )
     args = parser.parse_args()
     return args
 
@@ -612,13 +634,6 @@ def get_valid_objects(env, output_under, output_over):
             )
         )
     )
-
-
-def analyze_states(states, name):
-    print("Analyzing states...")
-    counts, edges, bars = plt.hist([state.num_programs for state in states])
-    plt.bar_label(bars)
-    plt.savefig("data/plots/" + name)
 
 
 def invalid_output(output_over, output_under, prog_output):
