@@ -206,12 +206,6 @@ class Synthesizer:
         for lib in img_to_environment.values():
             self.full_env = self.full_env | lib["environment"]
 
-    def perform_synthesis(self, gt_prog=None, auto=False, example_imgs=[]):
-        raise NotImplementedError
-
-    def find_distinguishing_img(self, fta, abstract_fta, img_to_environment, action):
-        raise NotImplementedError
-
     def get_indices(self, env, gt_prog):
         """
         Given the ground truth program, and the input image, automatically find out which are the labels by running the program on this input
@@ -248,7 +242,7 @@ class Synthesizer:
         print("Differing images: ", incorrect_img_ids)
         return incorrect_img_ids
 
-    def synthesize_top_down(self, env, action, eval_cache):
+    def synthesize_top_down(self, env, action, eval_cache, args):
         output = {key for (key, details) in env.items() if "ActionApplied" in details}
         card = len(output)
 
@@ -271,14 +265,16 @@ class Synthesizer:
             if not get_type(prog):
                 continue
             # EQUIVALENCE REDUCTION
-            should_prune = partial_eval(prog, env, output_dict, eval_cache, True)
-            if should_prune:
-                continue
-            if not isinstance(prog, Hole):
-                simplified_prog = simplify(prog.duplicate(), len(env), output_dict)
-                if simplified_prog is None or str(simplified_prog) in seen_progs:
-                    continue
-                seen_progs.add(str(simplified_prog))
+            if args.equiv_reduction:
+                if args.partial_eval:
+                    should_prune = partial_eval(prog, env, output_dict, eval_cache, True)
+                    if should_prune:
+                        continue
+                if not isinstance(prog, Hole):
+                    simplified_prog = simplify(prog.duplicate(), len(env), output_dict)
+                    if simplified_prog is None or str(simplified_prog) in seen_progs:
+                        continue
+                    seen_progs.add(str(simplified_prog))
             if not cur_tree.var_nodes:
                 extracted_objs = eval_extractor(
                     prog, env, output_dict=output_dict, eval_cache=eval_cache
@@ -355,12 +351,13 @@ class Synthesizer:
                     sub_extr.output_under = str(hole.output_under)
                 prog_output = get_prog_output(sub_extr, env, parent_node)
                 # OUTPUT ESTIMATION-BASED PRUNING
-                if prog_output and invalid_output(
-                    output_dict[hole.output_over],
-                    output_dict[hole.output_under],
-                    prog_output,
-                ):
-                    continue
+                if args.goal_inference:
+                    if prog_output and invalid_output(
+                        output_dict[hole.output_over],
+                        output_dict[hole.output_under],
+                        prog_output,
+                    ):
+                        continue
                 new_tree = cur_tree.duplicate(next(self.program_counter))
                 new_tree.nodes[hole_num] = sub_extr
                 new_tree.size += size
@@ -403,12 +400,11 @@ class Synthesizer:
 
     def perform_synthesis(
         self,
+        args,
         gt_prog=None,
         example_imgs=[],
         annotated_imgs=[],
         testing=True,
-        interactive=False,
-        time_limit=300,
     ):
         print("Starting synthesis!")
         print()
@@ -426,7 +422,7 @@ class Synthesizer:
         img_options = list(img_to_environment.keys())
         while rounds <= self.max_rounds:
             signal.signal(signal.SIGALRM, handler)
-            signal.alarm(time_limit)
+            signal.alarm(args.time_limit)
             try:
                 start_time = time.perf_counter()
                 if testing:
@@ -443,7 +439,7 @@ class Synthesizer:
                                 | annotated_env
                             )
                     # Interactive testing
-                    elif interactive:
+                    elif args.interactive:
                         while True:
                             filepath = filedialog.askopenfilename(
                                 title="Select an Image",
@@ -453,7 +449,6 @@ class Synthesizer:
                             env = img_to_environment[img_dir]["environment"]
                             action_to_objects = annotate_image(img_dir, env)
                             # TODO: (maybe) Support multiple actions?
-                            # TODO: (definitely) support multiple images
                             (action, indices) = list(action_to_objects.items())[0]
                             annotated_env = (
                                 self.get_environment(
@@ -497,7 +492,7 @@ class Synthesizer:
                             )
                 num_attributes = get_num_attributes(annotated_env)
                 construction_start_time = time.perf_counter()
-                prog, num_progs = self.synthesize_top_down(annotated_env, action, {})
+                prog, num_progs = self.synthesize_top_down(annotated_env, action, {}, args)
                 print("Program: ", prog)
                 construction_end_time = time.perf_counter()
                 construction_time = construction_end_time - construction_start_time
@@ -510,7 +505,7 @@ class Synthesizer:
                     num_progs,
                 )
                 self.synthesis_overview.append(row)
-                if interactive:
+                if args.interactive:
                     print("Finished round ", rounds)
                     print("Synthesized program: ", prog)
                     for img_dir, env in img_to_environment.items():
@@ -585,9 +580,8 @@ if __name__ == "__main__":
     img_to_environment = preprocess(img_folder, args.max_faces)
     synth = Synthesizer(args, client, img_to_environment)
     synth.perform_synthesis(
+        args,
         gt_prog=None,
         example_imgs=[],
-        interactive=True,
         testing=True,
-        time_limit=args.time_limit,
     )

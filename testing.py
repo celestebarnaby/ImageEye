@@ -13,7 +13,60 @@ import itertools
 import random
 import statistics
 
+
+def get_dataset_info():
+    data = []
+    for dataset in ["wedding", "receipts2", "objects"]:
+        if dataset == "objects":
+            img_to_environment = {}
+            for name in ["cars", "cats", "guitars"]:
+                img_folder = "test_images/" + name + "/"
+                temp = preprocess(img_folder, args.max_faces) 
+                img_to_environment = img_to_environment | temp
+        else:
+            img_folder = "test_images/" + dataset + "/"
+            img_to_environment = preprocess(img_folder, args.max_faces)
+        num_objects_per_img = [len(env['environment']) for env in img_to_environment.values()]
+        median_objs = statistics.median(num_objects_per_img)
+        avg_objs = statistics.mean(num_objects_per_img)
+        num_images = len(img_to_environment)
+        prog_size_per_benchmark = [benchmark.ast_size for benchmark in benchmarks if (benchmark.dataset_name == dataset or dataset == 'objects' and benchmark.dataset_name in ["cars", "cats", "guitars"])]
+        prog_depth_per_benchmark = [benchmark.ast_depth for benchmark in benchmarks if (benchmark.dataset_name == dataset or dataset == 'objects' and benchmark.dataset_name in ["cars", "cats", "guitars"])]
+        avg_prog_size = statistics.mean(prog_size_per_benchmark)
+        avg_prog_depth = statistics.mean(prog_depth_per_benchmark)
+        num_benchmarks = len(prog_size_per_benchmark)
+        row = (
+            dataset,
+            num_images,
+            median_objs,
+            avg_objs,
+            num_benchmarks,
+            avg_prog_size,
+            avg_prog_depth
+        )
+        data.append(row)
+    name = "data/dataset_info.csv"
+    with open(name, "w") as f:
+        fw = csv.writer(f)
+        fw.writerow(
+            (
+                "Dataset Name",
+                "# Images",
+                "Median # Objects Per Image",
+                "Average # Objects Per Image",
+                "# Synthesis Tasks",
+                "Average size of ground truth program",
+                "Average depth of ground truth program"
+            ),
+        )
+        for row in data:
+            fw.writerow(row)
+
+
 def test_synthesis(args):
+
+    if args.get_dataset_info:
+        get_dataset_info()
 
     if not os.path.exists("data"):
         os.mkdir("data")
@@ -51,27 +104,12 @@ def test_synthesis(args):
             num_objects,
             num_attributes,
         ) = synth.perform_synthesis(
+            args,
             gt_prog=prog,
             example_imgs=example_imgs,
-            interactive=args.interactive,
             testing=True,
-            time_limit=args.time_limit,
         )
         benchmark_to_example_imgs[i] = img_dirs
-        # except TimeOutException:
-        #     """
-        #     NOTE: I added a TimeOutException. You never know what exception perform_synthesis_v1 throws
-        #     """
-        #     row = (str(prog), "TIMEOUT")
-        #     data.append(row)
-        #     benchmark_to_example_imgs[i] = benchmark.example_imgs
-        #     print("TIMEOUT")
-        #     continue
-        # except:
-        # #     """
-        # #     TODO: add something else here to handle other exceptions
-        # #     """
-        #     raise NotImplementedError
         if args.interactive:
             break
         end_time = time.perf_counter()
