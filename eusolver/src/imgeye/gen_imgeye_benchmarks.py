@@ -5,7 +5,7 @@ sys.path.append('../../../../ImageEye')
 import os
 from dsl import *
 from benchmarks import benchmarks
-from run_imgman_benchmarks import test_make_solver2
+from run_imgeye_benchmarks import test_make_solver2
 import cProfile
 import time
 import signal
@@ -701,7 +701,7 @@ def test_synthesis():
             )
             overview_data.append(row)
             data.append(row)
-    with open('results.csv', "w") as f:
+    with open('data/results.csv', "w") as f:
         fw = csv.writer(f)
         fw.writerow(
             (
@@ -720,7 +720,7 @@ def test_synthesis():
         )
         for row in data:
             fw.writerow(row)
-    with open('overview.csv', "w") as f:
+    with open('data/overview.csv', "w") as f:
         fw = csv.writer(f)
         fw.writerow(
             (
@@ -743,6 +743,4 @@ def test_synthesis():
 
 
 if __name__ == "__main__":
-    # test_fta_construction(args)
-    # test_fta_intersection(args)
     test_synthesis()
