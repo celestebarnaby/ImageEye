@@ -45,6 +45,9 @@ def get_dataset_info():
             avg_prog_depth
         )
         data.append(row)
+
+    if not os.path.exists('data'):
+        os.mkdir('data')    
     name = "data/dataset_info.csv"
     with open(name, "w") as f:
         fw = csv.writer(f)
