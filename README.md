@@ -27,9 +27,10 @@ You can run the ablations listed in the paper with the following commands:
 ### Comparison with EUSolver
 
 Our EUSolver implementation is in the `eusolver` directory. You can run it as follows:
-1. Run `./scripts/build.sh` 
-2. Run `python3 gen_imgeye_benchmarks.py` from the `eusolver/src/imgeye` directory
-3. Results will be output to `eusolver/src/imgeye/data`
+1. Add `build` directory to `eusolver/thirdpary/libeusolver` 
+2. Run `./scripts/build.sh` 
+3. Run `python3 gen_imgeye_benchmarks.py` from the `eusolver/src/imgeye` directory
+4. Results will be output to `eusolver/src/imgeye/data`
 
 ## Command Line Tool
 
