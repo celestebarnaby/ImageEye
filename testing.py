@@ -68,8 +68,8 @@ def get_dataset_info():
 
 def test_synthesis(args):
 
-    if args.get_dataset_info:
-        get_dataset_info()
+    # if args.get_dataset_info:
+        # get_dataset_info()
 
     if not os.path.exists("data"):
         os.mkdir("data")

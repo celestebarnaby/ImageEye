@@ -256,8 +256,12 @@ class Synthesizer:
         hq.heappush(worklist, tree)
         output_objs_str = get_output_objs(env, action)
         num_progs = 0
+        progs = []
 
         while worklist:
+            if len(progs) >= 100:
+                print([str(prog) for prog in progs])
+                return progs, num_progs
             num_progs += 1
             cur_tree = hq.heappop(worklist)
             prog = construct_prog_from_tree(cur_tree)
@@ -265,7 +269,7 @@ class Synthesizer:
                 continue
             # EQUIVALENCE REDUCTION
             if args.equiv_reduction:
-                if args.partial_eval:
+                if output_objs_str and args.partial_eval:
                     should_prune = partial_eval(prog, env, output_dict, eval_cache, True)
                     if should_prune:
                         continue
@@ -279,10 +283,10 @@ class Synthesizer:
                     prog, env, output_dict=output_dict, eval_cache=eval_cache
                 )
                 extracted_objs_str = ",".join(sorted(extracted_objs))
-                if extracted_objs_str == output_objs_str:
+                if not output_objs_str or extracted_objs_str == output_objs_str:
                     print("Num progs: ", num_progs)
                     print("Size:", cur_tree.size)
-                    return prog, num_progs
+                    progs.append(copy.deepcopy(prog))
                 continue
             if num_progs % 1000 == 0:
                 print(num_progs)
@@ -382,6 +386,32 @@ class Synthesizer:
                 hq.heappush(worklist, new_tree)
         return None
 
+    def minimax(self, progs, img_to_environment):
+        min_progs = 0
+        min_img = None
+        finished = True
+        for img, env in img_to_environment.items():
+            env = env['environment']
+            inds_to_num_progs = {}
+            for prog in progs:
+                extracted_objs = eval_extractor(
+                    prog, env
+                )
+                extracted_objs_str = ",".join(sorted(extracted_objs))
+                if extracted_objs_str in inds_to_num_progs:
+                    inds_to_num_progs[extracted_objs_str] += 1
+                else:
+                    inds_to_num_progs[extracted_objs_str] = 1
+            if len(inds_to_num_progs) > 1:
+                finished = False
+            if min_img is None or min_progs > max(inds_to_num_progs.values()):
+                min_progs = max(inds_to_num_progs.values())
+                min_img = img
+        if finished:
+            return True, None, progs[0]
+        return False, min_img, None
+
+
     def get_environment(self, indices, img_dir, img_to_environment, action=Blur()):
         img_index = img_to_environment[img_dir]["img_index"]
         trace = [(img_index, i) for i in indices]
@@ -396,6 +426,16 @@ class Synthesizer:
             img_to_environment=img_to_environment,
         )
         return env
+
+
+    def decider(self, progs, img_to_environment):
+        for i in range(len(progs)):
+            for j in range(i, len(progs)):
+                prog1 = progs[i]
+                prog2 = progs[j]
+                for img, env in img_to_environment.items():
+                    env = env['environment']
+
 
     def perform_synthesis(
         self,
@@ -462,24 +502,42 @@ class Synthesizer:
                     else:
                         print("Starting round ", rounds)
                         print()
-                        img_dir, _ = min(
-                            [
-                                (img_dir, img_to_environment[img_dir]["environment"])
-                                for img_dir in img_options
-                            ],
-                            key=lambda tup: (len(tup[1]), str(tup[0])),
-                        )
-                        print("New image: ", img_dir)
-                        env = img_to_environment[img_dir]["environment"]
-                        indices = self.get_indices(env, gt_prog)
-                        if rounds == 1 and not indices:
-                            img_options.remove(img_dir)
-                            continue
-                        img_dirs.append(img_dir)
-                        annotated_env = (
-                            self.get_environment(indices, img_dir, img_to_environment)
-                            | annotated_env
-                        )
+                        # img_dir, _ = min(
+                        #     [
+                        #         (img_dir, img_to_environment[img_dir]["environment"])
+                        #         for img_dir in img_options
+                        #     ],
+                        #     key=lambda tup: (len(tup[1]), str(tup[0])),
+                        # )
+                        if rounds > 1:
+                            finished, img_dir, prog = self.minimax(progs, img_to_environment)
+                            if finished:
+                                print("Finished synthesis.")
+                                print("Program: ", str(prog))
+                                end_time = time.perf_counter()
+                                cur_round_time = end_time - start_time
+                                total_synthesis_time += cur_round_time
+                                print("Number of rounds: ", str(rounds))
+                                print("Total Synthesis Time: ", str(total_synthesis_time))
+                                return (
+                                    prog,
+                                    cur_round_time,
+                                    rounds,
+                                    img_dirs,
+                                    len(annotated_env),
+                                    num_attributes,
+                                )
+                            print("New image: ", img_dir)
+                            env = img_to_environment[img_dir]["environment"]
+                            indices = self.get_indices(env, gt_prog)
+                            if rounds == 1 and not indices:
+                                img_options.remove(img_dir)
+                                continue
+                            img_dirs.append(img_dir)
+                            annotated_env = (
+                                self.get_environment(indices, img_dir, img_to_environment)
+                                | annotated_env
+                            )                 
                 else:
                     if annotated_imgs:
                         for img_dir, indices in annotated_imgs:
@@ -491,13 +549,15 @@ class Synthesizer:
                             )
                 num_attributes = get_num_attributes(annotated_env)
                 construction_start_time = time.perf_counter()
-                prog, num_progs = self.synthesize_top_down(annotated_env, action, {}, args)
-                print("Program: ", prog)
+                progs, num_progs = self.synthesize_top_down(annotated_env, action, {}, args)
+                if rounds == 1:
+                    rounds += 1
+                    continue
                 construction_end_time = time.perf_counter()
                 construction_time = construction_end_time - construction_start_time
                 row = (
                     gt_prog,
-                    prog,
+                    str([str(prog) for prog in progs]),
                     rounds,
                     len(annotated_env),
                     construction_time,
@@ -525,7 +585,8 @@ class Synthesizer:
                         continue
                 # the list of images where synthesized prog and gt_prog have different outputs
                 if testing:
-                    img_options = self.get_differing_images(prog, gt_prog)
+                    # img_options = self.get_differing_images(prog, gt_prog)
+                    continue
                 else:
                     img_options = []
                 # if list is empty, synthesized program is correct
