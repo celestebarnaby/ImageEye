@@ -105,7 +105,7 @@ def test_synthesis(args):
             rounds,
             img_dirs,
             num_objects,
-            num_attributes,
+            end_condition
         ) = synth.perform_synthesis(
             args,
             gt_prog=prog,
@@ -130,7 +130,7 @@ def test_synthesis(args):
             total_time,
             rounds,
             num_objects,
-            num_attributes,
+            end_condition,
             benchmark.desc,
             benchmark.ast_depth,
             benchmark.ast_size,
@@ -155,7 +155,7 @@ def test_synthesis(args):
                 "Total Time",
                 "# Examples",
                 "# Objects",
-                "# Attributes",
+                "Ending condition",
                 "Description",
                 "AST Depth",
                 "AST Size",

@@ -259,7 +259,7 @@ class Synthesizer:
         progs = []
 
         while worklist:
-            if len(progs) >= 100:
+            if len(progs) >= 20:
                 print([str(prog) for prog in progs])
                 return progs, num_progs
             num_progs += 1
@@ -283,14 +283,13 @@ class Synthesizer:
                     prog, env, output_dict=output_dict, eval_cache=eval_cache
                 )
                 extracted_objs_str = ",".join(sorted(extracted_objs))
-                if not output_objs_str or extracted_objs_str == output_objs_str:
-                    print("Num progs: ", num_progs)
-                    print("Size:", cur_tree.size)
+                if len(env) == 0 or extracted_objs_str == output_objs_str:
                     progs.append(copy.deepcopy(prog))
                 continue
             if num_progs % 1000 == 0:
                 print(num_progs)
                 print(prog)
+                print(len(progs))
                 print(cur_tree.size)
                 print()
             hole_num = cur_tree.var_nodes.pop(0)
@@ -399,17 +398,65 @@ class Synthesizer:
                 )
                 extracted_objs_str = ",".join(sorted(extracted_objs))
                 if extracted_objs_str in inds_to_num_progs:
-                    inds_to_num_progs[extracted_objs_str] += 1
+                    inds_to_num_progs[extracted_objs_str].append(str(prog))
                 else:
-                    inds_to_num_progs[extracted_objs_str] = 1
+                    inds_to_num_progs[extracted_objs_str] = [str(prog)]
             if len(inds_to_num_progs) > 1:
                 finished = False
-            if min_img is None or min_progs > max(inds_to_num_progs.values()):
-                min_progs = max(inds_to_num_progs.values())
+            if min_img is None or min_progs > max(inds_to_num_progs.values(), key=len):
+                min_progs = max(inds_to_num_progs.values(), key=len)
                 min_img = img
         if finished:
             return True, None, progs[0]
         return False, min_img, None
+
+    def occur_number(self, progs, img_to_environment, rec):
+        skip_these = set()
+        for i in range(len(progs)):
+            num_indistinguishable = 0
+            if i in skip_these:
+                continue
+            for j in range(i + 1, len(progs)):
+                if not self.is_distinguishable(progs[i], progs[j], img_to_environment):
+                    num_indistinguishable += 1
+                    skip_these.add(j)
+            if num_indistinguishable >= len(progs) * .75:
+                return progs[i]
+        return None
+
+
+    def is_distinguishable(self, prog1, prog2, img_to_environment):
+        for img, env in img_to_environment.items():
+            env = env['environment']
+            prog1_output = eval_extractor(prog1, env)
+            prog1_output_str = ",".join(sorted(prog1_output))
+            prog2_output = eval_extractor(prog2, env)
+            prog2_output_str = ",".join(sorted(prog2_output))
+            if prog1_output_str != prog2_output_str:
+                return True 
+        return False
+
+
+    def get_challengeable_query(self, rec, progs, img_to_environment, used_imgs):
+        progs_dist_from_rec = [prog for prog in progs if self.is_distinguishable(rec, prog, img_to_environment)]
+        for img, env in img_to_environment.items():
+            if img in used_imgs:
+                continue
+            env = env['environment']
+            rec_output = eval_extractor(rec, env)
+            if not rec_output:
+                continue
+            rec_output_str = ",".join(sorted(rec_output))
+            num_progs_with_same_output = 0
+            for prog in progs_dist_from_rec:
+                prog_output = eval_extractor(prog, env)
+                prog_output_str = ",".join(sorted(prog_output))
+                if rec_output_str == prog_output_str:
+                    num_progs_with_same_output += 1
+            if num_progs_with_same_output < len(progs) * .25:
+                return img
+        _, img, _ = self.minimax(progs, img_to_environment)
+        return img
 
 
     def get_environment(self, indices, img_dir, img_to_environment, action=Blur()):
@@ -426,16 +473,6 @@ class Synthesizer:
             img_to_environment=img_to_environment,
         )
         return env
-
-
-    def decider(self, progs, img_to_environment):
-        for i in range(len(progs)):
-            for j in range(i, len(progs)):
-                prog1 = progs[i]
-                prog2 = progs[j]
-                for img, env in img_to_environment.items():
-                    env = env['environment']
-
 
     def perform_synthesis(
         self,
@@ -459,85 +496,56 @@ class Synthesizer:
         annotated_env = {}
         objs = set()
         img_options = list(img_to_environment.keys())
+        c = 0
+        rec = None
         while rounds <= self.max_rounds:
             signal.signal(signal.SIGALRM, handler)
             signal.alarm(args.time_limit)
             try:
                 start_time = time.perf_counter()
                 if testing:
-                    # Using manually chosen example images
-                    if example_imgs:
-                        for img_dir in example_imgs:
-                            img_dirs.append(img_dir)
-                            env = img_to_environment[img_dir]["environment"]
-                            indices = self.get_indices(env, gt_prog)
-                            annotated_env = (
-                                self.get_environment(
-                                    indices, img_dir, img_to_environment
-                                )
-                                | annotated_env
+                    print("Starting round ", rounds)
+                    print("Recommendation: ", rec)
+                    print("c: ", c)
+                    print()
+                    # img_dir, _ = min(
+                    #     [
+                    #         (img_dir, img_to_environment[img_dir]["environment"])
+                    #         for img_dir in img_options
+                    #     ],
+                    #     key=lambda tup: (len(tup[1]), str(tup[0])),
+                    # )
+                    if rounds > 1:
+                        # finished, img_dir, prog = self.minimax(progs, img_to_environment)
+                        prog = self.occur_number(progs, img_to_environment, rec)
+                        if prog is not None:
+                            print("Finished synthesis.")
+                            print("Program: ", str(prog))
+                            end_time = time.perf_counter()
+                            cur_round_time = end_time - start_time
+                            total_synthesis_time += cur_round_time
+                            print("Number of rounds: ", str(rounds))
+                            print("Total Synthesis Time: ", str(total_synthesis_time))
+                            return (
+                                prog,
+                                cur_round_time,
+                                len(img_dirs),
+                                img_dirs,
+                                len(annotated_env),
+                                "occur number"
                             )
-                    # Interactive testing
-                    elif args.interactive:
-                        while True:
-                            filepath = filedialog.askopenfilename(
-                                title="Select an Image",
-                                filetypes=(("images", "*.jpg"), ("all files", "*.*")),
-                            )
-                            img_dir = filepath.split("ImageEye/")[1]
-                            env = img_to_environment[img_dir]["environment"]
-                            action_to_objects = annotate_image(img_dir, env)
-                            # TODO: (maybe) Support multiple actions?
-                            (action, indices) = list(action_to_objects.items())[0]
-                            annotated_env = (
-                                self.get_environment(
-                                    indices, img_dir, img_to_environment, action
-                                )
-                                | annotated_env
-                            )
-                            should_continue = input("Add another image? (y/n)")
-                            if should_continue == "n":
-                                break
-                    # Automatically chosen examples using heuristic
-                    else:
-                        print("Starting round ", rounds)
-                        print()
-                        # img_dir, _ = min(
-                        #     [
-                        #         (img_dir, img_to_environment[img_dir]["environment"])
-                        #         for img_dir in img_options
-                        #     ],
-                        #     key=lambda tup: (len(tup[1]), str(tup[0])),
-                        # )
-                        if rounds > 1:
-                            finished, img_dir, prog = self.minimax(progs, img_to_environment)
-                            if finished:
-                                print("Finished synthesis.")
-                                print("Program: ", str(prog))
-                                end_time = time.perf_counter()
-                                cur_round_time = end_time - start_time
-                                total_synthesis_time += cur_round_time
-                                print("Number of rounds: ", str(rounds))
-                                print("Total Synthesis Time: ", str(total_synthesis_time))
-                                return (
-                                    prog,
-                                    cur_round_time,
-                                    rounds,
-                                    img_dirs,
-                                    len(annotated_env),
-                                    num_attributes,
-                                )
-                            print("New image: ", img_dir)
-                            env = img_to_environment[img_dir]["environment"]
-                            indices = self.get_indices(env, gt_prog)
-                            if rounds == 1 and not indices:
-                                img_options.remove(img_dir)
-                                continue
-                            img_dirs.append(img_dir)
-                            annotated_env = (
-                                self.get_environment(indices, img_dir, img_to_environment)
-                                | annotated_env
-                            )                 
+                        img_dir = self.get_challengeable_query(rec, progs, img_to_environment, img_dirs)
+                        print("New image: ", img_dir)
+                        env = img_to_environment[img_dir]["environment"]
+                        indices = self.get_indices(env, gt_prog)
+                        # if rounds == 1 and not indices:
+                            # img_options.remove(img_dir)
+                            # continue
+                        img_dirs.append(img_dir)
+                        annotated_env = (
+                            self.get_environment(indices, img_dir, img_to_environment)
+                            | annotated_env
+                        )
                 else:
                     if annotated_imgs:
                         for img_dir, indices in annotated_imgs:
@@ -547,9 +555,34 @@ class Synthesizer:
                                 )
                                 | annotated_env
                             )
-                num_attributes = get_num_attributes(annotated_env)
                 construction_start_time = time.perf_counter()
+                if rounds > 1:
+                    rec_output = eval_extractor(rec, env)
+                    rec_output_str = ",".join(sorted(rec_output))
+                    gt_output = eval_extractor(gt_prog, env)
+                    if rec_output_str == ",".join(sorted(gt_output)):
+                        c += 1
+                    else:
+                        c = 0
+                    if c >= 3:
+                        print("Finished synthesis.")
+                        print("Program: ", str(rec))
+                        end_time = time.perf_counter()
+                        cur_round_time = end_time - start_time
+                        total_synthesis_time += cur_round_time
+                        print("Number of rounds: ", str(rounds))
+                        print("Total Synthesis Time: ", str(total_synthesis_time))
+                        return (
+                            rec,
+                            cur_round_time,
+                            len(img_dirs),
+                            img_dirs,
+                            len(annotated_env),
+                            "recommendation"
+                        ) 
                 progs, num_progs = self.synthesize_top_down(annotated_env, action, {}, args)
+                if rec is None or c == 0:
+                    rec = progs[0]
                 if rounds == 1:
                     rounds += 1
                     continue
@@ -558,56 +591,12 @@ class Synthesizer:
                 row = (
                     gt_prog,
                     str([str(prog) for prog in progs]),
-                    rounds,
+                    len(img_dirs),
                     len(annotated_env),
                     construction_time,
                     num_progs,
                 )
                 self.synthesis_overview.append(row)
-                if args.interactive:
-                    print("Finished round ", rounds)
-                    print("Synthesized program: ", prog)
-                    for img_dir, env in img_to_environment.items():
-                        img = cv2.imread(img_dir, 1)
-                        edited_img = eval_apply_action(
-                            ApplyAction(action, prog),
-                            env["environment"],
-                            [img],
-                            self.client,
-                        )[0]
-                        img_name = img_dir.split("/")[-1]
-                        cv2.imwrite("output/" + img_name, edited_img)
-                    print("Images written to output directory")
-                    response = input("Continue?")
-                    if response == "n":
-                        break
-                    else:
-                        continue
-                # the list of images where synthesized prog and gt_prog have different outputs
-                if testing:
-                    # img_options = self.get_differing_images(prog, gt_prog)
-                    continue
-                else:
-                    img_options = []
-                # if list is empty, synthesized program is correct
-                if not img_options:
-                    print("Finished synthesis.")
-                    print("Program: ", str(prog))
-                    end_time = time.perf_counter()
-                    cur_round_time = end_time - start_time
-                    total_synthesis_time += cur_round_time
-                    print("Number of rounds: ", str(rounds))
-                    print("Total Synthesis Time: ", str(total_synthesis_time))
-                    return (
-                        prog,
-                        cur_round_time,
-                        rounds,
-                        img_dirs,
-                        len(annotated_env),
-                        num_attributes,
-                    )
-                if example_imgs:
-                    break
                 end_time = time.perf_counter()
                 cur_round_time = end_time - start_time
                 total_synthesis_time += cur_round_time
@@ -619,14 +608,11 @@ class Synthesizer:
                 return (
                     "TIMEOUT",
                     cur_round_time,
-                    rounds,
+                    len(img_dirs),
                     img_dirs,
                     len(annotated_env),
-                    num_attributes,
+                    "",
                 )
-        if interactive:
-            print("Done!")
-            return
         print("Synthesis failed.")
         print(rounds)
         return None, 0, rounds, img_dirs, len(annotated_env), num_attributes
