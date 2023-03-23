@@ -11,6 +11,46 @@ from typing import Any, List, Dict, Set, Tuple
 map_outputs = {}
 
 
+def compare_with_ground_truth(extr, img_to_environment, desc):
+    print(desc)
+    sampled_imgs = set()
+    num_tested = 0
+    num_correct = 0
+    while num_tested < 20 and len(sampled_imgs) < len(img_to_environment):
+        img_dir = random.choice(list(set(img_to_environment.keys()) - sampled_imgs))
+        img = cv2.imread("../imgman_v2/" + img_dir, 1)
+        sampled_imgs.add(img_dir)
+        details = img_to_environment[img_dir]['environment']
+        extracted_objs = eval_extractor(extr, details)
+        if not extracted_objs:
+            continue
+        for obj_id, details in details.items():
+            if obj_id not in extracted_objs:
+                continue
+            left, top, right, bottom = details["Loc"]
+            img_height, img_width = img.shape[0], img.shape[1]
+            if right > img_width or bottom > img_height:
+                continue
+            color = (0, 100, 0)
+            thickness = 2
+            keys = []
+            img = cv2.rectangle(img, (left, top), (right, bottom), color, thickness)
+        # Display image
+        cv2.imshow("image", img)
+        # Wait for a key to be pressed to exit
+        cv2.waitKey(0)
+        # Close the window
+        cv2.destroyAllWindows()
+        answer = input("Correct? y/n")
+        if answer == 'y':
+            num_correct += 1
+        num_tested += 1
+    if num_tested == 0:
+        return 0
+    return num_correct/num_tested
+
+
+
 def partial_eval_map(map_extr, env, output_dict, eval_cache):
     if partial_eval(map_extr.extractor, env, output_dict, eval_cache):
         return True

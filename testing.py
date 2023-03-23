@@ -1,7 +1,7 @@
 import os
 from dsl import *
 from synthesizer import *
-from interpreter import get_client
+from interpreter import get_client, compare_with_ground_truth
 from benchmarks import benchmarks, get_ast_depth, get_ast_size
 import cProfile
 import time
@@ -112,6 +112,10 @@ def test_synthesis(args):
             example_imgs=example_imgs,
             testing=True,
         )
+        if args.manually_inspect:
+            correct_pct = compare_with_ground_truth(synth_prog, img_to_environment, benchmark.desc)
+        else:
+            correct_pct = 0
         benchmark_to_example_imgs[i] = img_dirs
         if args.interactive:
             break
@@ -134,6 +138,7 @@ def test_synthesis(args):
             benchmark.desc,
             benchmark.ast_depth,
             benchmark.ast_size,
+            correct_pct,
         )
         data.append(row)
 
@@ -159,6 +164,7 @@ def test_synthesis(args):
                 "Description",
                 "AST Depth",
                 "AST Size",
+                "% Output Images matching Ground Truth"
             ),
         )
         for row in data:

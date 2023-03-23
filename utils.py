@@ -401,8 +401,14 @@ def get_args():
     parser.add_argument(
         "--get_dataset_info",
         type=bool,
-        default=True,
+        default=False,
         help="if True, outputs info about test dataset"
+    )
+    parser.add_argument(
+        "--manually_inspect",
+        type=bool,
+        default=False,
+        help="if True, manually inspect output program on sampled images"
     )
     args = parser.parse_args()
     return args
