@@ -1,4 +1,4 @@
-import React, {Component, useState} from 'react';
+import React, {Component, useState, useEffect} from 'react';
 import Sidebar from '../ui/Sidebar';
 import NewImage from '../ui/NewImage';
 import SearchResults from '../ui/SearchResults';

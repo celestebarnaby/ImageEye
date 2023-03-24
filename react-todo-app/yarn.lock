@@ -4948,6 +4948,18 @@ react-dom@^18.2.0:
     loose-envify "^1.1.0"
     scheduler "^0.23.0"
 
+react-fast-compare@^3.2.0:
+  version "3.2.1"
+  resolved "https://registry.npmjs.org/react-fast-compare/-/react-fast-compare-3.2.1.tgz"
+  integrity sha512-xTYf9zFim2pEif/Fw16dBiXpe0hoy5PxcD8+OwBnTtNLfIm3g6WxhKNurY+6OmdH1u6Ta/W/Vl6vjbYP1MFnDg==
+
+react-img-mapper@^1.5.0:
+  version "1.5.0"
+  resolved "https://registry.npmjs.org/react-img-mapper/-/react-img-mapper-1.5.0.tgz"
+  integrity sha512-t0WRxT0AKzGqS66j0zqsh/VAy6zsXI5HtGjDirZ0fjSg3IrP5Gce+XaXTEmfSJ1UuD2ye6c3zrDayUp4qOsgPw==
+  dependencies:
+    react-fast-compare "^3.2.0"
+
 react-is@^16.13.1:
   version "16.13.1"
   resolved "https://registry.npmjs.org/react-is/-/react-is-16.13.1.tgz"

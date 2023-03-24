@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 
 
 function Sidebar({files, changeImage}) {
-    const imgs = files ? Array.from(files).map(file => './' + file.name) : ['./1.jpg', './2.jpg', './3.jpg'];
+    const imgs = files ? Array.from(files).map(file => './images/' + file.name) : ['./images/1.jpg', './images/2.jpg', './images/3.jpg'];
     // const imgs = ['./1.jpg', './2.jpg', './3.jpg'];
     // const imgs = files.map(file => file.name);
 

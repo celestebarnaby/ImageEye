@@ -1,4 +1,5 @@
 import React from 'react';
+import ImageMapper from 'react-img-mapper';
 
 export default function NewImage({image, imgToEnvironment}) {
 

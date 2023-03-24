@@ -2,6 +2,7 @@
   "name": "react-todo-app",
   "version": "0.1.0",
   "private": true,
+  "proxy":"http://127.0.0.1:5000",
   "devDependencies": {
     "react-scripts": "0.9.0"
   },
@@ -12,6 +13,7 @@
     "keycode-js": "^0.0.4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-img-mapper": "^1.5.0",
     "react-js-dialog-box": "^1.1.6",
     "react-textarea-autosize": "^8.4.0",
     "recompose": "^0.23.5"
