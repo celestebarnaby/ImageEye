@@ -14,6 +14,10 @@ function App() {
   const [isOpen, setIsOpen] = useState(true);
   const [files, setFiles] = useState(null);
   const [mainImage, setMainImage] = useState(null);
+  const objectList = [];
+  const annotatedImages = {};
+  const [annotatedImages2, setAnnotatedImages2] = useState({});
+  const [result, setResult] = useState(null);
 
   // Using useEffect for single rendering
   useEffect(() => {
@@ -38,7 +42,8 @@ function App() {
     let handleChange = (event) => {
         // setSelectedFiles(event.target.files);
         setIsOpen(false);
-        setFiles(event.target.files);
+        setFiles(Array.from(event.target.files).map(file => './images/' + file.name))
+        // setFiles(event.target.files);
         setMainImage('./images/' + event.target.files[0].name);
       };
 
@@ -46,18 +51,48 @@ function App() {
       setMainImage(image);
     };
 
-    console.log('hi');
-    console.log(message);
+    let addObject = (index) => {
+      console.log(index);
+      objectList.push(index);
+      console.log(objectList);
+      console.log('object added');
+    }
+
+    let addImage = (image) => {
+      annotatedImages2[image] = objectList;
+      console.log("annotated image added");
+      console.log(annotatedImages2);
+    }
+
+    let updateResults = () => {
+      fetch('/synthesize', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(annotatedImages2)
+      })
+      .then(response => response.json())
+      .then(data => {
+        console.log('Success:', data);
+        setResult(data.program);
+        setFiles(data.results);
+      })
+      .catch((error) => {
+        console.error('Error:', error);
+      });
+    }
+
+    console.log('files:');
     console.log(files);
-    console.log(changeImage);
 
   return (
         <div>
           {/* <p>{message}</p> */}
         <Sidebar files={files} changeImage={changeImage} />
-        <NewImage image={mainImage} imgToEnvironment={message}/>
-        <SearchResults files={files} changeImage={changeImage}  />
-        <MenuBar/>
+        <NewImage image={mainImage} imgToEnvironment={message} addObject={addObject} addImage={addImage}/>
+        <SearchResults files={files} changeImage={changeImage} result={result} />
+        <MenuBar updateResults={updateResults}/>
         {/* <button onClick={this.openBox}>Open ReactDialogBox </button> */}
 
         {isOpen && (
