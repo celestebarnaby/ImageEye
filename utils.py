@@ -464,8 +464,8 @@ def preprocess(img_folder, max_faces=10):
     # read the cache if it exists
     key = img_folder + " 2 " + str(max_faces)
     test_images = {}
-    if os.path.exists("test_images.json"):
-        with open("test_images.json", "r") as fp:
+    if os.path.exists("test_images_ui.json"):
+        with open("test_images_ui.json", "r") as fp:
             test_images = json.load(fp)
             if key in test_images:
                 return test_images[key]
@@ -505,7 +505,7 @@ def preprocess(img_folder, max_faces=10):
     print("Num images: ", len(os.listdir(img_folder)))
     print("Total time: ", total_time)
     test_images[key] = img_to_environment
-    with open("test_images.json", "w") as fp:
+    with open("test_images_ui.json", "w") as fp:
         json.dump(test_images, fp)
     print(img_to_environment)
 
