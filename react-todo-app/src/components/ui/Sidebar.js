@@ -7,6 +7,8 @@ function Sidebar({files, changeImage}) {
     console.log('sidebar');
     console.log(files);
     const imgs = files ? files : ['./images/1.jpg', './images/2.jpg', './images/3.jpg'];
+    // const imgs = ['./images/wedding/wedding1.jpg', './images/wedding/wedding2.jpg', './images/wedding/3.jpg'];
+    console.log('sidebar');
     console.log(imgs);
     // const imgs = ['./1.jpg', './2.jpg', './3.jpg'];
     // const imgs = files.map(file => file.name);

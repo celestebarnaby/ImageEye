@@ -18,18 +18,19 @@ function App() {
   const annotatedImages = {};
   const [annotatedImages2, setAnnotatedImages2] = useState({});
   const [result, setResult] = useState(null);
+  const [imgDir, setImgDir] = useState("");
 
   // Using useEffect for single rendering
-  useEffect(() => {
-      // Using fetch to fetch the api from 
-      // flask server it will be redirected to proxy
-      fetch("/data").then((res) => {
-          res.json().then((data) => {
-              // Setting a data from api
-              setMessage(data.message);
-          });
-        });
-  }, []);
+  // useEffect(() => {
+  //     // Using fetch to fetch the api from 
+  //     // flask server it will be redirected to proxy
+  //     fetch("/data").then((res) => {
+  //         res.json().then((data) => {
+  //             // Setting a data from api
+  //             setMessage(data.message);
+  //         });
+  //       });
+  // }, []);
 
       let openBox = () => {
         setIsOpen(true);
@@ -39,12 +40,25 @@ function App() {
         setIsOpen(false);
       };
 
-    let handleChange = (event) => {
+    let handleChange = (img_dir) => {
         // setSelectedFiles(event.target.files);
         setIsOpen(false);
-        setFiles(Array.from(event.target.files).map(file => './images/' + file.name))
+        setImgDir(img_dir);
+        // setFiles(Array.from(event.target.files).map(file => './images/' + file.name))
         // setFiles(event.target.files);
-        setMainImage('./images/' + event.target.files[0].name);
+        fetch('/loadFiles', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(img_dir)
+        })
+        .then(response => response.json())
+        .then(data => {
+          setFiles(data.files);
+          setMessage(data.message);
+        })
+        setMainImage(files[0]);
       };
 
     let changeImage = (image) => {
@@ -90,7 +104,7 @@ function App() {
         <div>
           {/* <p>{message}</p> */}
         <Sidebar files={files} changeImage={changeImage} />
-        <NewImage image={mainImage} imgToEnvironment={message} addObject={addObject} addImage={addImage}/>
+        <NewImage image={mainImage} imgToEnvironment={message} addObject={addObject} addImage={addImage} imgDir={imgDir}/>
         <SearchResults files={files} changeImage={changeImage} result={result} />
         <MenuBar updateResults={updateResults}/>
         {/* <button onClick={this.openBox}>Open ReactDialogBox </button> */}
@@ -110,8 +124,10 @@ function App() {
               headerText='Title'
             >
               <div>
-                <h1>Load Images</h1>
-                <FileUploadButton handleChange={handleChange}/>
+                <h1>Select Image Directory</h1>
+                <button onClick={() => handleChange('wedding')}>Wedding</button>
+                <button onClick={() => handleChange('receipts')}>Receipts</button>
+                <button onClick={() => handleChange('objects')}>Objects</button>
               </div>
             </ReactDialogBox>
         //   </>

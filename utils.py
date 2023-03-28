@@ -484,6 +484,9 @@ def preprocess(img_folder, max_faces=10):
         env = get_environment(
             [img_dir], client, img_index, DETAIL_KEYS, prev_env, max_faces
         )
+        img = cv2.imread(img_dir, 1)
+        height, width, _ = img.shape
+        print((width, height))
         # print("environment:", env)
         score = len(env)
         # print("score:", score)
@@ -491,6 +494,7 @@ def preprocess(img_folder, max_faces=10):
             "environment": env,
             "img_index": img_index,
             "score": score,
+            "dimensions": [width, height],
         }
         if not env:
             continue

@@ -13,6 +13,16 @@ def hello():
         'message': img_to_environment
     }
 
+@app.route("/loadFiles", methods=['POST'])
+def load_files():
+    global img_to_environment
+    data = request.get_json()
+    img_to_environment = preprocess("react-todo-app/src/components/ui/images/" + data + "/", 100)
+    return {
+        'message': img_to_environment,
+        'files': ["." + filename.split("ui")[1] for filename in img_to_environment.keys()]
+    }
+
 @app.route("/synthesize", methods=['POST'])
 def get_synthesis_results():
     global img_to_environment
