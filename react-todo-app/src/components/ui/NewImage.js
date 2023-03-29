@@ -40,7 +40,7 @@ export default function NewImage({image, imgToEnvironment, addObject, addImage, 
             {image && (
             <div className="image-container">
             {/* <img src={require(image)} className="center-image"/> */}
-                <ImageMapper src={require(image)} map={map} onClick={(area, index) => addObject(index)} width={new_width}/>
+                <ImageMapper src={require(image)} map={map} onClick={(area, index) => addObject(index)} toggleHighlighted={true} stayMultiHighlighted={true} width={new_width}/>
             <div className="buttons-container">
                 <button className="button-10" onClick={() => addImage(img_dir)}>Mark as Positive</button>
                 <button className="button-10">Mark as Negative</button>

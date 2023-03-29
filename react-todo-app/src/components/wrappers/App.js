@@ -76,6 +76,7 @@ function App() {
       annotatedImages2[image] = objectList;
       console.log("annotated image added");
       console.log(annotatedImages2);
+      setAnnotatedImages2(annotatedImages2);
     }
 
     let updateResults = () => {
@@ -103,7 +104,7 @@ function App() {
   return (
         <div>
           {/* <p>{message}</p> */}
-        <Sidebar files={files} changeImage={changeImage} />
+        <Sidebar files={files} changeImage={changeImage} annotatedImgs={Object.keys(annotatedImages2)} />
         <NewImage image={mainImage} imgToEnvironment={message} addObject={addObject} addImage={addImage} imgDir={imgDir}/>
         <SearchResults files={files} changeImage={changeImage} result={result} />
         <MenuBar updateResults={updateResults}/>
@@ -125,9 +126,9 @@ function App() {
             >
               <div>
                 <h1>Select Image Directory</h1>
-                <button onClick={() => handleChange('wedding')}>Wedding</button>
-                <button onClick={() => handleChange('receipts')}>Receipts</button>
-                <button onClick={() => handleChange('objects')}>Objects</button>
+                {/* <button className="button-10" onClick={() => handleChange('wedding')}>Wedding</button> */}
+                <button className="button-10" onClick={() => handleChange('receipts')}>Receipts</button>
+                <button className="button-10" onClick={() => handleChange('objects')}>Objects</button>
               </div>
             </ReactDialogBox>
         //   </>

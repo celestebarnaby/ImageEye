@@ -8,6 +8,13 @@ body {
     height: auto;
 }
 
+.small-img-grayed-out {
+    width: 150px;
+    height: auto;
+    filter: grayscale(25%);
+    opacity: 0.5;
+}
+
 .side-by-side {
     display: flex;
     flex-direction: row;
