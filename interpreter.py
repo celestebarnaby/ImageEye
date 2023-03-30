@@ -734,9 +734,84 @@ def eval_program(prog: Program, imgs, details: Dict[str, Dict[str, Any]], client
             cv2.destroyAllWindows()
 
 
+def draw_rectangles(img, env):
+    for key, details_map in env.items():
+        # if key == '236':
+            # continue
+        left, top, right, bottom = details_map["Loc"]
+        img_height, img_width = img.shape[0], img.shape[1]
+        if right > img_width or bottom > img_height:
+            continue
+        color = (0, 100, 0)
+        thickness = 2
+        # keys = ["IsPrice", "IsPhoneNumber"]
+        keys = ["Smile", "EyesOpen"]
+        features = [feature for feature in details_map if feature in keys]
+        features += [str(details_map["Index"])]
+        # if "Text" in details_map:
+            # features += [details_map["Text"]]
+        if "Name" in details_map:
+            features += [details_map["Name"]]
+        # features = [str(details_map["ObjPosInImgLeftToRight"])]
+        for i, feature in enumerate(features):
+            cv2.putText(img, feature, (right, bottom + 30 * i), cv2.FONT_HERSHEY_SIMPLEX, 1.2, color, thickness)
+        img = cv2.rectangle(img, (left, top), (right, bottom), color, thickness)
+    return img
+
+
 def test_interpreter(args):
-    print("hi")
-    # TODO
+    img_to_environment = preprocess("test_images/wedding/")
+    num_benchmarks = 0
+    data = []
+    for benchmark in benchmarks:
+        if num_benchmarks > 5:
+            break
+        if benchmark.dataset_name != "wedding":
+            continue
+        imgs = random.choices(list(img_to_environment.keys()), k=10)
+        print(benchmark.gt_prog)
+        print(benchmark.desc)
+        for img_dir in imgs:
+            env = img_to_environment[img_dir]['environment']
+            img = cv2.imread(img_dir, 1)
+            img = draw_rectangles(img, env)
+            cv2.imshow("image", img)
+            cv2.waitKey(0)
+            cv2.destroyAllWindows()
+            would_not_prune = input("Does your annotation match model labels?")
+            false_positive = input("Is this due to incorrect labels?")
+            false_negative = input("Is this due to missing labels?")
+            labels = input("What labels are involved?")
+            would_prune_val = False if would_not_prune == 'y' else True
+            false_pos_val = True if false_positive == 'y' else False 
+            false_neg_val = True if false_negative == 'y' else False 
+            row = (
+                str(benchmark.gt_prog),
+                benchmark.desc,
+                img_dir,
+                would_prune_val,
+                false_pos_val,
+                false_neg_val,
+                labels
+            )
+            data.append(row)
+        num_benchmarks += 1
+    with open("output.csv", "w") as f:
+        fw = csv.writer(f)
+        fw.writerow(
+            (
+                "GT Prog",
+                "Description",
+                "Image",
+                "Would GT Prog Get Pruned?",
+                "Due to False Positives?",
+                "Due to False Negatives?",
+                "Relevant Labels"
+            )
+        )
+        for row in data:
+            fw.writerow(row)
+
 
 
 if __name__ == "__main__":

@@ -1,0 +1,61 @@
+GT Prog,Description,Image,Would GT Prog Get Pruned?,Due to False Positives?,Due to False Negatives?,Relevant Labels
+"Union[IsObject(Car), IsObject(Bicycle)]",All cars and bicycles,test_images/cars/9127573526_1e2be02f74_c.jpg,False,False,False,
+"Union[IsObject(Car), IsObject(Bicycle)]",All cars and bicycles,test_images/cars/37402566010_22421324b6_c.jpg,False,False,False,
+"Union[IsObject(Car), IsObject(Bicycle)]",All cars and bicycles,test_images/cars/37601924642_e146aea720_c.jpg,False,False,False,
+"Union[IsObject(Car), IsObject(Bicycle)]",All cars and bicycles,test_images/cars/14439655154_4598f22beb_c.jpg,False,False,False,
+"Union[IsObject(Car), IsObject(Bicycle)]",All cars and bicycles,test_images/cars/car4.jpeg,True,False,True,Car
+"Union[IsObject(Car), IsObject(Bicycle)]",All cars and bicycles,test_images/cars/47832410842_e59503560a_c.jpg,False,False,False,
+"Union[IsObject(Car), IsObject(Bicycle)]",All cars and bicycles,test_images/cars/23688815328_9262b6f13f_c.jpg,True,False,True,Car
+"Union[IsObject(Car), IsObject(Bicycle)]",All cars and bicycles,test_images/cars/42175641341_32367f644a_c.jpg,False,False,False,
+"Union[IsObject(Car), IsObject(Bicycle)]",All cars and bicycles,test_images/cars/38173050612_88886a495d_c.jpg,False,False,False,
+"Union[IsObject(Car), IsObject(Bicycle)]",All cars and bicycles,test_images/cars/39904896492_3629f1dc1c_c.jpg,False,False,False,
+"Map(MatchesWord(319), IsObject(Car), GetIsContained)", Car with number 319,test_images/cars/29732770968_263ae0fbe4_c.jpg,False,False,False,
+"Map(MatchesWord(319), IsObject(Car), GetIsContained)", Car with number 319,test_images/cars/43397308862_768b351439_c.jpg,False,False,False,
+"Map(MatchesWord(319), IsObject(Car), GetIsContained)", Car with number 319,test_images/cars/38173050612_88886a495d_c.jpg,False,False,False,
+"Map(MatchesWord(319), IsObject(Car), GetIsContained)", Car with number 319,test_images/cars/car2.jpeg,False,False,False,
+"Map(MatchesWord(319), IsObject(Car), GetIsContained)", Car with number 319,test_images/cars/14439655154_4598f22beb_c.jpg,False,False,False,
+"Map(MatchesWord(319), IsObject(Car), GetIsContained)", Car with number 319,test_images/cars/14960656582_161be9ac77_c.jpg,False,False,False,
+"Map(MatchesWord(319), IsObject(Car), GetIsContained)", Car with number 319,test_images/cars/37402566010_22421324b6_c.jpg,False,False,False,
+"Map(MatchesWord(319), IsObject(Car), GetIsContained)", Car with number 319,test_images/cars/6708503525_870ea33fd2_c.jpg,False,False,False,
+"Map(MatchesWord(319), IsObject(Car), GetIsContained)", Car with number 319,test_images/cars/7051526761_7f1293207a_k.jpg,False,False,False,
+"Map(MatchesWord(319), IsObject(Car), GetIsContained)", Car with number 319,test_images/cars/43410237094_213aff3335_c.jpg,False,False,False,
+"Map(IsObject(Car), IsFace, GetContains)",All faces within car,test_images/cars/n02834778_4305.JPEG,False,False,False,
+"Map(IsObject(Car), IsFace, GetContains)",All faces within car,test_images/cars/n02958343_16403.JPEG,True,False,True,Face
+"Map(IsObject(Car), IsFace, GetContains)",All faces within car,test_images/cars/43550177292_8b0be337fe_c.jpg,False,False,False,
+"Map(IsObject(Car), IsFace, GetContains)",All faces within car,test_images/cars/car3.jpeg,False,False,False,
+"Map(IsObject(Car), IsFace, GetContains)",All faces within car,test_images/cars/37342131896_1771206c51_c.jpg,False,False,False,
+"Map(IsObject(Car), IsFace, GetContains)",All faces within car,test_images/cars/6708503525_870ea33fd2_c.jpg,False,False,False,
+"Map(IsObject(Car), IsFace, GetContains)",All faces within car,test_images/cars/47832410842_e59503560a_c.jpg,False,False,False,
+"Map(IsObject(Car), IsFace, GetContains)",All faces within car,test_images/cars/n02834778_1724.JPEG,False,False,False,
+"Map(IsObject(Car), IsFace, GetContains)",All faces within car,test_images/cars/37402566010_22421324b6_c.jpg,False,False,False,
+"Map(IsObject(Car), IsFace, GetContains)",All faces within car,test_images/cars/43230032045_d8377fca4a_c.jpg,False,False,False,
+Complement(IsObject(Car)),All objects except cars,test_images/cars/n02958343_4294.JPEG,True,False,True,Text
+Complement(IsObject(Car)),All objects except cars,test_images/cars/44929498572_0b602cb182_c.jpg,True,False,True,"Car, Wheel"
+Complement(IsObject(Car)),All objects except cars,test_images/cars/42175641341_32367f644a_c.jpg,True,False,True,"Person, Text"
+Complement(IsObject(Car)),All objects except cars,test_images/cars/29264921928_50853b7ec8_c.jpg,True,False,True,"Car, Traffic Light"
+Complement(IsObject(Car)),All objects except cars,test_images/cars/7283056644_e9ca3877d1_c.jpg,False,False,False,
+Complement(IsObject(Car)),All objects except cars,test_images/cars/43591466295_59dc0fa91c_c.jpg,True,False,True,Person
+Complement(IsObject(Car)),All objects except cars,test_images/cars/n02958343_9005.JPEG,True,False,True,Text
+Complement(IsObject(Car)),All objects except cars,test_images/cars/47832410842_e59503560a_c.jpg,False,False,False,
+Complement(IsObject(Car)),All objects except cars,test_images/cars/37402566010_22421324b6_c.jpg,False,False,False,
+Complement(IsObject(Car)),All objects except cars,test_images/cars/43230032045_d8377fca4a_c.jpg,False,False,False,
+"Complement(Union[IsObject(Car), IsObject(Bicycle)])",All objects except cars and bicycles,test_images/cars/39910643935_3fee1c5e5e_c.jpg,False,False,False,
+"Complement(Union[IsObject(Car), IsObject(Bicycle)])",All objects except cars and bicycles,test_images/cars/23688815328_9262b6f13f_c.jpg,True,False,True,Car
+"Complement(Union[IsObject(Car), IsObject(Bicycle)])",All objects except cars and bicycles,test_images/cars/5421932595_68f7ab545d_c.jpg,False,False,False,
+"Complement(Union[IsObject(Car), IsObject(Bicycle)])",All objects except cars and bicycles,test_images/cars/n02958343_4294.JPEG,True,False,True,Car
+"Complement(Union[IsObject(Car), IsObject(Bicycle)])",All objects except cars and bicycles,test_images/cars/43420571660_864dc92875_c.jpg,False,False,False,
+"Complement(Union[IsObject(Car), IsObject(Bicycle)])",All objects except cars and bicycles,test_images/cars/42957663251_025fb32ac8_c.jpg,False,False,False,
+"Complement(Union[IsObject(Car), IsObject(Bicycle)])",All objects except cars and bicycles,test_images/cars/6708503525_870ea33fd2_c.jpg,False,False,False,
+"Complement(Union[IsObject(Car), IsObject(Bicycle)])",All objects except cars and bicycles,test_images/cars/14420105097_68c72c96f2_c.jpg,True,False,True,Wheel
+"Complement(Union[IsObject(Car), IsObject(Bicycle)])",All objects except cars and bicycles,test_images/cars/38003299455_d6d697ee64_c.jpg,True,False,True,Text
+"Complement(Union[IsObject(Car), IsObject(Bicycle)])",All objects except cars and bicycles,test_images/cars/7277639906_2f455d0a66_c.jpg,False,False,False,
+"Map(IsObject(Car), IsText, GetContains)",All text on a car,test_images/cars/41195542880_7166141ab7_c.jpg,False,False,False,
+"Map(IsObject(Car), IsText, GetContains)",All text on a car,test_images/cars/43410237094_213aff3335_c.jpg,False,False,False,
+"Map(IsObject(Car), IsText, GetContains)",All text on a car,test_images/cars/41814174020_5edd437c9b_c.jpg,True,True,True,Text
+"Map(IsObject(Car), IsText, GetContains)",All text on a car,test_images/cars/43230032045_d8377fca4a_c.jpg,False,False,False,
+"Map(IsObject(Car), IsText, GetContains)",All text on a car,test_images/cars/44929498572_0b602cb182_c.jpg,False,False,False,
+"Map(IsObject(Car), IsText, GetContains)",All text on a car,test_images/cars/7283056644_e9ca3877d1_c.jpg,False,False,False,
+"Map(IsObject(Car), IsText, GetContains)",All text on a car,test_images/cars/5421932595_68f7ab545d_c.jpg,True,False,True,Text
+"Map(IsObject(Car), IsText, GetContains)",All text on a car,test_images/cars/car1.jpeg,True,True,True,Text
+"Map(IsObject(Car), IsText, GetContains)",All text on a car,test_images/cars/42957663251_025fb32ac8_c.jpg,True,False,True,Text
+"Map(IsObject(Car), IsText, GetContains)",All text on a car,test_images/cars/43550177292_8b0be337fe_c.jpg,False,False,False,

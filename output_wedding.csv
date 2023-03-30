@@ -1,0 +1,121 @@
+GT Prog,Description,Image,Would GT Prog Get Pruned?,Due to False Positives?,Due to False Negatives?,Relevant Labels
+"Map(Union[GetFace(34), Smile, EyesOpen], IsObject(Person), GetBelow)","Bodies of faces that have id 34, are smiling, or have eyes open",test_images/wedding/Ana Maria Photography-6.jpg,False,False,False,
+"Map(Union[GetFace(34), Smile, EyesOpen], IsObject(Person), GetBelow)","Bodies of faces that have id 34, are smiling, or have eyes open",test_images/wedding/Ana Maria Photography-39.jpg,False,False,False,
+"Map(Union[GetFace(34), Smile, EyesOpen], IsObject(Person), GetBelow)","Bodies of faces that have id 34, are smiling, or have eyes open",test_images/wedding/Ana Maria Photography-48.jpg,True,False,True,Person
+"Map(Union[GetFace(34), Smile, EyesOpen], IsObject(Person), GetBelow)","Bodies of faces that have id 34, are smiling, or have eyes open",test_images/wedding/Ana Maria Photography-72.jpg,False,False,False,
+"Map(Union[GetFace(34), Smile, EyesOpen], IsObject(Person), GetBelow)","Bodies of faces that have id 34, are smiling, or have eyes open",test_images/wedding/Ana Maria Photography-93.jpg,False,False,False,
+"Map(Union[GetFace(34), Smile, EyesOpen], IsObject(Person), GetBelow)","Bodies of faces that have id 34, are smiling, or have eyes open",test_images/wedding/Ana Maria Photography-79.jpg,False,False,False,
+"Map(Union[GetFace(34), Smile, EyesOpen], IsObject(Person), GetBelow)","Bodies of faces that have id 34, are smiling, or have eyes open",test_images/wedding/Ana Maria Photography-138.jpg,False,False,False,
+"Map(Union[GetFace(34), Smile, EyesOpen], IsObject(Person), GetBelow)","Bodies of faces that have id 34, are smiling, or have eyes open",test_images/wedding/Ana Maria Photography-156.jpg,True,False,True,Face
+"Map(Union[GetFace(34), Smile, EyesOpen], IsObject(Person), GetBelow)","Bodies of faces that have id 34, are smiling, or have eyes open",test_images/wedding/Ana Maria Photography-103.jpg,False,False,False,
+"Map(Union[GetFace(34), Smile, EyesOpen], IsObject(Person), GetBelow)","Bodies of faces that have id 34, are smiling, or have eyes open",test_images/wedding/Ana Maria Photography-101.jpg,True,False,True,EyesOpen
+"Map(Union[GetFace(34), Smile, EyesOpen], IsObject(Person), GetBelow)","Bodies of faces that have id 34, are smiling, or have eyes open",test_images/wedding/Ana Maria Photography-88.jpg,False,False,False,
+"Map(Union[GetFace(34), Smile, EyesOpen], IsObject(Person), GetBelow)","Bodies of faces that have id 34, are smiling, or have eyes open",test_images/wedding/Ana Maria Photography-49.jpg,True,True,False,Face ID
+"Map(Union[GetFace(34), Smile, EyesOpen], IsObject(Person), GetBelow)","Bodies of faces that have id 34, are smiling, or have eyes open",test_images/wedding/Ana Maria Photography-73.jpg,True,False,True,Person
+"Map(Union[GetFace(34), Smile, EyesOpen], IsObject(Person), GetBelow)","Bodies of faces that have id 34, are smiling, or have eyes open",test_images/wedding/Ana Maria Photography-66.jpg,False,False,False,
+"Map(Union[GetFace(34), Smile, EyesOpen], IsObject(Person), GetBelow)","Bodies of faces that have id 34, are smiling, or have eyes open",test_images/wedding/Ana Maria Photography-89.jpg,False,False,False,
+"Map(Union[GetFace(34), Smile, EyesOpen], IsObject(Person), GetBelow)","Bodies of faces that have id 34, are smiling, or have eyes open",test_images/wedding/Ana Maria Photography-77.jpg,False,False,False,
+"Map(Union[GetFace(34), Smile, EyesOpen], IsObject(Person), GetBelow)","Bodies of faces that have id 34, are smiling, or have eyes open",test_images/wedding/Ana Maria Photography-75.jpg,False,False,False,
+"Map(Union[GetFace(34), Smile, EyesOpen], IsObject(Person), GetBelow)","Bodies of faces that have id 34, are smiling, or have eyes open",test_images/wedding/Ana Maria Photography-52.jpg,False,False,False,
+"Map(Union[GetFace(34), Smile, EyesOpen], IsObject(Person), GetBelow)","Bodies of faces that have id 34, are smiling, or have eyes open",test_images/wedding/Ana Maria Photography-101.jpg,True,False,True,EyesOpen
+"Map(Union[GetFace(34), Smile, EyesOpen], IsObject(Person), GetBelow)","Bodies of faces that have id 34, are smiling, or have eyes open",test_images/wedding/Ana Maria Photography-32.jpg,True,False,True,Person
+"Union[Map(GetFace(8), IsFace, GetNext), Map(GetFace(8), IsFace, GetPrev)]",Faces to the left and right of face with id 8,test_images/wedding/Ana Maria Photography-63.jpg,False,False,False,
+"Union[Map(GetFace(8), IsFace, GetNext), Map(GetFace(8), IsFace, GetPrev)]",Faces to the left and right of face with id 8,test_images/wedding/Ana Maria Photography-98.jpg,False,False,False,
+"Union[Map(GetFace(8), IsFace, GetNext), Map(GetFace(8), IsFace, GetPrev)]",Faces to the left and right of face with id 8,test_images/wedding/Ana Maria Photography-58.jpg,False,False,False,
+"Union[Map(GetFace(8), IsFace, GetNext), Map(GetFace(8), IsFace, GetPrev)]",Faces to the left and right of face with id 8,test_images/wedding/Ana Maria Photography-61.jpg,False,False,False,
+"Union[Map(GetFace(8), IsFace, GetNext), Map(GetFace(8), IsFace, GetPrev)]",Faces to the left and right of face with id 8,test_images/wedding/Ana Maria Photography-66.jpg,False,False,False,
+"Union[Map(GetFace(8), IsFace, GetNext), Map(GetFace(8), IsFace, GetPrev)]",Faces to the left and right of face with id 8,test_images/wedding/Ana Maria Photography-107.jpg,False,False,False,
+"Union[Map(GetFace(8), IsFace, GetNext), Map(GetFace(8), IsFace, GetPrev)]",Faces to the left and right of face with id 8,test_images/wedding/Ana Maria Photography-103.jpg,False,False,False,
+"Union[Map(GetFace(8), IsFace, GetNext), Map(GetFace(8), IsFace, GetPrev)]",Faces to the left and right of face with id 8,test_images/wedding/Ana Maria Photography-139.jpg,True,False,True,Face
+"Union[Map(GetFace(8), IsFace, GetNext), Map(GetFace(8), IsFace, GetPrev)]",Faces to the left and right of face with id 8,test_images/wedding/Ana Maria Photography-100.jpg,False,False,False,
+"Union[Map(GetFace(8), IsFace, GetNext), Map(GetFace(8), IsFace, GetPrev)]",Faces to the left and right of face with id 8,test_images/wedding/Ana Maria Photography-145.jpg,False,False,False,
+"Union[Map(GetFace(8), IsFace, GetNext), Map(GetFace(8), IsFace, GetPrev)]",Faces to the left and right of face with id 8,test_images/wedding/Ana Maria Photography-147.jpg,False,False,False,
+"Union[Map(GetFace(8), IsFace, GetNext), Map(GetFace(8), IsFace, GetPrev)]",Faces to the left and right of face with id 8,test_images/wedding/Ana Maria Photography-68.jpg,False,False,False,
+"Union[Map(GetFace(8), IsFace, GetNext), Map(GetFace(8), IsFace, GetPrev)]",Faces to the left and right of face with id 8,test_images/wedding/Ana Maria Photography-85.jpg,False,False,False,
+"Union[Map(GetFace(8), IsFace, GetNext), Map(GetFace(8), IsFace, GetPrev)]",Faces to the left and right of face with id 8,test_images/wedding/Ana Maria Photography-113.jpg,False,False,False,
+"Union[Map(GetFace(8), IsFace, GetNext), Map(GetFace(8), IsFace, GetPrev)]",Faces to the left and right of face with id 8,test_images/wedding/Ana Maria Photography-15.jpg,False,False,False,
+"Union[Map(GetFace(8), IsFace, GetNext), Map(GetFace(8), IsFace, GetPrev)]",Faces to the left and right of face with id 8,test_images/wedding/Ana Maria Photography-74.jpg,False,False,False,
+"Union[Map(GetFace(8), IsFace, GetNext), Map(GetFace(8), IsFace, GetPrev)]",Faces to the left and right of face with id 8,test_images/wedding/Ana Maria Photography-155.jpg,False,False,False,
+"Union[Map(GetFace(8), IsFace, GetNext), Map(GetFace(8), IsFace, GetPrev)]",Faces to the left and right of face with id 8,test_images/wedding/Ana Maria Photography-93.jpg,False,False,False,
+"Union[Map(GetFace(8), IsFace, GetNext), Map(GetFace(8), IsFace, GetPrev)]",Faces to the left and right of face with id 8,test_images/wedding/Ana Maria Photography-156.jpg,False,False,False,
+"Union[Map(GetFace(8), IsFace, GetNext), Map(GetFace(8), IsFace, GetPrev)]",Faces to the left and right of face with id 8,test_images/wedding/Ana Maria Photography-133.jpg,False,False,False,
+"Union[GetFace(8), Map(GetFace(8), GetFace(34), GetAbove)]",Face 8 and face 34 when it is behind face 8,test_images/wedding/Ana Maria Photography-107.jpg,False,False,False,
+"Union[GetFace(8), Map(GetFace(8), GetFace(34), GetAbove)]",Face 8 and face 34 when it is behind face 8,test_images/wedding/Ana Maria Photography-47.jpg,False,False,False,
+"Union[GetFace(8), Map(GetFace(8), GetFace(34), GetAbove)]",Face 8 and face 34 when it is behind face 8,test_images/wedding/Ana Maria Photography-104.jpg,False,False,False,
+"Union[GetFace(8), Map(GetFace(8), GetFace(34), GetAbove)]",Face 8 and face 34 when it is behind face 8,test_images/wedding/Ana Maria Photography-186.jpg,False,False,False,
+"Union[GetFace(8), Map(GetFace(8), GetFace(34), GetAbove)]",Face 8 and face 34 when it is behind face 8,test_images/wedding/Ana Maria Photography-139.jpg,True,False,True,Face
+"Union[GetFace(8), Map(GetFace(8), GetFace(34), GetAbove)]",Face 8 and face 34 when it is behind face 8,test_images/wedding/Ana Maria Photography-37.jpg,False,False,False,
+"Union[GetFace(8), Map(GetFace(8), GetFace(34), GetAbove)]",Face 8 and face 34 when it is behind face 8,test_images/wedding/Ana Maria Photography-154.jpg,False,False,False,
+"Union[GetFace(8), Map(GetFace(8), GetFace(34), GetAbove)]",Face 8 and face 34 when it is behind face 8,test_images/wedding/Ana Maria Photography-39.jpg,False,False,False,
+"Union[GetFace(8), Map(GetFace(8), GetFace(34), GetAbove)]",Face 8 and face 34 when it is behind face 8,test_images/wedding/Ana Maria Photography-138.jpg,True,False,True,Face
+"Union[GetFace(8), Map(GetFace(8), GetFace(34), GetAbove)]",Face 8 and face 34 when it is behind face 8,test_images/wedding/Ana Maria Photography-26.jpg,False,False,False,
+"Union[GetFace(8), Map(GetFace(8), GetFace(34), GetAbove)]",Face 8 and face 34 when it is behind face 8,test_images/wedding/Ana Maria Photography-133.jpg,False,False,False,
+"Union[GetFace(8), Map(GetFace(8), GetFace(34), GetAbove)]",Face 8 and face 34 when it is behind face 8,test_images/wedding/Ana Maria Photography-148.jpg,True,False,True,Face
+"Union[GetFace(8), Map(GetFace(8), GetFace(34), GetAbove)]",Face 8 and face 34 when it is behind face 8,test_images/wedding/Ana Maria Photography-22.jpg,False,False,False,
+"Union[GetFace(8), Map(GetFace(8), GetFace(34), GetAbove)]",Face 8 and face 34 when it is behind face 8,test_images/wedding/Ana Maria Photography-138.jpg,True,False,True,Face
+"Union[GetFace(8), Map(GetFace(8), GetFace(34), GetAbove)]",Face 8 and face 34 when it is behind face 8,test_images/wedding/Ana Maria Photography-76.jpg,False,False,False,
+"Union[GetFace(8), Map(GetFace(8), GetFace(34), GetAbove)]",Face 8 and face 34 when it is behind face 8,test_images/wedding/Ana Maria Photography-37.jpg,False,False,False,
+"Union[GetFace(8), Map(GetFace(8), GetFace(34), GetAbove)]",Face 8 and face 34 when it is behind face 8,test_images/wedding/Ana Maria Photography-93.jpg,False,False,False,
+"Union[GetFace(8), Map(GetFace(8), GetFace(34), GetAbove)]",Face 8 and face 34 when it is behind face 8,test_images/wedding/Ana Maria Photography-186.jpg,False,False,False,
+"Union[GetFace(8), Map(GetFace(8), GetFace(34), GetAbove)]",Face 8 and face 34 when it is behind face 8,test_images/wedding/Ana Maria Photography-180.jpg,False,False,False,
+"Union[GetFace(8), Map(GetFace(8), GetFace(34), GetAbove)]",Face 8 and face 34 when it is behind face 8,test_images/wedding/Ana Maria Photography-68.jpg,False,False,False,
+"Map(IsFace, IsFace, GetAbove)",All faces in back,test_images/wedding/Ana Maria Photography-147.jpg,False,False,False,
+"Map(IsFace, IsFace, GetAbove)",All faces in back,test_images/wedding/Ana Maria Photography-69.jpg,False,False,False,
+"Map(IsFace, IsFace, GetAbove)",All faces in back,test_images/wedding/Ana Maria Photography-108.jpg,False,False,False,
+"Map(IsFace, IsFace, GetAbove)",All faces in back,test_images/wedding/Ana Maria Photography-22.jpg,False,False,False,
+"Map(IsFace, IsFace, GetAbove)",All faces in back,test_images/wedding/Ana Maria Photography-141.jpg,False,False,False,
+"Map(IsFace, IsFace, GetAbove)",All faces in back,test_images/wedding/Ana Maria Photography-88.jpg,False,False,False,
+"Map(IsFace, IsFace, GetAbove)",All faces in back,test_images/wedding/Ana Maria Photography-107.jpg,True,False,True,Face
+"Map(IsFace, IsFace, GetAbove)",All faces in back,test_images/wedding/Ana Maria Photography-71.jpg,False,False,False,
+"Map(IsFace, IsFace, GetAbove)",All faces in back,test_images/wedding/Ana Maria Photography-81.jpg,True,False,True,Face
+"Map(IsFace, IsFace, GetAbove)",All faces in back,test_images/wedding/Ana Maria Photography-71.jpg,False,False,False,
+"Map(IsFace, IsFace, GetAbove)",All faces in back,test_images/wedding/Ana Maria Photography-52.jpg,False,False,False,
+"Map(IsFace, IsFace, GetAbove)",All faces in back,test_images/wedding/Ana Maria Photography-42.jpg,False,False,False,
+"Map(IsFace, IsFace, GetAbove)",All faces in back,test_images/wedding/Ana Maria Photography-186.jpg,False,False,False,
+"Map(IsFace, IsFace, GetAbove)",All faces in back,test_images/wedding/Ana Maria Photography-69.jpg,False,False,False,
+"Map(IsFace, IsFace, GetAbove)",All faces in back,test_images/wedding/Ana Maria Photography-119.jpg,False,False,False,
+"Map(IsFace, IsFace, GetAbove)",All faces in back,test_images/wedding/Ana Maria Photography-146.jpg,False,False,False,
+"Map(IsFace, IsFace, GetAbove)",All faces in back,test_images/wedding/Ana Maria Photography-18.jpg,False,False,False,
+"Map(IsFace, IsFace, GetAbove)",All faces in back,test_images/wedding/Ana Maria Photography-80.jpg,False,False,False,
+"Map(IsFace, IsFace, GetAbove)",All faces in back,test_images/wedding/Ana Maria Photography-120.jpg,False,False,False,
+"Map(IsFace, IsFace, GetAbove)",All faces in back,test_images/wedding/Ana Maria Photography-48.jpg,False,False,False,
+"Intersection[Complement(Smile), Map(IsFace, IsFace, GetAbove)]",All faces in back that are not smiling,test_images/wedding/Ana Maria Photography-33.jpg,False,False,False,
+"Intersection[Complement(Smile), Map(IsFace, IsFace, GetAbove)]",All faces in back that are not smiling,test_images/wedding/Ana Maria Photography-106.jpg,False,False,False,
+"Intersection[Complement(Smile), Map(IsFace, IsFace, GetAbove)]",All faces in back that are not smiling,test_images/wedding/Ana Maria Photography-71.jpg,False,False,False,
+"Intersection[Complement(Smile), Map(IsFace, IsFace, GetAbove)]",All faces in back that are not smiling,test_images/wedding/Ana Maria Photography-155.jpg,False,False,False,
+"Intersection[Complement(Smile), Map(IsFace, IsFace, GetAbove)]",All faces in back that are not smiling,test_images/wedding/Ana Maria Photography-32.jpg,False,False,False,
+"Intersection[Complement(Smile), Map(IsFace, IsFace, GetAbove)]",All faces in back that are not smiling,test_images/wedding/Ana Maria Photography-73.jpg,False,False,False,
+"Intersection[Complement(Smile), Map(IsFace, IsFace, GetAbove)]",All faces in back that are not smiling,test_images/wedding/Ana Maria Photography-49.jpg,True,False,True,Smiling
+"Intersection[Complement(Smile), Map(IsFace, IsFace, GetAbove)]",All faces in back that are not smiling,test_images/wedding/Ana Maria Photography-15.jpg,False,False,False,
+"Intersection[Complement(Smile), Map(IsFace, IsFace, GetAbove)]",All faces in back that are not smiling,test_images/wedding/Ana Maria Photography-77.jpg,False,False,False,
+"Intersection[Complement(Smile), Map(IsFace, IsFace, GetAbove)]",All faces in back that are not smiling,test_images/wedding/Ana Maria Photography-147.jpg,True,False,True,Face
+"Intersection[Complement(Smile), Map(IsFace, IsFace, GetAbove)]",All faces in back that are not smiling,test_images/wedding/Ana Maria Photography-148.jpg,True,False,True,Face
+"Intersection[Complement(Smile), Map(IsFace, IsFace, GetAbove)]",All faces in back that are not smiling,test_images/wedding/Ana Maria Photography-57.jpg,False,False,False,
+"Intersection[Complement(Smile), Map(IsFace, IsFace, GetAbove)]",All faces in back that are not smiling,test_images/wedding/Ana Maria Photography-155.jpg,False,False,False,
+"Intersection[Complement(Smile), Map(IsFace, IsFace, GetAbove)]",All faces in back that are not smiling,test_images/wedding/Ana Maria Photography-98.jpg,False,False,False,
+"Intersection[Complement(Smile), Map(IsFace, IsFace, GetAbove)]",All faces in back that are not smiling,test_images/wedding/Ana Maria Photography-87.jpg,False,False,False,
+"Intersection[Complement(Smile), Map(IsFace, IsFace, GetAbove)]",All faces in back that are not smiling,test_images/wedding/Ana Maria Photography-102.jpg,True,False,True,"Face, Smiling"
+"Intersection[Complement(Smile), Map(IsFace, IsFace, GetAbove)]",All faces in back that are not smiling,test_images/wedding/Ana Maria Photography-7.jpg,False,False,False,
+"Intersection[Complement(Smile), Map(IsFace, IsFace, GetAbove)]",All faces in back that are not smiling,test_images/wedding/Ana Maria Photography-44.jpg,False,False,False,
+"Intersection[Complement(Smile), Map(IsFace, IsFace, GetAbove)]",All faces in back that are not smiling,test_images/wedding/Ana Maria Photography-65.jpg,True,False,True,Smiling
+"Intersection[Complement(Smile), Map(IsFace, IsFace, GetAbove)]",All faces in back that are not smiling,test_images/wedding/Ana Maria Photography-44.jpg,False,False,False,
+"Intersection[Map(IsFace, IsFace, GetNext), Map(IsFace, IsFace, GetPrev)]",All faces except leftmost and rightmost face,test_images/wedding/Ana Maria Photography-58.jpg,False,False,False,
+"Intersection[Map(IsFace, IsFace, GetNext), Map(IsFace, IsFace, GetPrev)]",All faces except leftmost and rightmost face,test_images/wedding/Ana Maria Photography-104-2.jpg,False,False,False,
+"Intersection[Map(IsFace, IsFace, GetNext), Map(IsFace, IsFace, GetPrev)]",All faces except leftmost and rightmost face,test_images/wedding/Ana Maria Photography-56.jpg,False,False,False,
+"Intersection[Map(IsFace, IsFace, GetNext), Map(IsFace, IsFace, GetPrev)]",All faces except leftmost and rightmost face,test_images/wedding/Ana Maria Photography-151.jpg,False,False,False,
+"Intersection[Map(IsFace, IsFace, GetNext), Map(IsFace, IsFace, GetPrev)]",All faces except leftmost and rightmost face,test_images/wedding/Ana Maria Photography-172.jpg,False,False,False,
+"Intersection[Map(IsFace, IsFace, GetNext), Map(IsFace, IsFace, GetPrev)]",All faces except leftmost and rightmost face,test_images/wedding/Ana Maria Photography-105.jpg,False,False,False,
+"Intersection[Map(IsFace, IsFace, GetNext), Map(IsFace, IsFace, GetPrev)]",All faces except leftmost and rightmost face,test_images/wedding/Ana Maria Photography-133.jpg,False,False,False,
+"Intersection[Map(IsFace, IsFace, GetNext), Map(IsFace, IsFace, GetPrev)]",All faces except leftmost and rightmost face,test_images/wedding/Ana Maria Photography-13.jpg,False,False,False,
+"Intersection[Map(IsFace, IsFace, GetNext), Map(IsFace, IsFace, GetPrev)]",All faces except leftmost and rightmost face,test_images/wedding/Ana Maria Photography-32.jpg,False,False,False,
+"Intersection[Map(IsFace, IsFace, GetNext), Map(IsFace, IsFace, GetPrev)]",All faces except leftmost and rightmost face,test_images/wedding/Ana Maria Photography-34.jpg,False,False,False,
+"Intersection[Map(IsFace, IsFace, GetNext), Map(IsFace, IsFace, GetPrev)]",All faces except leftmost and rightmost face,test_images/wedding/Ana Maria Photography-117.jpg,False,False,False,
+"Intersection[Map(IsFace, IsFace, GetNext), Map(IsFace, IsFace, GetPrev)]",All faces except leftmost and rightmost face,test_images/wedding/Ana Maria Photography-151.jpg,False,False,False,
+"Intersection[Map(IsFace, IsFace, GetNext), Map(IsFace, IsFace, GetPrev)]",All faces except leftmost and rightmost face,test_images/wedding/Ana Maria Photography-79.jpg,True,False,True,Face
+"Intersection[Map(IsFace, IsFace, GetNext), Map(IsFace, IsFace, GetPrev)]",All faces except leftmost and rightmost face,test_images/wedding/Ana Maria Photography-118.jpg,False,False,False,
+"Intersection[Map(IsFace, IsFace, GetNext), Map(IsFace, IsFace, GetPrev)]",All faces except leftmost and rightmost face,test_images/wedding/Ana Maria Photography-41.jpg,True,False,True,Face
+"Intersection[Map(IsFace, IsFace, GetNext), Map(IsFace, IsFace, GetPrev)]",All faces except leftmost and rightmost face,test_images/wedding/Ana Maria Photography-41.jpg,True,False,True,Face
+"Intersection[Map(IsFace, IsFace, GetNext), Map(IsFace, IsFace, GetPrev)]",All faces except leftmost and rightmost face,test_images/wedding/Ana Maria Photography-153-2.jpg,False,False,False,
+"Intersection[Map(IsFace, IsFace, GetNext), Map(IsFace, IsFace, GetPrev)]",All faces except leftmost and rightmost face,test_images/wedding/Ana Maria Photography-81.jpg,True,False,True,Face
+"Intersection[Map(IsFace, IsFace, GetNext), Map(IsFace, IsFace, GetPrev)]",All faces except leftmost and rightmost face,test_images/wedding/Ana Maria Photography-96.jpg,False,False,False,
+"Intersection[Map(IsFace, IsFace, GetNext), Map(IsFace, IsFace, GetPrev)]",All faces except leftmost and rightmost face,test_images/wedding/Ana Maria Photography-98.jpg,False,False,False,

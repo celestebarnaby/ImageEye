@@ -127,7 +127,7 @@ def get_environment(
         )
         text_response = client.detect_text(Image={"Bytes": get_source_bytes(img_dir)})
         object_response = client.detect_labels(
-            Image={"Bytes": get_source_bytes(img_dir)}, MaxLabels=100, MinConfidence=90
+            Image={"Bytes": get_source_bytes(img_dir)}, MaxLabels=100, MinConfidence=75
         )
         img = cv2.imread(img_dir, 1)
         face_responses.append(face_response)
@@ -392,12 +392,12 @@ def get_details(
                     details_map[key] = []
                     emotion_list = details[key]
                     for emotion in emotion_list:
-                        if emotion["Confidence"] > 90:
+                        if emotion["Confidence"] > 75:
                             details_map[key].append(emotion["Type"])
                 elif key == "AgeRange":
                     details_map[key] = details[key]
                 else:
-                    if details[key]["Value"] and details[key]["Confidence"] > 90:
+                    if details[key]["Value"] and details[key]["Confidence"] > 75:
                         # The value doesn't matter here
                         details_map[key] = True
             details_map["Loc"] = get_loc(img, face["Face"]["BoundingBox"])
@@ -431,7 +431,7 @@ def get_details(
             obj_count += 1
         bbox_to_text = {}
         for text_object in text_objects:
-            if text_object["Confidence"] < 90:
+            if text_object["Confidence"] < 75:
                 continue
             bbox = get_loc(img, text_object["Geometry"]["BoundingBox"])
             if not is_unique_text_object(bbox_to_text, bbox, text_object["DetectedText"]):
@@ -452,7 +452,7 @@ def get_details(
             obj_count += 1
         for obj in objects:
             for instance in obj["Instances"]:
-                if instance["Confidence"] < 90:
+                if instance["Confidence"] < 75:
                     continue
                 # Remove redundant objects
                 if obj["Name"] in {'Adult', 'Child', 'Man', 'Male', 'Woman', 'Female', 'Bride', 'Groom'}:
