@@ -19,6 +19,7 @@ function App() {
   const [annotatedImages2, setAnnotatedImages2] = useState({});
   const [result, setResult] = useState(null);
   const [imgDir, setImgDir] = useState("");
+  const [inputText, setInputText] = useState("hi");
 
   // Using useEffect for single rendering
   // useEffect(() => {
@@ -39,6 +40,25 @@ function App() {
       let closeBox = () => {
         setIsOpen(false);
       };
+
+    let handleTextChange = (event) => {
+      setInputText(event.target.value);
+    }
+
+    let handleTextSubmit = () => {
+      fetch('/textQuery', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(inputText)     
+      })
+      .then(response => response.json())
+      .then(data => {
+        setFiles(data.files);
+      })
+      setMainImage(files[0]);
+    }
 
     let handleChange = (img_dir) => {
         // setSelectedFiles(event.target.files);
@@ -104,7 +124,7 @@ function App() {
   return (
         <div>
           {/* <p>{message}</p> */}
-        <Sidebar files={files} changeImage={changeImage} annotatedImgs={Object.keys(annotatedImages2)} />
+        <Sidebar files={files} changeImage={changeImage} handleTextChange={handleTextChange} handleTextSubmit={handleTextSubmit} annotatedImgs={Object.keys(annotatedImages2)} />
         <NewImage image={mainImage} imgToEnvironment={message} addObject={addObject} addImage={addImage} imgDir={imgDir}/>
         <SearchResults files={files} changeImage={changeImage} result={result} />
         <MenuBar updateResults={updateResults}/>

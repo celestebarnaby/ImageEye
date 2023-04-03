@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 
 
 
-function Sidebar({files, changeImage, annotatedImgs}) {
+function Sidebar({files, changeImage, annotatedImgs, handleTextChange, handleTextSubmit}) {
     console.log('sidebar');
     console.log(files);
     const imgs = files ? files : ['./images/1.jpg', './images/2.jpg', './images/3.jpg'];
@@ -18,16 +18,14 @@ function Sidebar({files, changeImage, annotatedImgs}) {
 
   return (
     <div className="sidebar">
-      <form>
-        {/* <input type="text" /> */}
         <textarea 
             maxLength={100} 
             rows={3}
             columns={20}  
+            onChange={handleTextChange}
         />
         <br/>
-        <button className="button-10" type="submit">Submit</button>
-      </form>
+        <button className="button-10" onClick={handleTextSubmit}>Submit</button>
       <h3>Images to Annotate</h3>
       <div>
         {/* <div>
