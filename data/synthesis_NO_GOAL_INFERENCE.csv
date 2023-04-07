@@ -1,0 +1,2 @@
+Ground Truth Prog,Synthesized Prog,Dataset,Correct,Total Time,# Examples,# Objects,# Attributes,Description,AST Depth,AST Size,% Output Images matching Ground Truth
+"Map(IsFace, IsFace, GetAbove)","Map(IsFace, IsFace, GetAbove)",wedding,True,0.06682203999662306,1,4,8,All faces in back,3,5,0

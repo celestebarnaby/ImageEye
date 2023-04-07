@@ -1,0 +1,155 @@
+         101832 function calls (98116 primitive calls) in 0.124 seconds
+
+   Ordered by: cumulative time
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        1    0.001    0.001    0.073    0.073 /Users/celestebarnaby/Desktop/ImageEye/synthesizer.py:396(perform_synthesis)
+        1    0.010    0.010    0.060    0.060 /Users/celestebarnaby/Desktop/ImageEye/synthesizer.py:239(synthesize_top_down)
+        1    0.000    0.000    0.044    0.044 /Users/celestebarnaby/Desktop/ImageEye/utils.py:460(preprocess)
+        1    0.000    0.000    0.044    0.044 /Users/celestebarnaby/.pyenv/versions/3.10.9/lib/python3.10/json/__init__.py:274(load)
+        1    0.000    0.000    0.037    0.037 /Users/celestebarnaby/.pyenv/versions/3.10.9/lib/python3.10/json/__init__.py:299(loads)
+        1    0.000    0.000    0.037    0.037 /Users/celestebarnaby/.pyenv/versions/3.10.9/lib/python3.10/json/decoder.py:332(decode)
+        1    0.037    0.037    0.037    0.037 /Users/celestebarnaby/.pyenv/versions/3.10.9/lib/python3.10/json/decoder.py:343(raw_decode)
+ 1873/877    0.004    0.000    0.016    0.000 /Users/celestebarnaby/Desktop/ImageEye/interpreter.py:612(eval_extractor)
+        2    0.000    0.000    0.013    0.007 /Users/celestebarnaby/Desktop/ImageEye/synthesizer.py:211(get_differing_images)
+      948    0.005    0.000    0.013    0.000 /Users/celestebarnaby/Desktop/ImageEye/synthesizer.py:150(duplicate)
+      498    0.009    0.000    0.013    0.000 /Users/celestebarnaby/Desktop/ImageEye/interpreter.py:226(eval_map)
+  784/143    0.004    0.000    0.007    0.000 /Users/celestebarnaby/Desktop/ImageEye/utils.py:114(simplify)
+  713/234    0.004    0.000    0.007    0.000 /Users/celestebarnaby/Desktop/ImageEye/interpreter.py:406(partial_eval)
+        1    0.006    0.006    0.007    0.007 {method 'read' of '_io.TextIOWrapper' objects}
+    45644    0.006    0.000    0.006    0.000 {built-in method builtins.isinstance}
+      948    0.002    0.000    0.005    0.000 /Users/celestebarnaby/Desktop/ImageEye/synthesizer.py:11(get_prog_output)
+ 1207/294    0.003    0.000    0.004    0.000 /Users/celestebarnaby/Desktop/ImageEye/utils.py:414(get_type)
+      238    0.001    0.000    0.004    0.000 /Users/celestebarnaby/Desktop/ImageEye/utils.py:117(<listcomp>)
+  967/294    0.003    0.000    0.004    0.000 /Users/celestebarnaby/Desktop/ImageEye/utils.py:302(construct_prog_from_tree)
+       32    0.001    0.000    0.002    0.000 /Users/celestebarnaby/Desktop/ImageEye/synthesizer.py:53(get_extractors)
+     4320    0.002    0.000    0.002    0.000 /Users/celestebarnaby/Desktop/ImageEye/synthesizer.py:167(__lt__)
+       14    0.000    0.000    0.002    0.000 {built-in method builtins.min}
+     1493    0.001    0.000    0.002    0.000 /Users/celestebarnaby/Desktop/ImageEye/utils.py:43(duplicate)
+      949    0.001    0.000    0.002    0.000 {built-in method _heapq.heappush}
+      294    0.001    0.000    0.002    0.000 {built-in method _heapq.heappop}
+     1603    0.002    0.000    0.002    0.000 /Users/celestebarnaby/Desktop/ImageEye/synthesizer.py:466(<lambda>)
+     1048    0.001    0.000    0.001    0.000 /Users/celestebarnaby/Desktop/ImageEye/interpreter.py:627(<setcomp>)
+      441    0.001    0.000    0.001    0.000 /Users/celestebarnaby/Desktop/ImageEye/dsl.py:134(duplicate)
+       14    0.001    0.000    0.001    0.000 /Users/celestebarnaby/Desktop/ImageEye/synthesizer.py:462(<listcomp>)
+      697    0.001    0.000    0.001    0.000 /Users/celestebarnaby/Desktop/ImageEye/dsl.py:108(__init__)
+      949    0.001    0.000    0.001    0.000 /Users/celestebarnaby/Desktop/ImageEye/synthesizer.py:140(__init__)
+     2404    0.001    0.000    0.001    0.000 /Users/celestebarnaby/Desktop/ImageEye/utils.py:33(__init__)
+     2673    0.001    0.000    0.001    0.000 /Users/celestebarnaby/Desktop/ImageEye/dsl.py:98(__init__)
+       52    0.001    0.000    0.001    0.000 /Users/celestebarnaby/Desktop/ImageEye/synthesizer.py:37(get_attributes)
+        1    0.000    0.000    0.001    0.001 /Users/celestebarnaby/.pyenv/versions/3.10.9/lib/python3.10/codecs.py:319(decode)
+        1    0.001    0.001    0.001    0.001 {built-in method _codecs.utf_8_decode}
+       32    0.000    0.000    0.001    0.000 /Users/celestebarnaby/Desktop/ImageEye/synthesizer.py:84(<listcomp>)
+      260    0.001    0.000    0.001    0.000 /Users/celestebarnaby/Desktop/ImageEye/interpreter.py:713(<setcomp>)
+      724    0.001    0.000    0.001    0.000 /Users/celestebarnaby/Desktop/ImageEye/dsl.py:103(__eq__)
+      290    0.000    0.000    0.001    0.000 /Users/celestebarnaby/Desktop/ImageEye/dsl.py:330(duplicate)
+       59    0.001    0.000    0.001    0.000 {built-in method builtins.print}
+      949    0.001    0.000    0.001    0.000 {built-in method builtins.next}
+    94/81    0.000    0.000    0.001    0.000 /Users/celestebarnaby/Desktop/ImageEye/interpreter.py:567(update_output_approx)
+      148    0.000    0.000    0.001    0.000 /Users/celestebarnaby/Desktop/ImageEye/dsl.py:306(__str__)
+       14    0.000    0.000    0.001    0.000 /Users/celestebarnaby/Desktop/ImageEye/synthesizer.py:204(get_indices)
+      294    0.000    0.000    0.001    0.000 /Users/celestebarnaby/Desktop/ImageEye/dsl.py:310(duplicate)
+     1897    0.001    0.000    0.001    0.000 {method 'copy' of 'dict' objects}
+      345    0.000    0.000    0.001    0.000 /Users/celestebarnaby/Desktop/ImageEye/dsl.py:320(__init__)
+     4659    0.001    0.000    0.001    0.000 {built-in method builtins.len}
+       14    0.000    0.000    0.001    0.000 /Users/celestebarnaby/.pyenv/versions/3.10.9/lib/python3.10/signal.py:54(signal)
+     2958    0.000    0.000    0.000    0.000 {method 'items' of 'dict' objects}
+      105    0.000    0.000    0.000    0.000 /Users/celestebarnaby/Desktop/ImageEye/dsl.py:326(__str__)
+      360    0.000    0.000    0.000    0.000 /Users/celestebarnaby/Desktop/ImageEye/dsl.py:300(__init__)
+      910    0.000    0.000    0.000    0.000 {built-in method builtins.max}
+      948    0.000    0.000    0.000    0.000 {built-in method itertools.tee}
+      113    0.000    0.000    0.000    0.000 /Users/celestebarnaby/Desktop/ImageEye/dsl.py:122(__str__)
+      718    0.000    0.000    0.000    0.000 /Users/celestebarnaby/Desktop/ImageEye/utils.py:314(<listcomp>)
+     2586    0.000    0.000    0.000    0.000 {method 'keys' of 'dict' objects}
+      148    0.000    0.000    0.000    0.000 /Users/celestebarnaby/Desktop/ImageEye/dsl.py:307(<listcomp>)
+     2352    0.000    0.000    0.000    0.000 {method 'append' of 'list' objects}
+       49    0.000    0.000    0.000    0.000 /Users/celestebarnaby/Desktop/ImageEye/interpreter.py:54(partial_eval_map)
+       14    0.000    0.000    0.000    0.000 /Users/celestebarnaby/.pyenv/versions/3.10.9/lib/python3.10/signal.py:24(_int_to_enum)
+      256    0.000    0.000    0.000    0.000 /Users/celestebarnaby/Desktop/ImageEye/interpreter.py:420(<setcomp>)
+       14    0.000    0.000    0.000    0.000 /Users/celestebarnaby/.pyenv/versions/3.10.9/lib/python3.10/enum.py:359(__call__)
+      105    0.000    0.000    0.000    0.000 /Users/celestebarnaby/Desktop/ImageEye/dsl.py:327(<listcomp>)
+      718    0.000    0.000    0.000    0.000 {built-in method builtins.vars}
+       14    0.000    0.000    0.000    0.000 /Users/celestebarnaby/.pyenv/versions/3.10.9/lib/python3.10/enum.py:678(__new__)
+      256    0.000    0.000    0.000    0.000 /Users/celestebarnaby/Desktop/ImageEye/interpreter.py:421(<setcomp>)
+      256    0.000    0.000    0.000    0.000 /Users/celestebarnaby/Desktop/ImageEye/interpreter.py:422(<setcomp>)
+      207    0.000    0.000    0.000    0.000 {method 'issubset' of 'set' objects}
+      144    0.000    0.000    0.000    0.000 /Users/celestebarnaby/Desktop/ImageEye/dsl.py:258(duplicate)
+      102    0.000    0.000    0.000    0.000 {method 'sort' of 'list' objects}
+      144    0.000    0.000    0.000    0.000 /Users/celestebarnaby/Desktop/ImageEye/dsl.py:159(duplicate)
+      573    0.000    0.000    0.000    0.000 /Users/celestebarnaby/Desktop/ImageEye/utils.py:40(__str__)
+      144    0.000    0.000    0.000    0.000 /Users/celestebarnaby/Desktop/ImageEye/dsl.py:242(duplicate)
+      948    0.000    0.000    0.000    0.000 {method 'copy' of 'list' objects}
+      144    0.000    0.000    0.000    0.000 /Users/celestebarnaby/Desktop/ImageEye/dsl.py:250(duplicate)
+      122    0.000    0.000    0.000    0.000 /Users/celestebarnaby/Desktop/ImageEye/dsl.py:196(__str__)
+       66    0.000    0.000    0.000    0.000 /Users/celestebarnaby/Desktop/ImageEye/dsl.py:342(__init__)
+       28    0.000    0.000    0.000    0.000 /Users/celestebarnaby/.pyenv/versions/3.10.9/lib/python3.10/signal.py:34(_enum_to_int)
+      105    0.000    0.000    0.000    0.000 /Users/celestebarnaby/Desktop/ImageEye/dsl.py:192(__init__)
+       34    0.000    0.000    0.000    0.000 /Users/celestebarnaby/Desktop/ImageEye/dsl.py:351(duplicate)
+      430    0.000    0.000    0.000    0.000 {method 'intersection' of 'set' objects}
+      533    0.000    0.000    0.000    0.000 {method 'pop' of 'list' objects}
+      265    0.000    0.000    0.000    0.000 {method 'join' of 'str' objects}
+       32    0.000    0.000    0.000    0.000 /Users/celestebarnaby/Desktop/ImageEye/utils.py:561(get_positions)
+      603    0.000    0.000    0.000    0.000 /Users/celestebarnaby/Desktop/ImageEye/dsl.py:261(__str__)
+      411    0.000    0.000    0.000    0.000 /Users/celestebarnaby/Desktop/ImageEye/dsl.py:162(__str__)
+       50    0.000    0.000    0.000    0.000 /Users/celestebarnaby/Desktop/ImageEye/dsl.py:204(duplicate)
+      271    0.000    0.000    0.000    0.000 /Users/celestebarnaby/Desktop/ImageEye/dsl.py:229(__str__)
+       56    0.000    0.000    0.000    0.000 /Users/celestebarnaby/Desktop/ImageEye/dsl.py:175(__init__)
+      603    0.000    0.000    0.000    0.000 /Users/celestebarnaby/Desktop/ImageEye/dsl.py:245(__str__)
+      603    0.000    0.000    0.000    0.000 /Users/celestebarnaby/Desktop/ImageEye/dsl.py:253(__str__)
+       83    0.000    0.000    0.000    0.000 /Users/celestebarnaby/Desktop/ImageEye/dsl.py:270(__str__)
+      265    0.000    0.000    0.000    0.000 {method 'union' of 'set' objects}
+       52    0.000    0.000    0.000    0.000 /Users/celestebarnaby/Desktop/ImageEye/dsl.py:209(__init__)
+       14    0.000    0.000    0.000    0.000 {built-in method _signal.signal}
+      271    0.000    0.000    0.000    0.000 /Users/celestebarnaby/Desktop/ImageEye/dsl.py:237(__str__)
+        1    0.000    0.000    0.000    0.000 {built-in method io.open}
+       52    0.000    0.000    0.000    0.000 /Users/celestebarnaby/Desktop/ImageEye/interpreter.py:629(<setcomp>)
+    37/36    0.000    0.000    0.000    0.000 /Users/celestebarnaby/Desktop/ImageEye/dsl.py:348(__str__)
+       15    0.000    0.000    0.000    0.000 /Users/celestebarnaby/Desktop/ImageEye/dsl.py:12(__lt__)
+       52    0.000    0.000    0.000    0.000 /Users/celestebarnaby/Desktop/ImageEye/dsl.py:266(__init__)
+        9    0.000    0.000    0.000    0.000 /Users/celestebarnaby/Desktop/ImageEye/utils.py:620(get_valid_objects)
+       14    0.000    0.000    0.000    0.000 {built-in method _signal.alarm}
+       19    0.000    0.000    0.000    0.000 {built-in method time.perf_counter}
+      189    0.000    0.000    0.000    0.000 /Users/celestebarnaby/Desktop/ImageEye/dsl.py:6(__str__)
+       81    0.000    0.000    0.000    0.000 /Users/celestebarnaby/Desktop/ImageEye/dsl.py:199(__eq__)
+       13    0.000    0.000    0.000    0.000 {method 'remove' of 'list' objects}
+        1    0.000    0.000    0.000    0.000 /Users/celestebarnaby/Desktop/ImageEye/utils.py:643(get_num_attributes)
+       32    0.000    0.000    0.000    0.000 /Users/celestebarnaby/Desktop/ImageEye/utils.py:48(__lt__)
+        1    0.000    0.000    0.000    0.000 {method '__exit__' of '_io._IOBase' objects}
+      192    0.000    0.000    0.000    0.000 {method 'add' of 'set' objects}
+      160    0.000    0.000    0.000    0.000 {method 'update' of 'set' objects}
+        1    0.000    0.000    0.000    0.000 /Users/celestebarnaby/Desktop/ImageEye/synthesizer.py:382(get_environment)
+       20    0.000    0.000    0.000    0.000 {built-in method builtins.sorted}
+       59    0.000    0.000    0.000    0.000 /Users/celestebarnaby/Desktop/ImageEye/dsl.py:170(__str__)
+        1    0.000    0.000    0.000    0.000 /Users/celestebarnaby/Desktop/ImageEye/utils.py:278(get_output_objs)
+        5    0.000    0.000    0.000    0.000 /Users/celestebarnaby/Desktop/ImageEye/interpreter.py:554(<setcomp>)
+       11    0.000    0.000    0.000    0.000 /Users/celestebarnaby/Desktop/ImageEye/dsl.py:179(__str__)
+        2    0.000    0.000    0.000    0.000 {method 'match' of 're.Pattern' objects}
+        1    0.000    0.000    0.000    0.000 /Users/celestebarnaby/Desktop/ImageEye/synthesizer.py:98(__init__)
+        1    0.000    0.000    0.000    0.000 /Users/celestebarnaby/.pyenv/versions/3.10.9/lib/python3.10/genericpath.py:16(exists)
+        1    0.000    0.000    0.000    0.000 {built-in method posix.stat}
+        3    0.000    0.000    0.000    0.000 /Users/celestebarnaby/Desktop/ImageEye/dsl.py:187(duplicate)
+       13    0.000    0.000    0.000    0.000 /Users/celestebarnaby/.pyenv/versions/3.10.9/lib/python3.10/enum.py:741(_missing_)
+        2    0.000    0.000    0.000    0.000 /Users/celestebarnaby/Desktop/ImageEye/utils.py:574(get_valid_indices)
+       14    0.000    0.000    0.000    0.000 /Users/celestebarnaby/Desktop/ImageEye/synthesizer.py:209(<listcomp>)
+        5    0.000    0.000    0.000    0.000 /Users/celestebarnaby/Desktop/ImageEye/dsl.py:213(__str__)
+        1    0.000    0.000    0.000    0.000 /Users/celestebarnaby/Desktop/ImageEye/dsl.py:66(__hash__)
+        8    0.000    0.000    0.000    0.000 /Users/celestebarnaby/Desktop/ImageEye/utils.py:631(<listcomp>)
+        9    0.000    0.000    0.000    0.000 /Users/celestebarnaby/Desktop/ImageEye/utils.py:622(<listcomp>)
+        9    0.000    0.000    0.000    0.000 /Users/celestebarnaby/Desktop/ImageEye/synthesizer.py:330(<listcomp>)
+        1    0.000    0.000    0.000    0.000 /Users/celestebarnaby/.pyenv/versions/3.10.9/lib/python3.10/codecs.py:309(__init__)
+        1    0.000    0.000    0.000    0.000 /Users/celestebarnaby/Desktop/ImageEye/dsl.py:63(__eq__)
+        1    0.000    0.000    0.000    0.000 /Users/celestebarnaby/Desktop/ImageEye/dsl.py:75(__init__)
+        1    0.000    0.000    0.000    0.000 {method 'startswith' of 'str' objects}
+        2    0.000    0.000    0.000    0.000 /Users/celestebarnaby/Desktop/ImageEye/utils.py:576(<listcomp>)
+        2    0.000    0.000    0.000    0.000 {method 'replace' of 'str' objects}
+        1    0.000    0.000    0.000    0.000 /Users/celestebarnaby/Desktop/ImageEye/dsl.py:144(__eq__)
+        2    0.000    0.000    0.000    0.000 {method 'end' of 're.Match' objects}
+        2    0.000    0.000    0.000    0.000 /Users/celestebarnaby/Desktop/ImageEye/synthesizer.py:312(<listcomp>)
+        1    0.000    0.000    0.000    0.000 /Users/celestebarnaby/.pyenv/versions/3.10.9/lib/python3.10/codecs.py:260(__init__)
+        1    0.000    0.000    0.000    0.000 /Users/celestebarnaby/Desktop/ImageEye/synthesizer.py:240(<setcomp>)
+        3    0.000    0.000    0.000    0.000 {method 'values' of 'dict' objects}
+        1    0.000    0.000    0.000    0.000 {method 'disable' of '_lsprof.Profiler' objects}
+        1    0.000    0.000    0.000    0.000 /Users/celestebarnaby/Desktop/ImageEye/synthesizer.py:384(<listcomp>)
+        1    0.000    0.000    0.000    0.000 {built-in method builtins.hash}
+
+

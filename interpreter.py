@@ -744,7 +744,6 @@ def eval_apply_action(
     statement: Statement,
     details: Dict[str, Dict[str, Any]],
     imgs,
-    client,
     extracted_objs=None,
 ):
     # list of all obj ids we want to apply action to
@@ -761,9 +760,9 @@ def eval_apply_action(
     return imgs
 
 
-def eval_program(prog: Program, imgs, details: Dict[str, Dict[str, Any]], client):
+def eval_program(prog: Program, imgs, details: Dict[str, Dict[str, Any]]):
     for statement in prog.statements:
-        imgs = eval_apply_action(statement, details, imgs, client)
+        imgs = eval_apply_action(statement, details, imgs)
     else:
         for img in imgs:
             # Display image

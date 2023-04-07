@@ -50,9 +50,12 @@ _expr_to_str = exprs.expression_to_string
 _is_expr = exprs.is_expression
 _get_expr_with_id = exprs.get_expr_with_id
 
+
 class StoppingCondition(Enum):
     one_term_sufficiency = 1
-    term_sufficiency = 2 
+    term_sufficiency = 2
+
+
 # def check_term_sufficiency(sig_to_term, num_points):
 #     accumulator = BitSet(num_points)
 #     for (sig, term) in sig_to_term.items():
@@ -64,6 +67,7 @@ class StoppingCondition(Enum):
 #         if sig.is_full():
 #             return True
 #     return False
+
 
 class TermSolverInterface(object):
     def __init__(self):
@@ -112,7 +116,6 @@ class TermSolverInterface(object):
 
         self.signature_to_term = new_sig_to_term
 
-
     def _default_compute_term_signature(self, term, old_signature=None):
         points = self.points
         # num_points = len(points)
@@ -133,10 +136,11 @@ class TermSolverInterface(object):
         return retval
 
     def solve(self):
-        raise basetypes.AbstractMethodError('TermSolverInterface.solve()')
+        raise basetypes.AbstractMethodError("TermSolverInterface.solve()")
 
     def generate_more_terms(self):
-        raise basetypes.AbstractMethodError('TermSolverInterface.generate_more_terms()')
+        raise basetypes.AbstractMethodError("TermSolverInterface.generate_more_terms()")
+
 
 class EnumerativeTermSolverBase(TermSolverInterface):
     def __init__(self, term_signature):
@@ -154,10 +158,10 @@ class EnumerativeTermSolverBase(TermSolverInterface):
 
     def _trivial_solve(self):
         term_size = 1
-        while (term_size <= self.max_term_size):
+        while term_size <= self.max_term_size:
             self.term_generator.set_size(term_size)
             for term in self.term_generator.generate():
-                self.signature_to_term = {None : term}
+                self.signature_to_term = {None: term}
                 return True
             term_size += 1
         return False
@@ -165,27 +169,31 @@ class EnumerativeTermSolverBase(TermSolverInterface):
     def get_largest_term_size_enumerated(self):
         if self.bunch_generator is None:
             return self.current_largest_term_size
-        return max(self.current_largest_term_size,
-                self.bunch_generator.current_object_size)
+        return max(
+            self.current_largest_term_size, self.bunch_generator.current_object_size
+        )
 
     def restart_bunched_generator(self):
         # Book keeping
         if self.bunch_generator is not None:
-            self.current_largest_term_size = max(self.current_largest_term_size,
-                    self.bunch_generator.current_object_size)
+            self.current_largest_term_size = max(
+                self.current_largest_term_size, self.bunch_generator.current_object_size
+            )
 
         # HACK HACK HACK: BunchGenerator bunch_size should be initialized properly.
         # If bunch_size is larger than the number of point_distinct predicates, it goes into an infinite loop
-        # 
-        self.bunch_generator = enumerators.BunchedGenerator(self.term_generator,
-                                                            # self.max_term_size, len(self.points) * 2)
-                                                            self.max_term_size, 1)
+        #
+        self.bunch_generator = enumerators.BunchedGenerator(
+            self.term_generator,
+            # self.max_term_size, len(self.points) * 2)
+            self.max_term_size,
+            1,
+        )
         self.bunch_generator_state = self.bunch_generator.generate()
-
 
     def _default_solve(self, restart_everytime):
         num_points = len(self.points)
-        if (num_points == 0): # No points, any term will do
+        if num_points == 0:  # No points, any term will do
             return self._trivial_solve()
 
         signature_to_term = self.signature_to_term
@@ -200,11 +208,15 @@ class EnumerativeTermSolverBase(TermSolverInterface):
             success = self.generate_more_terms()
             if not success:
                 return False
-            if (self.stopping_condition == StoppingCondition.term_sufficiency
-                    and self.full_signature.is_full()):
+            if (
+                self.stopping_condition == StoppingCondition.term_sufficiency
+                and self.full_signature.is_full()
+            ):
                 return True
-            elif (self.stopping_condition == StoppingCondition.one_term_sufficiency
-                    and self.one_full_signature):
+            elif (
+                self.stopping_condition == StoppingCondition.one_term_sufficiency
+                and self.one_full_signature
+            ):
                 return True
         return True
 
@@ -216,12 +228,11 @@ class EnumerativeTermSolverBase(TermSolverInterface):
         except StopIteration:
             return False
 
-
         for term in bunch:
             if transform_term is not None:
                 term = transform_term(term)
             sig = self._compute_term_signature(term)
-            if (sig in signature_to_term or sig.is_empty()):
+            if sig in signature_to_term or sig.is_empty():
                 continue
             signature_to_term[sig] = term
             self.full_signature = self.full_signature | sig
@@ -229,7 +240,6 @@ class EnumerativeTermSolverBase(TermSolverInterface):
                 self.one_full_signature = True
 
         return True
-
 
 
 class PointlessTermSolver(EnumerativeTermSolverBase):
@@ -252,11 +262,13 @@ class PointlessTermSolver(EnumerativeTermSolverBase):
             term = _get_expr_with_id(term, self.monotonic_expr_id)
             self.monotonic_expr_id += 1
             return term
+
         return self._default_generate_more_terms(transform_term=add_expr_id)
 
     def solve(self):
         self.monotonic_expr_id = 0
         return self._default_solve(restart_everytime=False)
+
 
 class PointDistinctTermSolver(EnumerativeTermSolverBase):
     def __init__(self, term_signature, term_generator):
@@ -272,6 +284,7 @@ class PointDistinctTermSolver(EnumerativeTermSolverBase):
 
     def solve(self):
         return self._default_solve(restart_everytime=True)
+
 
 # TermSolver = PointlessTermSolver
 # TermSolver = PointDistinctTermSolver

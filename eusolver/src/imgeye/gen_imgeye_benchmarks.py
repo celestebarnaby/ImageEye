@@ -1,19 +1,13 @@
 import sys
 
-sys.path.append('../../../../ImageEye')
+sys.path.append("../../../../ImageEye")
 
 import os
 from dsl import *
 from benchmarks import benchmarks
 from run_imgeye_benchmarks import test_make_solver2
 import cProfile
-import time
-import signal
-import io
-import pstats
-import argparse
-import itertools
-import random
+
 # from eval_rekognition import eval_extractor
 from interpreter import eval_extractor
 import csv
@@ -33,7 +27,7 @@ DETAIL_KEYS = [
     "MouthOpen",
     # "AgeRange",
     "IsPrice",
-    "IsPhoneNumber"
+    "IsPhoneNumber",
 ]
 
 # Since we don't construct class here, some static variables to track things
@@ -107,7 +101,7 @@ def get_img_score(env, strategy):
     for details_map in env.values():
         face_str = ""
         for k, v in details_map.items():
-            if k not in DETAIL_KEYS or k in {'IsPrice', 'IsPhoneNumber'}:
+            if k not in DETAIL_KEYS or k in {"IsPrice", "IsPhoneNumber"}:
                 continue
             if k == "Emotions":
                 for emotion in v:
@@ -151,27 +145,28 @@ def get_details(
     prev_environment=None,
     max_faces=10,
 ) -> Dict[str, Dict[str, Any]]:
-
     details_list = []
-    keys =[
-    "Eyeglasses",
-    "Sunglasses",
-    "Beard",
-    "Mustache",
-    "EyesOpen",
-    "Smile",
-    "MouthOpen",
-    "AgeRange",
-    # "IsPrice",
-    # "IsPhoneNumber"
-]
+    keys = [
+        "Eyeglasses",
+        "Sunglasses",
+        "Beard",
+        "Mustache",
+        "EyesOpen",
+        "Smile",
+        "MouthOpen",
+        "AgeRange",
+        # "IsPrice",
+        # "IsPhoneNumber"
+    ]
     if not prev_environment:
         obj_count = 0
         img_count = 0
     else:
         obj_count = len(prev_environment)
         img_count = max(item["ImgIndex"] for item in prev_environment.values()) + 1
-    for img_index, (face_response, text_response, img) in enumerate(zip(face_responses, text_responses, imgs)):
+    for img_index, (face_response, text_response, img) in enumerate(
+        zip(face_responses, text_responses, imgs)
+    ):
         # print("img_index:", img_index)
         # print('response:', response)
         # print("img:", img)
@@ -209,14 +204,20 @@ def get_details(
                     face_index = obj_count
                 else:
                     search_response = client.search_faces(
-                        CollectionId="library2", FaceId=face_hash, MaxFaces=max_faces, FaceMatchThreshold=80
+                        CollectionId="library2",
+                        FaceId=face_hash,
+                        MaxFaces=max_faces,
+                        FaceMatchThreshold=80,
                     )
                     hashes_to_indices = {
                         details["Hash"]: details["Index"]
                         for details in prev_environment.values()
                         if details["Type"] == "Face"
                     }
-                    matched_face_hashes = [item["Face"]["FaceId"] for item in search_response["FaceMatches"]]
+                    matched_face_hashes = [
+                        item["Face"]["FaceId"]
+                        for item in search_response["FaceMatches"]
+                    ]
                     face_index = obj_count
                     for matched_face_hash in matched_face_hashes:
                         if matched_face_hash == face_hash:
@@ -237,7 +238,9 @@ def get_details(
             if text_object["Confidence"] < 90:
                 continue
             bbox = get_loc(img, text_object["Geometry"]["BoundingBox"])
-            if not is_unique_text_object(bbox_to_text, bbox, text_object["DetectedText"]):
+            if not is_unique_text_object(
+                bbox_to_text, bbox, text_object["DetectedText"]
+            ):
                 continue
             details_map = {}
             details_map["Type"] = "Text"
@@ -321,7 +324,6 @@ class IOExample:
         self,
         trace,
         img_dirs: List[str],
-        client,
         gt_prog: str,
         explanation: str,
         max_faces: int,
@@ -332,20 +334,20 @@ class IOExample:
         self.img_dirs = img_dirs
         self.gt_prog = gt_prog
         self.explanation = explanation
-        if img_to_environment:
-            env = {}
-            for img_dir in img_dirs:
-                env = {**env, **img_to_environment[img_dir]["environment"]}
-            self.env = env
-        else:
-            self.env = get_environment1(img_dirs, client, DETAIL_KEYS, prev_env, max_faces)
+        env = {}
+        for img_dir in img_dirs:
+            env = {**env, **img_to_environment[img_dir]["environment"]}
+        self.env = env
         for details_map in self.env.values():
             if "ActionApplied" in details_map:
                 del details_map["ActionApplied"]
         for action, l in trace.items():
-            for (img_index, index) in l:
+            for img_index, index in l:
                 for details_map in self.env.values():
-                    if details_map["ObjPosInImgLeftToRight"] == index and details_map["ImgIndex"] == img_index:
+                    if (
+                        details_map["ObjPosInImgLeftToRight"] == index
+                        and details_map["ImgIndex"] == img_index
+                    ):
                         details_map["ActionApplied"] = action
         self.obj_list = self.env.keys()
         # dictionary from action to fta
@@ -359,6 +361,7 @@ def get_source_bytes(img: str):
         source_bytes = source_image.read()
     return source_bytes
 
+
 def get_client():
     with open("../../../credentials.csv", "r") as _input:
         next(_input)
@@ -368,7 +371,10 @@ def get_client():
             secret_access_key = line[3]
 
     client = boto3.client(
-        "rekognition", aws_access_key_id=access_key_id, aws_secret_access_key=secret_access_key, region_name="us-west-2"
+        "rekognition",
+        aws_access_key_id=access_key_id,
+        aws_secret_access_key=secret_access_key,
+        region_name="us-west-2",
     )
     return client
 
@@ -400,7 +406,14 @@ def get_environment1(
         object_responses.append(object_response)
         imgs.append(img)
     return get_details(
-        face_responses, text_responses, object_responses, keys, imgs, client, img_index, prev_environment
+        face_responses,
+        text_responses,
+        object_responses,
+        keys,
+        imgs,
+        client,
+        img_index,
+        prev_environment,
     )
 
 
@@ -420,66 +433,7 @@ def preprocess(img_folder, strategy, max_faces=10):
             if key in test_images:
                 return test_images[key]
 
-    #     cache_dir = '.cache'
-    #     cache_file = "{}/{}_{}.pkl".format(cache_dir, img_folder.split('/')[-1], strategy)
-    #     if not os.path.exists(cache_dir):
-    #         os.mkdir(cache_dir)
-    #     else:
-    #         if os.path.exists(cache_file):
-    #             with open(cache_file, 'rb') as f:
-    #                 img_to_environment = pickle.load(f)
-    #                 return img_to_environment
-
-    client = get_client()
-    client.delete_collection(CollectionId="library2")
-    client.create_collection(CollectionId="library2")
-    img_to_environment = {}
-    prev_env = {}
-    img_index = 0
-
-    start_time = time.perf_counter()
-    # loop through all image files to cache information
-    for filename in os.listdir(img_folder):
-        # print("filename:", filename)
-        img_dir = img_folder + filename
-        env = get_environment1([img_dir], client, img_index, DETAIL_KEYS, prev_env, max_faces)
-        # print("environment:", env)
-        score = get_img_score(env, strategy)
-        # print("score:", score)
-        img_to_environment[img_dir] = {"environment": env, "img_index": img_index, "score": score}
-        if not env:
-            continue
-        img_index += 1
-        prev_env = prev_env | env
-    end_time = time.perf_counter()
-    total_time = end_time - start_time
-
-    print("preprocessing finished...")
-
-    clean_environment(img_to_environment)
-    print("Num images: ", len(os.listdir(img_folder)))
-    print("Total time: ", total_time)
-    test_images[key] = img_to_environment
-    with open("test_images.json", "w") as fp:
-        json.dump(test_images, fp)
-
-    #     # print(env)
-    #     print("Num images: ", len(os.listdir(img_folder)))
-    #     print("Total time: ", total_time)
-
-    #     # save the cache once finished
-    #     with open(cache_file, "wb") as f:
-    #         pickle.dump(img_to_environment, f)
-
-    # objects = set()
-    # for env in img_to_environment.values():
-    #     env = env['environment']
-    #     objects.update([details["Name"] for details in env.values() if details["Type"] == "Object"])
-
-    print(img_to_environment)
-    # raise TypeError
-
-    return img_to_environment
+    return None
 
 
 def get_indices(env, gt_prog):
@@ -490,15 +444,15 @@ def get_indices(env, gt_prog):
     return [env[obj_id]["ObjPosInImgLeftToRight"] for obj_id in ids]
 
 
-def get_environment2(client, indices, img_dir, img_to_environment):
+def get_environment2(indices, img_dir, img_to_environment):
     img_index = img_to_environment[img_dir]["img_index"]
     trace = [(img_index, i) for i in indices]
     env = img_to_environment[img_dir]["environment"]
     ex = IOExample(
-        {Blur(): trace}, [img_dir], client, "", "", 100, img_to_environment=img_to_environment
+        {Blur(): trace}, [img_dir], "", "", 100, img_to_environment=img_to_environment
     )
     # del img_to_environment[img_dir]
-    return env 
+    return env
 
 
 def get_differing_images(img_to_environment, prog1, prog2) -> bool:
@@ -514,7 +468,6 @@ def get_differing_images(img_to_environment, prog1, prog2) -> bool:
     incorrect_img_ids = []
 
     for img_id, lib in img_to_environment.items():
-
         env = lib["environment"]
         ids1 = eval_extractor(prog1, env)
         ids2 = eval_extractor(prog2, env)
@@ -537,23 +490,19 @@ def test_synthesis():
     if not os.path.exists("data"):
         os.mkdir("data")
 
-    client = get_client()
-    client.delete_collection(CollectionId="library")
-    client.create_collection(CollectionId="library")
-
     data = []
     pr = cProfile.Profile()
     pr.enable()
 
     if not os.path.exists("../../benchmarks/imgman"):
         os.mkdir("../../benchmarks/imgman")
-    
-    benchmark_num = 0 
+
+    benchmark_num = 0
     text_to_id = {}
     data = []
     overview_data = []
     # with open('example_imgs.json', 'r') as f:
-        # benchmark_to_example_imgs = json.load(f)
+    # benchmark_to_example_imgs = json.load(f)
 
     for i, benchmark in enumerate(benchmarks):
         print(benchmark.gt_prog)
@@ -568,7 +517,13 @@ def test_synthesis():
         while rounds <= 10:
             print("Round: ", rounds)
             # example_imgs = [img for img in benchmark_to_example_imgs[str(i)]]
-            img_dir, _ = min([(img_dir, img_to_environment[img_dir]["environment"]) for img_dir in img_options], key=lambda tup: (len(tup[1]), str(tup[0])))
+            img_dir, _ = min(
+                [
+                    (img_dir, img_to_environment[img_dir]["environment"])
+                    for img_dir in img_options
+                ],
+                key=lambda tup: (len(tup[1]), str(tup[0])),
+            )
             if img_dir in example_imgs:
                 img_options.remove(img_dir)
                 continue
@@ -576,7 +531,10 @@ def test_synthesis():
             for img_dir in example_imgs:
                 env = img_to_environment[img_dir]["environment"]
                 indices = get_indices(env, prog)
-                annotated_env = get_environment2(client, indices, img_dir, img_to_environment) | annotated_env
+                annotated_env = (
+                    get_environment2(indices, img_dir, img_to_environment)
+                    | annotated_env
+                )
 
             if rounds == 1 and not indices:
                 img_options.remove(img_dir)
@@ -592,11 +550,11 @@ def test_synthesis():
             for obj in annotated_env.values():
                 preds = set()
                 for key, val in obj.items():
-                    if key == 'Type' and val != 'Object':
+                    if key == "Type" and val != "Object":
                         preds.add(key + val)
-                    elif key == 'Name':
+                    elif key == "Name":
                         preds.add(key + val)
-                    elif key == 'Text':
+                    elif key == "Text":
                         if val in text_to_id:
                             text_id = text_to_id[val]
                         elif not text_to_id:
@@ -606,23 +564,41 @@ def test_synthesis():
                             text_id = max(text_to_id.values()) + 1
                             text_to_id[val] = text_id
                         preds.add(key + str(text_id))
-                    elif key == 'AgeRange':
-                        if val['High'] < 18:
-                            preds.add('BelowAge18')
+                    elif key == "AgeRange":
+                        if val["High"] < 18:
+                            preds.add("BelowAge18")
                         # elif val['Low'] > 18:
-                            # preds.add('AboveAge18')
-                    elif key == 'Index' and obj['Type'] == 'Face':
+                        # preds.add('AboveAge18')
+                    elif key == "Index" and obj["Type"] == "Face":
                         preds.add(key + str(val))
                     elif key in DETAIL_KEYS:
                         preds.add(key)
                 all_preds.update(preds)
                 pred_str = " ".join(preds)
-                img_str = "{" + pred_str + " bb: " + str(obj['Loc'][0]) + " " + str(obj['Loc'][2]) + " " + str(obj['Loc'][1]) + " " + str(obj['Loc'][3]) + " " + str(obj['ImgIndex']) + "}"
+                img_str = (
+                    "{"
+                    + pred_str
+                    + " bb: "
+                    + str(obj["Loc"][0])
+                    + " "
+                    + str(obj["Loc"][2])
+                    + " "
+                    + str(obj["Loc"][1])
+                    + " "
+                    + str(obj["Loc"][3])
+                    + " "
+                    + str(obj["ImgIndex"])
+                    + "}"
+                )
                 inputs.add(img_str)
-                if 'ActionApplied' in obj:
+                if "ActionApplied" in obj:
                     outputs.add(img_str)
-            all_preds_str = "\n\t".join(['"' + pred + '"' for pred in sorted(list(all_preds))])
-            input_str = '{' + str(sorted(list(inputs), key=str)).replace("'", "")[1:-1] + '}' #if inputs else "{}"
+            all_preds_str = "\n\t".join(
+                ['"' + pred + '"' for pred in sorted(list(all_preds))]
+            )
+            input_str = (
+                "{" + str(sorted(list(inputs), key=str)).replace("'", "")[1:-1] + "}"
+            )  # if inputs else "{}"
             output_str = str(outputs).replace("'", "") if outputs else "{}"
             benchmark_str = """
 (set-logic IMG)
@@ -652,17 +628,21 @@ def test_synthesis():
 (constraint (= (f {} ) {} ))
 
 (check-synth)
-                """.format(all_preds_str, input_str, output_str)
+                """.format(
+                all_preds_str, input_str, output_str
+            )
             benchmark_name = "imgman" + str(benchmark_num) + ".sl"
-            filename = '../../benchmarks/imgman/' + benchmark_name
-            with open(filename, 'w') as f:
+            filename = "../../benchmarks/imgman/" + benchmark_name
+            with open(filename, "w") as f:
                 f.write(benchmark_str)
             id_to_text = {value: key for (key, value) in text_to_id.items()}
             output_prog, total_time = test_make_solver2(filename, id_to_text)
-            if output_prog == '(fail)':
+            if output_prog == "(fail)":
                 img_options = []
             else:
-                img_options = get_differing_images(img_to_environment, output_prog, benchmark.gt_prog)
+                img_options = get_differing_images(
+                    img_to_environment, output_prog, benchmark.gt_prog
+                )
             row = (
                 str(benchmark.gt_prog),
                 output_prog,
@@ -675,7 +655,7 @@ def test_synthesis():
                 len(annotated_env),
                 len(all_preds),
                 example_imgs,
-            ) 
+            )
             overview_data.append(row)
             if not img_options:
                 data.append(row)
@@ -701,7 +681,7 @@ def test_synthesis():
             )
             overview_data.append(row)
             data.append(row)
-    with open('data/results.csv', "w") as f:
+    with open("../../../data/synthesis_eusolver.csv", "w") as f:
         fw = csv.writer(f)
         fw.writerow(
             (
@@ -715,12 +695,12 @@ def test_synthesis():
                 "# Example Images",
                 "# Objects",
                 "# Attributes",
-                "Example Images"
+                "Example Images",
             ),
         )
         for row in data:
             fw.writerow(row)
-    with open('data/overview.csv', "w") as f:
+    with open("data/overview_eusolver.csv", "w") as f:
         fw = csv.writer(f)
         fw.writerow(
             (
@@ -733,13 +713,11 @@ def test_synthesis():
                 "AST Size",
                 "# Example Images",
                 "# Objects",
-                "Example Images"
+                "Example Images",
             ),
         )
         for row in overview_data:
             fw.writerow(row)
-
-
 
 
 if __name__ == "__main__":

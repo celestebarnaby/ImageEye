@@ -29,9 +29,9 @@ Run benchmarks with `python3 testing.py`. Results will be output to `data` direc
 
 You can run the ablations listed in the paper with the following commands:
 
-1. No goal inference: `python3 testing.py -- --goal-inference=False`
-2. No partial evaluation: `python3 testing.py -- --partial-eval=False`
-3. No equivalence reduction: `python3 testing.py -- --equiv-reduction=False`
+1. No goal inference: `python3 testing.py --no_goal_inference`
+2. No partial evaluation: `python3 testing.py --no_partial_eval`
+3. No equivalence reduction: `python3 testing.py --no_equiv_reduction`
 
 ### Comparison with EUSolver
 

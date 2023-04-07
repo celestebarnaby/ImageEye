@@ -9,25 +9,26 @@
                 (Find input Start StartStr Pos)
                 ))
     (StartStr String (
-        "EyesOpen"
-	"Index104"
-	"Index136"
+        "BelowAge18"
+	"EyesOpen"
+	"Index111"
+	"Index166"
+	"Index17"
+	"Index18"
+	"Index229"
+	"Index30"
+	"Index32"
 	"Index34"
 	"Index37"
-	"Index553"
+	"Index7"
 	"Index78"
 	"Index79"
 	"Index8"
-	"Index83"
 	"MouthOpen"
-	"NameGlasses"
 	"NamePerson"
-	"NameSuit"
-	"NameWedding Gown"
+	"NameTie"
 	"Smile"
-	"Text0"
 	"TypeFace"
-	"TypeText"
         ))
     (Pos String (
         "GetLeft"
@@ -41,7 +42,7 @@
 
 (declare-var s0 Set)
 
-(constraint (= (f {{EyesOpen Index104 TypeFace bb: 666 821 292 481 14}, {EyesOpen Index136 TypeFace bb: 1397 1454 384 452 14}, {EyesOpen Index78 TypeFace bb: 541 676 433 621 8}, {Index34 MouthOpen EyesOpen Smile TypeFace bb: 1024 1087 575 650 104}, {Index37 MouthOpen EyesOpen Smile TypeFace bb: 573 672 483 601 56}, {Index37 Smile TypeFace MouthOpen bb: 776 862 420 548 22}, {Index553 TypeFace bb: 688 734 478 601 119}, {Index79 TypeFace bb: 687 750 556 633 8}, {Index8 MouthOpen EyesOpen Smile TypeFace bb: 350 422 583 672 119}, {Index8 MouthOpen EyesOpen Smile TypeFace bb: 461 558 455 577 56}, {Index8 MouthOpen EyesOpen Smile TypeFace bb: 881 1032 271 449 14}, {Index8 Smile TypeFace MouthOpen bb: 1338 1407 610 685 104}, {Index8 TypeFace bb: 455 574 645 838 105}, {MouthOpen EyesOpen Smile TypeFace Index83 bb: 379 457 320 420 104}, {NameGlasses bb: 665 840 336 397 14}, {NamePerson bb: 0 120 563 1018 8}, {NamePerson bb: 1099 1588 114 1051 8}, {NamePerson bb: 1239 1504 588 985 104}, {NamePerson bb: 1285 1522 332 818 14}, {NamePerson bb: 143 630 553 1476 119}, {NamePerson bb: 448 895 239 1066 14}, {NamePerson bb: 456 958 414 1566 119}, {NamePerson bb: 638 989 378 1054 22}, {NamePerson bb: 644 769 533 692 8}, {NamePerson bb: 802 1308 220 1022 14}, {NamePerson bb: 946 1175 552 829 104}, {NameSuit bb: 251 556 392 1054 104}, {NameWedding Gown bb: 262 1037 644 1598 105}, {NameWedding Gown bb: 31 957 506 1598 56}, {TypeFace Index34 bb: 775 912 342 544 8}, {TypeText Text0 bb: 1112 1149 385 415 104}} ) {{Index34 MouthOpen EyesOpen Smile TypeFace bb: 1024 1087 575 650 104}, {Index8 MouthOpen EyesOpen Smile TypeFace bb: 881 1032 271 449 14}, {Index79 TypeFace bb: 687 750 556 633 8}} ))
+(constraint (= (f {{Index17 TypeFace EyesOpen bb: 620 787 306 523 42}, {Index30 TypeFace EyesOpen Smile bb: 393 544 581 773 97}, {Index34 TypeFace bb: 1097 1161 202 292 118}, {Index34 TypeFace bb: 775 912 342 544 8}, {Index37 TypeFace MouthOpen Smile bb: 645 777 659 833 97}, {Index37 TypeFace Smile MouthOpen EyesOpen bb: 1055 1158 455 586 63}, {Index78 TypeFace EyesOpen bb: 541 676 433 621 8}, {Index79 TypeFace bb: 687 750 556 633 8}, {Index8 TypeFace BelowAge18 EyesOpen bb: 584 626 291 363 118}, {Index8 TypeFace Smile MouthOpen EyesOpen bb: 819 929 445 579 63}, {NamePerson bb: 0 120 563 1018 8}, {NamePerson bb: 1093 1495 365 1031 63}, {NamePerson bb: 1099 1588 114 1051 8}, {NamePerson bb: 161 538 362 1043 63}, {NamePerson bb: 175 633 501 1590 97}, {NamePerson bb: 316 878 241 1044 118}, {NamePerson bb: 331 879 243 1048 42}, {NamePerson bb: 412 992 366 1060 83}, {NamePerson bb: 488 756 438 831 63}, {NamePerson bb: 540 875 624 1585 97}, {NamePerson bb: 644 769 533 692 8}, {NamePerson bb: 720 1042 400 990 63}, {NamePerson bb: 733 1087 375 1064 24}, {NamePerson bb: 765 1396 142 1054 42}, {NamePerson bb: 846 1097 487 1043 83}, {NamePerson bb: 857 1264 165 1011 118}, {NamePerson bb: 958 1349 261 1056 24}, {NamePerson bb: 996 1271 408 1010 63}, {NameTie bb: 459 543 808 1081 97}, {TypeFace Index111 Smile MouthOpen EyesOpen bb: 598 703 479 616 63}, {TypeFace Index229 bb: 1041 1143 324 454 24}, {TypeFace Index7 MouthOpen Smile bb: 1260 1369 397 536 63}, {TypeFace Smile Index18 MouthOpen EyesOpen bb: 853 1064 221 480 42}, {TypeFace Smile MouthOpen EyesOpen Index166 bb: 386 495 397 534 63}, {TypeFace Smile MouthOpen EyesOpen Index32 bb: 743 863 421 589 83}, {TypeFace Smile MouthOpen EyesOpen Index32 bb: 821 889 500 624 83}} ) {{NamePerson bb: 644 769 533 692 8}, {NamePerson bb: 540 875 624 1585 97}, {NamePerson bb: 331 879 243 1048 42}, {NamePerson bb: 996 1271 408 1010 63}, {NamePerson bb: 488 756 438 831 63}, {NamePerson bb: 846 1097 487 1043 83}} ))
 
 (check-synth)
                 

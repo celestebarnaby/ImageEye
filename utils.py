@@ -359,7 +359,7 @@ def get_args():
     parser.add_argument(
         "--time_limit",
         type=int,
-        default=180,
+        default=200,
         help="time out limit for synthesis (seconds)",
     )
     parser.add_argument(
@@ -381,34 +381,31 @@ def get_args():
         help="hand-picked examples versus heuristically chosen examples",
     )
     parser.add_argument(
-        "--equiv_reduction",
-        type=bool,
-        default=True,
-        help="set to False to turn off equivalence reduction"
+        "--no_equiv_reduction",
+        action="store_true",
+        help="set to turn off equivalence reduction",
     )
     parser.add_argument(
-        "--partial_eval",
-        type=bool,
-        default=True,
-        help="set to False to turn off partial evaluation"
+        "--no_partial_eval",
+        action="store_true",
+        help="set to turn off partial evaluation",
     )
     parser.add_argument(
-        "--goal_inference",
-        type=bool,
-        default=True,
-        help="set to False to turn off partial evaluation"
+        "--no_goal_inference",
+        action="store_true",
+        help="set to turn off partial evaluation",
     )
     parser.add_argument(
         "--get_dataset_info",
         type=bool,
         default=False,
-        help="if True, outputs info about test dataset"
+        help="if True, outputs info about test dataset",
     )
     parser.add_argument(
         "--manually_inspect",
         type=bool,
         default=False,
-        help="if True, manually inspect output program on sampled images"
+        help="if True, manually inspect output program on sampled images",
     )
     args = parser.parse_args()
     return args
@@ -475,9 +472,6 @@ def preprocess(img_folder, max_faces=10):
             test_images = json.load(fp)
             if key in test_images:
                 return test_images[key]
-    client = get_client()
-    client.delete_collection(CollectionId="library2")
-    client.create_collection(CollectionId="library2")
     img_to_environment = {}
     prev_env = {}
     img_index = 0
@@ -487,9 +481,7 @@ def preprocess(img_folder, max_faces=10):
     for filename in os.listdir(img_folder):
         # print("filename:", filename)
         img_dir = img_folder + filename
-        env = get_environment(
-            [img_dir], client, img_index, DETAIL_KEYS, prev_env, max_faces
-        )
+        env = get_environment([img_dir], img_index, DETAIL_KEYS, prev_env, max_faces)
         # print("environment:", env)
         score = len(env)
         # print("score:", score)
@@ -558,9 +550,9 @@ def write_logs(logs):
             fw.writerow(row)
 
 
-def write_synthesis_overview(logs):
-    filename = "data/synthesis_overview.csv"
-    with open("data/synthesis_overview.csv", "w") as f:
+def write_synthesis_overview(logs, ablation_name):
+    filename = "data/synthesis_overview" + ablation_name + ".csv"
+    with open(filename, "w") as f:
         fw = csv.writer(f)
         for row in logs:
             fw.writerow(row)

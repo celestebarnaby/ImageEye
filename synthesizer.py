@@ -1,8 +1,6 @@
 from interpreter import eval_extractor, get_environment, partial_eval, eval_apply_action
 import heapq as hq
 import itertools
-import psutil
-import random
 import signal
 from utils import *
 from image_utils import *
@@ -101,7 +99,6 @@ class IOExample:
         self,
         trace,
         img_dirs: List[str],
-        client,
         gt_prog: str,
         explanation: str,
         max_faces: int,
@@ -125,7 +122,7 @@ class IOExample:
             if "ActionApplied" in details_map:
                 del details_map["ActionApplied"]
         for action, l in trace.items():
-            for (img_index, index) in l:
+            for img_index, index in l:
                 for details_map in self.env.values():
                     if (
                         details_map["ObjPosInImgLeftToRight"] == index
@@ -180,12 +177,11 @@ class Synthesizer:
     Interface for synthesizer with some shared functions.
     """
 
-    def __init__(self, args, client, img_to_environment):
+    def __init__(self, args, img_to_environment):
         self.max_synth_depth = args.max_synth_depth
         self.max_prog_depth = args.max_prog_depth
         self.max_faces = args.max_faces
         self.max_rounds = args.max_rounds
-        self.client = client
         self.gt_prog_id = 0
         self.logs = []
         self.synthesis_overview = []
@@ -225,7 +221,6 @@ class Synthesizer:
         incorrect_img_ids = []
 
         for img_id, lib in self.img_to_environment.items():
-
             env = lib["environment"]
             ids1 = eval_extractor(prog1, env)
             ids2 = eval_extractor(prog2, env)
@@ -264,9 +259,11 @@ class Synthesizer:
             if not get_type(prog):
                 continue
             # EQUIVALENCE REDUCTION
-            if args.equiv_reduction:
-                if args.partial_eval:
-                    should_prune = partial_eval(prog, env, output_dict, eval_cache, True)
+            if not args.no_equiv_reduction:
+                if not args.no_partial_eval:
+                    should_prune = partial_eval(
+                        prog, env, output_dict, eval_cache, True
+                    )
                     if should_prune:
                         continue
                 if not isinstance(prog, Hole):
@@ -350,7 +347,7 @@ class Synthesizer:
                     sub_extr.output_under = str(hole.output_under)
                 prog_output = get_prog_output(sub_extr, env, parent_node)
                 # OUTPUT ESTIMATION-BASED PRUNING
-                if args.goal_inference:
+                if not args.no_goal_inference:
                     if prog_output and invalid_output(
                         output_dict[hole.output_over],
                         output_dict[hole.output_under],
@@ -389,7 +386,6 @@ class Synthesizer:
         ex = IOExample(
             {action: trace},
             [img_dir],
-            self.client,
             "",
             "",
             self.max_faces,
@@ -491,7 +487,9 @@ class Synthesizer:
                             )
                 num_attributes = get_num_attributes(annotated_env)
                 construction_start_time = time.perf_counter()
-                prog, num_progs = self.synthesize_top_down(annotated_env, action, {}, args)
+                prog, num_progs = self.synthesize_top_down(
+                    annotated_env, action, {}, args
+                )
                 print("Program: ", prog)
                 construction_end_time = time.perf_counter()
                 construction_time = construction_end_time - construction_start_time
@@ -513,7 +511,6 @@ class Synthesizer:
                             ApplyAction(action, prog),
                             env["environment"],
                             [img],
-                            self.client,
                         )[0]
                         img_name = img_dir.split("/")[-1]
                         cv2.imwrite("output/" + img_name, edited_img)
@@ -563,7 +560,7 @@ class Synthesizer:
                     len(annotated_env),
                     num_attributes,
                 )
-        if interactive:
+        if args.interactive:
             print("Done!")
             return
         print("Synthesis failed.")
@@ -572,12 +569,10 @@ class Synthesizer:
 
 
 if __name__ == "__main__":
-
     args = get_args()
-    client = get_client()
     img_folder = "example_imgs/"
     img_to_environment = preprocess(img_folder, args.max_faces)
-    synth = Synthesizer(args, client, img_to_environment)
+    synth = Synthesizer(args, img_to_environment)
     synth.perform_synthesis(
         args,
         gt_prog=None,

@@ -1,7 +1,7 @@
 import os
 from dsl import *
 from synthesizer import *
-from interpreter import get_client, compare_with_ground_truth
+from interpreter import compare_with_ground_truth
 from benchmarks import benchmarks, get_ast_depth, get_ast_size
 import cProfile
 import time
@@ -21,17 +21,35 @@ def get_dataset_info():
             img_to_environment = {}
             for name in ["cars", "cats", "guitars"]:
                 img_folder = "test_images/" + name + "/"
-                temp = preprocess(img_folder, args.max_faces) 
+                temp = preprocess(img_folder, args.max_faces)
                 img_to_environment = img_to_environment | temp
         else:
             img_folder = "test_images/" + dataset + "/"
             img_to_environment = preprocess(img_folder, args.max_faces)
-        num_objects_per_img = [len(env['environment']) for env in img_to_environment.values()]
+        num_objects_per_img = [
+            len(env["environment"]) for env in img_to_environment.values()
+        ]
         median_objs = statistics.median(num_objects_per_img)
         avg_objs = statistics.mean(num_objects_per_img)
         num_images = len(img_to_environment)
-        prog_size_per_benchmark = [benchmark.ast_size for benchmark in benchmarks if (benchmark.dataset_name == dataset or dataset == 'objects' and benchmark.dataset_name in ["cars", "cats", "guitars"])]
-        prog_depth_per_benchmark = [benchmark.ast_depth for benchmark in benchmarks if (benchmark.dataset_name == dataset or dataset == 'objects' and benchmark.dataset_name in ["cars", "cats", "guitars"])]
+        prog_size_per_benchmark = [
+            benchmark.ast_size
+            for benchmark in benchmarks
+            if (
+                benchmark.dataset_name == dataset
+                or dataset == "objects"
+                and benchmark.dataset_name in ["cars", "cats", "guitars"]
+            )
+        ]
+        prog_depth_per_benchmark = [
+            benchmark.ast_depth
+            for benchmark in benchmarks
+            if (
+                benchmark.dataset_name == dataset
+                or dataset == "objects"
+                and benchmark.dataset_name in ["cars", "cats", "guitars"]
+            )
+        ]
         avg_prog_size = statistics.mean(prog_size_per_benchmark)
         avg_prog_depth = statistics.mean(prog_depth_per_benchmark)
         num_benchmarks = len(prog_size_per_benchmark)
@@ -42,12 +60,12 @@ def get_dataset_info():
             avg_objs,
             num_benchmarks,
             avg_prog_size,
-            avg_prog_depth
+            avg_prog_depth,
         )
         data.append(row)
 
-    if not os.path.exists('data'):
-        os.mkdir('data')    
+    if not os.path.exists("data"):
+        os.mkdir("data")
     name = "data/dataset_info.csv"
     with open(name, "w") as f:
         fw = csv.writer(f)
@@ -59,7 +77,7 @@ def get_dataset_info():
                 "Average # Objects Per Image",
                 "# Synthesis Tasks",
                 "Average size of ground truth program",
-                "Average depth of ground truth program"
+                "Average depth of ground truth program",
             ),
         )
         for row in data:
@@ -67,17 +85,13 @@ def get_dataset_info():
 
 
 def test_synthesis(args):
-
     if args.get_dataset_info:
         get_dataset_info()
 
     if not os.path.exists("data"):
         os.mkdir("data")
 
-    client = get_client()
-    client.delete_collection(CollectionId="library")
-    client.create_collection(CollectionId="library")
-    synth = Synthesizer(args, client, {})
+    synth = Synthesizer(args, {})
 
     data = []
     pr = cProfile.Profile()
@@ -113,7 +127,9 @@ def test_synthesis(args):
             testing=True,
         )
         if args.manually_inspect:
-            correct_pct = compare_with_ground_truth(synth_prog, img_to_environment, benchmark.desc)
+            correct_pct = compare_with_ground_truth(
+                synth_prog, img_to_environment, benchmark.desc
+            )
         else:
             correct_pct = 0
         benchmark_to_example_imgs[i] = img_dirs
@@ -148,7 +164,17 @@ def test_synthesis(args):
     ps.print_stats()
     with open("data/profiling.txt", "w") as f:
         f.write(s.getvalue())
-    name = "data/synthesis.csv"
+    ablation_name = ""
+    if args.no_equiv_reduction:
+        ablation_name += "_NO_EQUIV_REDUCTION"
+    if args.no_partial_eval:
+        ablation_name += "_NO_PARTIAL_EVAL"
+    if args.no_goal_inference:
+        ablation_name += "_NO_GOAL_INFERENCE"
+    name = "data/synthesis" + ablation_name + ".csv"
+    print(name)
+    print("writing data to " + name)
+    print(os.getcwd())
     with open(name, "w") as f:
         fw = csv.writer(f)
         fw.writerow(
@@ -164,7 +190,7 @@ def test_synthesis(args):
                 "Description",
                 "AST Depth",
                 "AST Size",
-                "% Output Images matching Ground Truth"
+                "% Output Images matching Ground Truth",
             ),
         )
         for row in data:
@@ -172,11 +198,10 @@ def test_synthesis(args):
     with open("example_imgs.json", "w") as f:
         json.dump(benchmark_to_example_imgs, f)
     write_logs(synth.logs)
-    write_synthesis_overview(synth.synthesis_overview)
+    write_synthesis_overview(synth.synthesis_overview, ablation_name)
 
 
 if __name__ == "__main__":
-
     args = get_args()
 
     test_synthesis(args)

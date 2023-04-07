@@ -48,26 +48,27 @@ sys.path.append("../../thirdparty/libeusolver/build")
 
 from eusolver import BitSet
 
+
 def print_module_misuse_and_exit():
     # print('This module is intented for use as a library, and not as a ' +
     #       'standalone program!')
     sys.exit(1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     pass
     # print_module_misuse_and_exit()
 
 
 def is_number_prime(number):
     for i in range(2, math.ceil(math.sqrt(number))):
-        if (number % i == 0):
+        if number % i == 0:
             return False
     return True
 
 
 def round_to_next_higher_prime(number):
-    while (not is_number_prime(number)):
+    while not is_number_prime(number):
         number += 1
     return number
 
@@ -76,22 +77,24 @@ def partitions(n, k):
     """generate all splits of n into k components. Order
     "of the split components is considered relevant.
     """
-    if (n < k):
-        raise ValueError('n must be greater than or equal to k in call ' +
-                            'to utils.partitions(n, k)')
+    if n < k:
+        raise ValueError(
+            "n must be greater than or equal to k in call "
+            + "to utils.partitions(n, k)"
+        )
 
     cuts = []
     cuts.append(0)
-    cuts.append(n-k+1)
+    cuts.append(n - k + 1)
     for i in range(k - 1):
-      cuts.append(n - k + 1 + i + 1)
+        cuts.append(n - k + 1 + i + 1)
 
     done = False
 
-    while (not done):
-        retval = tuple([cuts[i] - cuts[i-1] for i in range(1, k+1)])
+    while not done:
+        retval = tuple([cuts[i] - cuts[i - 1] for i in range(1, k + 1)])
         rightmost = 0
-        for i in range(1,k):
+        for i in range(1, k):
             if cuts[i] - cuts[i - 1] > 1:
                 rightmost = i
                 cuts[i] = cuts[i] - 1
@@ -105,18 +108,20 @@ def partitions(n, k):
                 accum = accum + 1
         yield retval
 
+
 def is_subsequence_of(iterable1, iterable2):
     """Tests if :iterable1: is a subsequence of :iterable2:."""
-    if (len(iterable1) > len(iterable2)):
+    if len(iterable1) > len(iterable2):
         return False
 
     for i in range(len(iterable1)):
-        if (iterable1[i] != iterable2[i]):
+        if iterable1[i] != iterable2[i]:
             return False
 
     return True
 
-'''
+
+"""
 def bitvector_to_string(bitvec_value, bitvec_size):
     if (bitvec_size % 4 == 0):
         format_string = '0%dX' % (bitvec_size / 4)
@@ -125,16 +130,19 @@ def bitvector_to_string(bitvec_value, bitvec_size):
         format_string = '0%db' % bitvec_size
         prefix_string = '#b'
     return prefix_string + format(bitvec_value, format_string)
-'''
+"""
+
+
 def bitvector_to_string(bitvec_value, bitvec_size):
     return str(bitvec_value)
 
 
 def all_of(iterable, predicate):
     for elem in iterable:
-        if (not predicate(elem)):
+        if not predicate(elem):
             return False
     return True
+
 
 class UIDGenerator(object):
     def __init__(self):
@@ -145,10 +153,11 @@ class UIDGenerator(object):
         self.next_uid += 1
         return r
 
-    def get_string_uid(self, prefix = ''):
-        r = ((prefix + '%s') % self.next_uid)
+    def get_string_uid(self, prefix=""):
+        r = (prefix + "%s") % self.next_uid
         self.next_uid += 1
         return r
+
 
 def bitset_extend(bitset, value):
     assert type(value) == bool
@@ -157,6 +166,7 @@ def bitset_extend(bitset, value):
     if value:
         newset.add(bitset.size_of_universe())
     return newset
+
 
 def timeout(func, args=(), kwargs={}, timeout_duration=1, default=None):
     import signal
@@ -168,7 +178,7 @@ def timeout(func, args=(), kwargs={}, timeout_duration=1, default=None):
         raise TimeoutError()
 
     # set the timeout handler
-    signal.signal(signal.SIGALRM, handler) 
+    signal.signal(signal.SIGALRM, handler)
     signal.alarm(timeout_duration)
     try:
         result = func(*args, **kwargs)
@@ -179,13 +189,17 @@ def timeout(func, args=(), kwargs={}, timeout_duration=1, default=None):
 
     return result
 
+
 #
 # utils.py ends here
 
-if __name__ == '__main__':
+if __name__ == "__main__":
+
     def f(i):
         import time
+
         time.sleep(4)
         return i
-    t = timeout(f, (42,), timeout_duration = 3, default=None)
+
+    t = timeout(f, (42,), timeout_duration=3, default=None)
     # print(t)
