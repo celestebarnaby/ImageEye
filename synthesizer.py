@@ -101,7 +101,6 @@ class IOExample:
         self,
         trace,
         img_dirs: List[str],
-        client,
         gt_prog: str,
         explanation: str,
         max_faces: int,
@@ -119,7 +118,7 @@ class IOExample:
             self.env = env
         else:
             self.env = get_environment(
-                img_dirs, client, DETAIL_KEYS, prev_env, max_faces
+                img_dirs, DETAIL_KEYS, prev_env, max_faces
             )
         for details_map in self.env.values():
             if "ActionApplied" in details_map:
@@ -180,12 +179,11 @@ class Synthesizer:
     Interface for synthesizer with some shared functions.
     """
 
-    def __init__(self, args, client, img_to_environment):
+    def __init__(self, args, img_to_environment):
         self.max_synth_depth = args.max_synth_depth
         self.max_prog_depth = args.max_prog_depth
         self.max_faces = args.max_faces
         self.max_rounds = args.max_rounds
-        self.client = client
         self.gt_prog_id = 0
         self.logs = []
         self.synthesis_overview = []
@@ -389,7 +387,6 @@ class Synthesizer:
         ex = IOExample(
             {action: trace},
             [img_dir],
-            self.client,
             "",
             "",
             self.max_faces,
@@ -513,7 +510,6 @@ class Synthesizer:
                             ApplyAction(action, prog),
                             env["environment"],
                             [img],
-                            self.client,
                         )[0]
                         img_name = img_dir.split("/")[-1]
                         cv2.imwrite("output/" + img_name, edited_img)
@@ -563,7 +559,7 @@ class Synthesizer:
                     len(annotated_env),
                     num_attributes,
                 )
-        if interactive:
+        if args.interactive:
             print("Done!")
             return
         print("Synthesis failed.")

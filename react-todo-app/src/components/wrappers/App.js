@@ -1,4 +1,4 @@
-import React, {Component, useState, useEffect} from 'react';
+import React, { Component, useState, useEffect } from 'react';
 import Sidebar from '../ui/Sidebar';
 import NewImage from '../ui/NewImage';
 import SearchResults from '../ui/SearchResults';
@@ -13,13 +13,17 @@ function App() {
   const [message, setMessage] = useState("");
   const [isOpen, setIsOpen] = useState(true);
   const [files, setFiles] = useState(null);
+  const [sidebarFiles, setSidebarFiles] = useState(null);
+  const [searchResults, setSearchResults] = useState(null);
   const [mainImage, setMainImage] = useState(null);
   const objectList = [];
-  const annotatedImages = {};
   const [annotatedImages2, setAnnotatedImages2] = useState({});
   const [result, setResult] = useState(null);
   const [imgDir, setImgDir] = useState("");
   const [inputText, setInputText] = useState("hi");
+  const [isLoading, setIsLoading] = useState(false);
+  const [stupid, setStupid] = useState(0);
+  const [errorMessage, setErrorMessage] = useState('');
 
   // Using useEffect for single rendering
   // useEffect(() => {
@@ -33,73 +37,91 @@ function App() {
   //       });
   // }, []);
 
-      let openBox = () => {
-        setIsOpen(true);
-      };
-    
-      let closeBox = () => {
-        setIsOpen(false);
-      };
+  let openBox = () => {
+    setIsOpen(true);
+  };
 
-    let handleTextChange = (event) => {
-      setInputText(event.target.value);
-    }
+  let closeBox = () => {
+    setIsOpen(false);
+  };
 
-    let handleTextSubmit = () => {
-      fetch('/textQuery', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(inputText)     
+  let closeError = () => {
+    setErrorMessage('');
+  }
+
+  let handleTextChange = (event) => {
+    setInputText(event.target.value);
+  }
+
+  let handleTextSubmit = () => {
+    setIsLoading(true);
+    fetch('/textQuery', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(inputText)
+    })
+      .then(response => response.json())
+      .then(data => {
+        setSearchResults(data.searchResults);
+        setSidebarFiles(data.sidebarFiles);
+        setIsLoading(false);
+        setMainImage(data.sidebarFiles[0]);
       })
+  }
+
+  let handleChange = (img_dir) => {
+    // setSelectedFiles(event.target.files);
+    setIsOpen(false);
+    setImgDir(img_dir);
+    // setFiles(Array.from(event.target.files).map(file => './images/' + file.name))
+    // setFiles(event.target.files);
+    fetch('/loadFiles', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(img_dir)
+    })
       .then(response => response.json())
       .then(data => {
         setFiles(data.files);
+        setSidebarFiles(data.sidebarFiles);
+        setMessage(data.message);
+        // setMainImage(data.files[0]);
       })
-      setMainImage(files[0]);
+  };
+
+  let changeImage = (image) => {
+    setMainImage(image);
+  };
+
+  let addObject = (index) => {
+    if (objectList.includes(index)) {
+      const index = objectList.indexOf(index);
+      objectList.splice(index, 1); // 2nd parameter means remove one item only
     }
-
-    let handleChange = (img_dir) => {
-        // setSelectedFiles(event.target.files);
-        setIsOpen(false);
-        setImgDir(img_dir);
-        // setFiles(Array.from(event.target.files).map(file => './images/' + file.name))
-        // setFiles(event.target.files);
-        fetch('/loadFiles', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(img_dir)
-        })
-        .then(response => response.json())
-        .then(data => {
-          setFiles(data.files);
-          setMessage(data.message);
-        })
-        setMainImage(files[0]);
-      };
-
-    let changeImage = (image) => {
-      setMainImage(image);
-    };
-
-    let addObject = (index) => {
-      console.log(index);
+    else {
       objectList.push(index);
-      console.log(objectList);
-      console.log('object added');
     }
+  }
 
-    let addImage = (image) => {
-      annotatedImages2[image] = objectList;
-      console.log("annotated image added");
-      console.log(annotatedImages2);
-      setAnnotatedImages2(annotatedImages2);
-    }
+  let addImage = (image) => {
+    annotatedImages2[image] = objectList;
+    console.log("annotated image added");
+    console.log(annotatedImages2);
+    setAnnotatedImages2(annotatedImages2);
+    setStupid(stupid + 1);
+  }
 
-    let updateResults = () => {
+  let updateResults = () => {
+    console.log('hi');
+    console.log(annotatedImages2);
+    const vals = Object.values(annotatedImages2);
+    var hasPosExample = vals.some(val => val.length > 0);
+    if (hasPosExample) {
+      setIsLoading(true);
       fetch('/synthesize', {
         method: 'POST',
         headers: {
@@ -107,54 +129,102 @@ function App() {
         },
         body: JSON.stringify(annotatedImages2)
       })
-      .then(response => response.json())
-      .then(data => {
-        console.log('Success:', data);
-        setResult(data.program);
-        setFiles(data.results);
-      })
-      .catch((error) => {
-        console.error('Error:', error);
-      });
+        .then(response => response.json())
+        .then(data => {
+          console.log('Success:', data);
+          setResult(data.program);
+          setSearchResults(data.searchResults);
+          setSidebarFiles(data.sidebarFiles);
+          setIsLoading(false);
+        })
+        .catch((error) => {
+          console.error('Error:', error);
+        });
+    } else {
+      setErrorMessage("You need at least one positive example!");
     }
 
-    console.log('files:');
-    console.log(files);
+  }
+
+  console.log('files:');
+  console.log(files);
 
   return (
-        <div>
-          {/* <p>{message}</p> */}
-        <Sidebar files={files} changeImage={changeImage} handleTextChange={handleTextChange} handleTextSubmit={handleTextSubmit} annotatedImgs={Object.keys(annotatedImages2)} />
-        <NewImage image={mainImage} imgToEnvironment={message} addObject={addObject} addImage={addImage} imgDir={imgDir}/>
-        <SearchResults files={files} changeImage={changeImage} result={result} />
-        <MenuBar updateResults={updateResults}/>
-        {/* <button onClick={this.openBox}>Open ReactDialogBox </button> */}
+    <div>
+      {/* <p>{message}</p> */}
+      <Sidebar imgsToAnnotate={sidebarFiles} allFiles={files} changeImage={changeImage} handleTextChange={handleTextChange} handleTextSubmit={handleTextSubmit} annotatedImgs={Object.keys(annotatedImages2)} />
+      <NewImage image={mainImage} annotatedImgs={Object.keys(annotatedImages2)} imgToEnvironment={message} addObject={addObject} addImage={addImage} imgDir={imgDir} />
+      <SearchResults files={searchResults} changeImage={changeImage} result={result} />
+      <MenuBar updateResults={updateResults} />
+      {/* <button onClick={this.openBox}>Open ReactDialogBox </button> */}
 
-        {isOpen && (
+      {isOpen && (
         //   <>
-            <ReactDialogBox
-              closeBox={closeBox}
-              modalWidth='60%'
-              headerBackgroundColor='red'
-              headerTextColor='white'
-              headerHeight='65'
-              closeButtonColor='white'
-              bodyBackgroundColor='white'
-              bodyTextColor='black'
-              bodyHeight='200px'
-              headerText='Title'
-            >
-              <div>
-                <h1>Select Image Directory</h1>
-                {/* <button className="button-10" onClick={() => handleChange('wedding')}>Wedding</button> */}
-                <button className="button-10" onClick={() => handleChange('receipts')}>Receipts</button>
-                <button className="button-10" onClick={() => handleChange('objects')}>Objects</button>
-              </div>
-            </ReactDialogBox>
+        <ReactDialogBox
+          closeBox={closeBox}
+          modalWidth='60%'
+          headerBackgroundColor='red'
+          headerTextColor='white'
+          headerHeight='65'
+          closeButtonColor='white'
+          bodyBackgroundColor='white'
+          bodyTextColor='black'
+          bodyHeight='200px'
+          headerText='Title'
+        >
+          <div>
+            <h1>Select Image Directory</h1>
+            {/* <button className="button-10" onClick={() => handleChange('wedding')}>Wedding</button> */}
+            <button className="button-10" onClick={() => handleChange('receipts')}>Receipts</button>
+            <button className="button-10" onClick={() => handleChange('objects')}>Objects</button>
+          </div>
+        </ReactDialogBox>
         //   </>
-        )}
-      </div>
-        );
+      )}
+      {isLoading && (
+        //   <>
+        <ReactDialogBox
+          // closeBox={closeBox}
+          modalWidth='60%'
+          // headerBackgroundColor='red'
+          headerTextColor='white'
+          headerHeight='65'
+          closeButtonColor='white'
+          bodyBackgroundColor='white'
+          bodyTextColor='black'
+          bodyHeight='200px'
+          headerText='Title'
+        >
+          <div>
+            <p>Loading...</p>
+          </div>
+        </ReactDialogBox>
+        //   </>
+      )}
+      {(errorMessage !== "") && (
+        //   <>
+        <ReactDialogBox
+          closeBox={closeError}
+          modalWidth='60%'
+          headerBackgroundColor='red'
+          headerTextColor='white'
+          headerHeight='65'
+          closeButtonColor='white'
+          bodyBackgroundColor='white'
+          bodyTextColor='black'
+          bodyHeight='200px'
+          headerText='Title'
+        >
+          <div>
+            <p>{errorMessage}</p>
+          </div>
+        </ReactDialogBox>
+        //   </>
+      )
+
+      }
+    </div>
+  );
 }
 
 
@@ -169,13 +239,13 @@ function App() {
 //           // message: "hi",
 //         }
 //       }
-    
+
 //       openBox = () => {
 //         this.setState({
 //           isOpen: true
 //         })
 //       }
-    
+
 //       closeBox = () => {
 //         this.setState({
 //           isOpen: false
@@ -206,7 +276,7 @@ function App() {
 //             <SearchResults files={this.state.files} changeImage={this.changeImage}  />
 //             <MenuBar/>
 //             {/* <button onClick={this.openBox}>Open ReactDialogBox </button> */}
-    
+
 //             {this.state.isOpen && (
 //             //   <>
 //                 <ReactDialogBox
@@ -229,8 +299,8 @@ function App() {
 //             //   </>
 //             )}
 //           </div>
-        
-        
+
+
 //             );
 //     }
 // }

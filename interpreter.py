@@ -445,7 +445,8 @@ def partial_eval(extractor, env, output_dict, eval_cache, top_level=False):
         should_prune = False
         for sub_extr in extractor.extractors:
             should_prune = (
-                partial_eval(sub_extr, env, output_dict, eval_cache) or should_prune
+                partial_eval(sub_extr, env, output_dict,
+                             eval_cache) or should_prune
             )
         vals = []
         none_vals = []
@@ -474,7 +475,8 @@ def partial_eval(extractor, env, output_dict, eval_cache, top_level=False):
         should_prune = False
         for sub_extr in extractor.extractors:
             should_prune = (
-                partial_eval(sub_extr, env, output_dict, eval_cache) or should_prune
+                partial_eval(sub_extr, env, output_dict,
+                             eval_cache) or should_prune
             )
         vals = []
         none_vals = []
@@ -542,7 +544,8 @@ def update_output_approx(prog, output_under, output_over, env, output_dict):
     prog.output_over = over_str
     if isinstance(prog, Union):
         for sub_extr in prog.extractors:
-            update_output_approx(sub_extr, set(), output_over, env, output_dict)
+            update_output_approx(
+                sub_extr, set(), output_over, env, output_dict)
     elif isinstance(prog, Intersection):
         for sub_extr in prog.extractors:
             update_output_approx(
@@ -557,16 +560,20 @@ def update_output_approx(prog, output_under, output_over, env, output_dict):
             output_dict,
         )
     elif isinstance(prog, Map):
-        update_output_approx(prog.extractor, set(), set(env.keys()), env, output_dict)
+        update_output_approx(prog.extractor, set(),
+                             set(env.keys()), env, output_dict)
         update_output_approx(
             prog.restriction, output_under, set(env.keys()), env, output_dict
         )
     elif isinstance(prog, MatchesWord):
-        update_output_approx(prog.word, output_under, output_over, env, output_dict)
+        update_output_approx(prog.word, output_under,
+                             output_over, env, output_dict)
     elif isinstance(prog, GetFace):
-        update_output_approx(prog.index, output_under, output_over, env, output_dict)
+        update_output_approx(prog.index, output_under,
+                             output_over, env, output_dict)
     elif isinstance(prog, IsObject):
-        update_output_approx(prog.obj, output_under, output_over, env, output_dict)
+        update_output_approx(prog.obj, output_under,
+                             output_over, env, output_dict)
 
 
 def eval_extractor(
@@ -635,7 +642,8 @@ def eval_extractor(
             res = set()
             for sub_extr in extractor.extractors:
                 res = res.union(
-                    eval_extractor(sub_extr, details, rec, output_dict, eval_cache)
+                    eval_extractor(sub_extr, details, rec,
+                                   output_dict, eval_cache)
                 )
             res = res
         else:
@@ -648,7 +656,8 @@ def eval_extractor(
             res = set(details.keys())
             for sub_extr in extractor.extractors:
                 res = res.intersection(
-                    eval_extractor(sub_extr, details, rec, output_dict, eval_cache)
+                    eval_extractor(sub_extr, details, rec,
+                                   output_dict, eval_cache)
                 )
         else:
             res = set()
@@ -699,12 +708,10 @@ def eval_crop(extracted_objs, details_map, imgs):
     return [img]
 
 
-
 def eval_apply_action(
     statement: Statement,
     details: Dict[str, Dict[str, Any]],
     imgs,
-    client,
     extracted_objs=None,
 ):
     # list of all obj ids we want to apply action to
@@ -721,9 +728,9 @@ def eval_apply_action(
     return imgs
 
 
-def eval_program(prog: Program, imgs, details: Dict[str, Dict[str, Any]], client):
+def eval_program(prog: Program, imgs, details: Dict[str, Dict[str, Any]]):
     for statement in prog.statements:
-        imgs = eval_apply_action(statement, details, imgs, client)
+        imgs = eval_apply_action(statement, details, imgs)
     else:
         for img in imgs:
             # Display image

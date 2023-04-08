@@ -1,9 +1,8 @@
 import React from 'react';
 
-function MenuBar({updateResults}) {
+function MenuBar({ updateResults }) {
   return (
     <div className="bottom-menu-bar">
-        <button className="button-10">View All Images</button>
       <button className="button-10" onClick={() => updateResults()}>Update Results</button>
     </div>
   );
