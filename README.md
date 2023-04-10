@@ -1,47 +1,13 @@
 # ImageEye: Batch Image Editing with Program Synthesis
 
-This is the codebase for the paper "ImageEye: Batch Image Processing Using Program Synthesis."
+This is a Docker image for running the experiments in "ImageEye: Batch Image Editing with Program Synthesis"
 
-## Getting Started
+## How to Run
 
-This code was tested on Python 3.10
+To load the saved image, use `docker load -i imageeye.tar`. To build the image from source code, use `docker build -t imageeye:v1 .`. Run the image with `docker run -v [PATH]:/ImageEye/data imageeye:v1`, where [PATH] is the location on your machine that you would like the results to be output to. The image runs the following experiments:
 
-<b>Install the required libraries:</b>
+1. Runs ImageEye on 50 benchmarks as described in the paper.
+2. Runs ablations for no goal inference, no partial evaluation, and no equivalence reduction.
+3. Compares with EUSolver.
 
-```
-$ pip3 install -r requirements.txt
-```
-
-To use the boto3 API, you will also need a file called `credentials.csv` in your repository containing your [AWS credentials](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html).
-
-Your `credentials.csv` file should look like this:
-
-```
-User name,Password,Access key ID,Secret access key,Console login link
-[username],,[access_key_id],[secret_access_key],[console_login_link]
-```
-
-## Benchmarks
-
-Run benchmarks with `python3 testing.py`. Results will be output to `data` directory. The test images we used for evaluation are not in this repository, but their abstract representations are stored in `test_images.json`.
-
-### Ablations
-
-You can run the ablations listed in the paper with the following commands:
-
-1. No goal inference: `python3 testing.py --no_goal_inference`
-2. No partial evaluation: `python3 testing.py --no_partial_eval`
-3. No equivalence reduction: `python3 testing.py --no_equiv_reduction`
-
-### Comparison with EUSolver
-
-Our EUSolver implementation is in the `eusolver` directory. You can run it as follows:
-
-1. Add `build` directory to `eusolver/thirdpary/libeusolver`
-2. Run `./scripts/build.sh`
-3. Run `python3 gen_imgeye_benchmarks.py` from the `eusolver/src/imgeye` directory
-4. Results will be output to `eusolver/src/imgeye/data`
-
-## Command Line Tool
-
-Our current interface is a pretty simple command line tool, but it gets the job done. To start the tool, run `python3 synthesizer.py -- --imgdir=YOUR_DIRECTORY`. You will be prompted to select an image to annotate. Once the image is displayed, select the objects and the action you would like to apply. Then press q. You will be asked on the command line whether you want to annotate another image. If you answer no, the synthesizer will run. Once a program that matches your example(s) is synthesized, the program will be applied to all images in `YOUR_DIRECTORY`. The edited images will be saved to the `output` directory.
+The results are summarized in csv files. It took about 5 hours to run everything on my machine.
