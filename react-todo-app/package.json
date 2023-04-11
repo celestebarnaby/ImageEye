@@ -2,7 +2,7 @@
   "name": "react-todo-app",
   "version": "0.1.0",
   "private": true,
-  "proxy":"http://127.0.0.1:5000",
+  "proxy": "http://127.0.0.1:5000",
   "devDependencies": {
     "react-scripts": "0.9.0"
   },
@@ -11,6 +11,7 @@
     "bootstrap": "^3.4.1",
     "immutability-helper": "^2.1.1",
     "keycode-js": "^0.0.4",
+    "node-abort-controller": "^3.1.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-img-mapper": "^1.5.0",

@@ -68,7 +68,8 @@ def get_extractors(
     if not isinstance(parent_extr, Union):
         for i in range(2, 4):
             extrs.append(
-                (Union([None] * i), ["extr"] * i, [output_over] * i, [set()] * i, i)
+                (Union([None] * i), ["extr"] * i,
+                 [output_over] * i, [set()] * i, i)
             ),
     if not isinstance(parent_extr, Intersection):
         for i in range(2, 4):
@@ -240,7 +241,8 @@ class Synthesizer:
         return incorrect_img_ids
 
     def synthesize_top_down(self, env, action, eval_cache, args):
-        output = {key for (key, details) in env.items() if "ActionApplied" in details}
+        output = {key for (key, details) in env.items()
+                  if "ActionApplied" in details}
         card = len(output)
 
         output_dict = {}
@@ -257,6 +259,8 @@ class Synthesizer:
 
         while worklist:
             num_progs += 1
+            if num_progs > 10000:
+                break
             cur_tree = hq.heappop(worklist)
             prog = construct_prog_from_tree(cur_tree)
             if not get_type(prog):
@@ -264,11 +268,13 @@ class Synthesizer:
             # EQUIVALENCE REDUCTION
             if args.equiv_reduction:
                 if args.partial_eval:
-                    should_prune = partial_eval(prog, env, output_dict, eval_cache, True)
+                    should_prune = partial_eval(
+                        prog, env, output_dict, eval_cache, True)
                     if should_prune:
                         continue
                 if not isinstance(prog, Hole):
-                    simplified_prog = simplify(prog.duplicate(), len(env), output_dict)
+                    simplified_prog = simplify(
+                        prog.duplicate(), len(env), output_dict)
                     if simplified_prog is None or str(simplified_prog) in seen_progs:
                         continue
                     seen_progs.add(str(simplified_prog))
@@ -378,7 +384,7 @@ class Synthesizer:
                     else:
                         new_tree.to_children[hole_num] = [new_node_num]
                 hq.heappush(worklist, new_tree)
-        return None
+        return None, 0
 
     def get_environment(self, indices, img_dir, img_to_environment, action=Blur()):
         img_index = img_to_environment[img_dir]["img_index"]
@@ -418,7 +424,7 @@ class Synthesizer:
         img_options = list(img_to_environment.keys())
         while rounds <= self.max_rounds:
             signal.signal(signal.SIGALRM, handler)
-            signal.alarm(args.time_limit)
+            signal.alarm(5)
             try:
                 start_time = time.perf_counter()
                 if testing:
@@ -439,13 +445,15 @@ class Synthesizer:
                         while True:
                             filepath = filedialog.askopenfilename(
                                 title="Select an Image",
-                                filetypes=(("images", "*.jpg"), ("all files", "*.*")),
+                                filetypes=(("images", "*.jpg"),
+                                           ("all files", "*.*")),
                             )
                             img_dir = filepath.split("ImageEye/")[1]
                             env = img_to_environment[img_dir]["environment"]
                             action_to_objects = annotate_image(img_dir, env)
                             # TODO: (maybe) Support multiple actions?
-                            (action, indices) = list(action_to_objects.items())[0]
+                            (action, indices) = list(
+                                action_to_objects.items())[0]
                             annotated_env = (
                                 self.get_environment(
                                     indices, img_dir, img_to_environment, action
@@ -461,7 +469,8 @@ class Synthesizer:
                         print()
                         img_dir, _ = min(
                             [
-                                (img_dir, img_to_environment[img_dir]["environment"])
+                                (img_dir,
+                                 img_to_environment[img_dir]["environment"])
                                 for img_dir in img_options
                             ],
                             key=lambda tup: (len(tup[1]), str(tup[0])),
@@ -474,7 +483,8 @@ class Synthesizer:
                             continue
                         img_dirs.append(img_dir)
                         annotated_env = (
-                            self.get_environment(indices, img_dir, img_to_environment)
+                            self.get_environment(
+                                indices, img_dir, img_to_environment)
                             | annotated_env
                         )
                 else:
@@ -488,7 +498,8 @@ class Synthesizer:
                             )
                 num_attributes = get_num_attributes(annotated_env)
                 construction_start_time = time.perf_counter()
-                prog, num_progs = self.synthesize_top_down(annotated_env, action, {}, args)
+                prog, num_progs = self.synthesize_top_down(
+                    annotated_env, action, {}, args)
                 print("Program: ", prog)
                 construction_end_time = time.perf_counter()
                 construction_time = construction_end_time - construction_start_time

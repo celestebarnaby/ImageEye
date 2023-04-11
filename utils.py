@@ -95,8 +95,10 @@ def get_productions(env, states, depth, full_env):
             (AboveAge(18), {"Face"}),
         ]
         prods += [(GetFace(i), {"Face"}) for i in get_valid_indices(env)]
-        prods += [(IsObject(obj), {"Object"}) for obj in get_valid_objects(env)]
-        prods += [(MatchesWord(word), {"Text"}) for word in get_valid_words(env)]
+        prods += [(IsObject(obj), {"Object"})
+                  for obj in get_valid_objects(env)]
+        prods += [(MatchesWord(word), {"Text"})
+                  for word in get_valid_words(env)]
     for pos in positions:
         prods.append((Map(None, pos), pos_to_types[str(pos)]))
     prods += [
@@ -359,7 +361,7 @@ def get_args():
     parser.add_argument(
         "--time_limit",
         type=int,
-        default=180,
+        default=1,
         help="time out limit for synthesis (seconds)",
     )
     parser.add_argument(
@@ -446,7 +448,8 @@ def get_type(prog):
     elif isinstance(prog, IsObject):
         return {"Object"}
     elif isinstance(prog, Map):
-        map_type = get_type(prog.extractor).intersection(get_type(prog.position))
+        map_type = get_type(prog.extractor).intersection(
+            get_type(prog.position))
         if not map_type:
             return map_type
         return get_type(prog.restriction)
@@ -516,6 +519,30 @@ def preprocess(img_folder, max_faces=10):
     return img_to_environment
 
 
+def consolidate_environment(img_to_environment):
+    for lib in img_to_environment.values():
+        env = lib["environment"]
+        new_env = {}
+        for obj_id, obj in env.items():
+            add_face = True
+            if obj["Type"] == "Object" and obj["Name"] in {'Adult', 'Child', 'Man', 'Male', 'Woman', 'Female', 'Bride', 'Groom', 'Boy', 'Girl'}:
+                continue
+            if obj["Type"] != "Face":
+                new_env[obj_id] = obj
+                continue
+            for _, other_obj in env.items():
+                if other_obj["Type"] != "Object" or other_obj["Name"] != "Person":
+                    continue
+                if is_contained(obj['Loc'], other_obj['Loc']):
+                    add_face = False
+                    for attr in {"Smile", "MouthOpen", "EyesOpen", "Eyeglasses", "AgeRange"}:
+                        if attr in obj:
+                            other_obj[attr] = obj[attr]
+            if add_face:
+                new_env[obj_id] = obj
+        lib["environment"] = new_env
+
+
 # Replace face hashes with readable face ids
 def clean_environment(img_to_environment):
     new_id = "0"
@@ -579,7 +606,8 @@ def get_positions() -> List[Position]:
 
 def get_valid_indices(env, output_under, output_over):
     req_indices = set(
-        [env[obj_id]["Index"] for obj_id in output_under if "Index" in env[obj_id]]
+        [env[obj_id]["Index"]
+            for obj_id in output_under if "Index" in env[obj_id]]
     )
     if len(req_indices) == 1:
         return req_indices
@@ -625,7 +653,8 @@ def get_valid_words(env, output_under, output_over):
 
 def get_valid_objects(env, output_under, output_over):
     req_objects = set(
-        [env[obj_id]["Name"] for obj_id in output_under if "Name" in env[obj_id]]
+        [env[obj_id]["Name"]
+            for obj_id in output_under if "Name" in env[obj_id]]
     )
     if len(req_objects) == 1:
         return req_objects
@@ -634,7 +663,8 @@ def get_valid_objects(env, output_under, output_over):
     return sorted(
         list(
             set(
-                [env[obj_id]["Name"] for obj_id in output_over if "Name" in env[obj_id]]
+                [env[obj_id]["Name"]
+                    for obj_id in output_over if "Name" in env[obj_id]]
             )
         )
     )
@@ -642,7 +672,8 @@ def get_valid_objects(env, output_under, output_over):
 
 def invalid_output(output_over, output_under, prog_output):
     return not (
-        output_under.issubset(prog_output) and prog_output.issubset(output_over)
+        output_under.issubset(
+            prog_output) and prog_output.issubset(output_over)
     )
 
 

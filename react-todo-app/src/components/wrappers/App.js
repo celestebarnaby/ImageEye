@@ -132,10 +132,15 @@ function App() {
         .then(response => response.json())
         .then(data => {
           console.log('Success:', data);
-          setResult(data.program);
-          setSearchResults(data.searchResults);
-          setSidebarFiles(data.sidebarFiles);
-          setIsLoading(false);
+          if (data.program === null) {
+            setErrorMessage("Synthesizer timed out");
+            setIsLoading(false);
+          } else {
+            setResult(data.program);
+            setSearchResults(data.searchResults);
+            setSidebarFiles(data.sidebarFiles);
+            setIsLoading(false);
+          }
         })
         .catch((error) => {
           console.error('Error:', error);
@@ -144,16 +149,16 @@ function App() {
       setErrorMessage("You need at least one positive example!");
     }
 
-  }
+    console.log('results');
+    console.log(result);
 
-  console.log('files:');
-  console.log(files);
+  }
 
   return (
     <div>
       {/* <p>{message}</p> */}
       <Sidebar imgsToAnnotate={sidebarFiles} allFiles={files} changeImage={changeImage} handleTextChange={handleTextChange} handleTextSubmit={handleTextSubmit} annotatedImgs={Object.keys(annotatedImages2)} />
-      <NewImage image={mainImage} annotatedImgs={Object.keys(annotatedImages2)} imgToEnvironment={message} addObject={addObject} addImage={addImage} imgDir={imgDir} />
+      <NewImage image={mainImage} annotatedImgs={annotatedImages2} imgToEnvironment={message} addObject={addObject} addImage={addImage} imgDir={imgDir} />
       <SearchResults files={searchResults} changeImage={changeImage} result={result} />
       <MenuBar updateResults={updateResults} />
       {/* <button onClick={this.openBox}>Open ReactDialogBox </button> */}

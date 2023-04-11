@@ -591,7 +591,8 @@ def eval_extractor(
         res = eval_map(extractor, details, rec, output_dict, eval_cache)
     elif isinstance(extractor, IsFace):
         # list of all face ids in target image
-        res = {obj for obj in details.keys() if details[obj]["Type"] == "Face"}
+        res = {obj for obj in details.keys() if details[obj]["Type"] == "Face" or (
+            details[obj]["Type"] == "Object" and details[obj]["Name"] == "Person")}
     elif isinstance(extractor, IsText):
         res = {obj for obj in details.keys() if details[obj]["Type"] == "Text"}
     elif isinstance(extractor, GetFace):

@@ -17,7 +17,7 @@ def get_ast_depth(prog):
     if isinstance(prog, Complement) or isinstance(prog, Map):
         return get_ast_depth(prog.extractor) + 1
     if isinstance(prog, IsFace) or isinstance(prog, IsText) or isinstance(prog, IsPhoneNumber) or isinstance(prog, IsPrice) or isinstance(prog, IsSmiling) or isinstance(prog, EyesOpen) or isinstance(prog, MouthOpen):
-        return 2 
+        return 2
     else:
         return 3
 
@@ -34,14 +34,15 @@ def get_ast_size(prog):
             extra_size = 2
         return get_ast_size(prog.extractor) + get_ast_size(prog.restriction) + extra_size - 1
     if isinstance(prog, IsFace) or isinstance(prog, IsText) or isinstance(prog, IsPhoneNumber) or isinstance(prog, IsPrice) or isinstance(prog, IsSmiling) or isinstance(prog, EyesOpen) or isinstance(prog, MouthOpen):
-        return 2 
+        return 2
     else:
         return 3
 
 
 benchmarks = [
     Benchmark(
-        Map(Union([GetFace(34), IsSmiling(), EyesOpen()]), IsObject("Person"), GetBelow()),
+        Map(Union([GetFace(34), IsSmiling(), EyesOpen()]),
+            IsObject("Person"), GetBelow()),
         "Bodies of faces that have id 34, are smiling, or have eyes open",
         "wedding",
         [
@@ -53,7 +54,8 @@ benchmarks = [
         ],
     ),
     Benchmark(
-        Union([Map(GetFace(8), IsFace(), GetNext()), Map(GetFace(8), IsFace(), GetPrev())]),
+        Union([Map(GetFace(8), IsFace(), GetNext()),
+              Map(GetFace(8), IsFace(), GetPrev())]),
         "Faces to the left and right of face with id 8",
         "wedding",
         [
@@ -101,7 +103,8 @@ benchmarks = [
         ],
     ),
     Benchmark(
-        Intersection([Complement(IsSmiling()), Map(IsFace(), IsFace(), GetAbove())]),
+        Intersection([Complement(IsSmiling()), Map(
+            IsFace(), IsFace(), GetAbove())]),
         "All faces in back that are not smiling",
         "wedding",
         [
@@ -113,7 +116,8 @@ benchmarks = [
         ],
     ),
     Benchmark(
-        Intersection([Map(IsFace(), IsFace(), GetNext()), Map(IsFace(), IsFace(), GetPrev())]),
+        Intersection([Map(IsFace(), IsFace(), GetNext()),
+                     Map(IsFace(), IsFace(), GetPrev())]),
         "All faces except leftmost and rightmost face",
         "wedding",
         [
@@ -137,7 +141,8 @@ benchmarks = [
         ],
     ),
     Benchmark(
-        Intersection([IsFace(), Complement(Intersection([IsSmiling(), EyesOpen()]))]),
+        Intersection([IsFace(), Complement(
+            Intersection([IsSmiling(), EyesOpen()]))]),
         "All faces that are not smiling and have eyes open",
         "wedding",
         [
@@ -233,7 +238,8 @@ benchmarks = [
         ],
     ),
     Benchmark(
-        Union([Map(GetFace(8), IsFace(), GetNext()), Map(GetFace(8), IsFace(), GetPrev()), GetFace(8)]),
+        Union([Map(GetFace(8), IsFace(), GetNext()), Map(
+            GetFace(8), IsFace(), GetPrev()), GetFace(8)]),
         "Face with id 8 and faces directly to their left and right",
         "wedding",
         [
@@ -269,7 +275,8 @@ benchmarks = [
         ],
     ),
     Benchmark(
-        Complement(Map(Map(IsText(), IsText(), GetAbove()), IsText(), GetAbove())),
+        Complement(
+            Map(Map(IsText(), IsText(), GetAbove()), IsText(), GetAbove())),
         "Bottom two columns of text",
         "receipts2",
         [
@@ -281,7 +288,8 @@ benchmarks = [
         ],
     ),
     Benchmark(
-        Intersection([IsText(), Complement(Union([MatchesWord("total"), IsPrice()]))]),
+        Intersection([IsText(), Complement(
+            Union([MatchesWord("total"), IsPrice()]))]),
         "All text except prices and the word 'total'",
         "receipts2",
         [
@@ -341,7 +349,8 @@ benchmarks = [
         ],
     ),
     Benchmark(
-        Union([Map(MatchesWord("TOTAL"), IsText(), GetRight()), Map(MatchesWord("SUBTOTAL"), IsText(), GetRight())]),
+        Union([Map(MatchesWord("TOTAL"), IsText(), GetRight()),
+              Map(MatchesWord("SUBTOTAL"), IsText(), GetRight())]),
         'Text to the right of the word "TOTAL" or the word "SUBTOTAL"',
         "receipts2",
         [
@@ -366,7 +375,8 @@ benchmarks = [
         ],
     ),
     Benchmark(
-        Intersection([IsText(), Complement(Union([IsPrice(), IsPhoneNumber()]))]),
+        Intersection([IsText(), Complement(
+            Union([IsPrice(), IsPhoneNumber()]))]),
         "All text that is not a price or phone number",
         "receipts2",
         [
@@ -378,7 +388,8 @@ benchmarks = [
         ],
     ),
     Benchmark(
-        Intersection([IsPrice(), Complement(Map(MatchesWord("TOTAL"), IsText(), GetRight()))]),
+        Intersection([IsPrice(), Complement(
+            Map(MatchesWord("TOTAL"), IsText(), GetRight()))]),
         'Text that is a price and is not to the right of the word "TOTAL"',
         "receipts2",
         [
@@ -474,7 +485,8 @@ benchmarks = [
         ],
     ),
     Benchmark(
-        Intersection([IsText(), Complement(Map(IsObject("Car"), IsText(), GetContains()))]),
+        Intersection([IsText(), Complement(
+            Map(IsObject("Car"), IsText(), GetContains()))]),
         "All text not on a car",
         "cars",
         [
@@ -510,7 +522,8 @@ benchmarks = [
         ],
     ),
     Benchmark(
-        Intersection([IsObject("Bicycle"), Complement(Map(IsObject("Person"), IsObject("Bicycle"), GetBelow()))]),
+        Intersection([IsObject("Bicycle"), Complement(
+            Map(IsObject("Person"), IsObject("Bicycle"), GetBelow()))]),
         "Bicycles that are not being ridden",
         "cars",
         [
@@ -522,7 +535,8 @@ benchmarks = [
         ],
     ),
     Benchmark(
-        Intersection([IsObject("Bicycle"), Complement(Map(BelowAge(18), IsObject("Bicycle"), GetBelow()))]),
+        Intersection([IsObject("Bicycle"), Complement(
+            Map(BelowAge(18), IsObject("Bicycle"), GetBelow()))]),
         "Bicycles that are not being ridden by a child",
         "cars",
         [
@@ -558,7 +572,8 @@ benchmarks = [
         ],
     ),
     Benchmark(
-        Intersection([IsFace(), Complement(Map(IsObject("Bicycle"), IsFace(), GetAbove()))]),
+        Intersection([IsFace(), Complement(
+            Map(IsObject("Bicycle"), IsFace(), GetAbove()))]),
         "Faces of people not riding bicycles",
         "cars",
         [
@@ -594,7 +609,8 @@ benchmarks = [
         ],
     ),
     Benchmark(
-        Intersection([IsObject("Cat"), Complement(Map(IsObject("Cat"), IsObject("Cat"), GetBelow()))]),
+        Intersection([IsObject("Cat"), Complement(
+            Map(IsObject("Cat"), IsObject("Cat"), GetBelow()))]),
         "Topmost cat",
         "cats",
         [
@@ -647,7 +663,8 @@ benchmarks = [
         ],
     ),
     Benchmark(
-        Intersection([IsFace(), Complement(Map(IsObject("Guitar"), IsFace(), GetAbove()))]),
+        Intersection([IsFace(), Complement(
+            Map(IsObject("Guitar"), IsFace(), GetAbove()))]),
         "Faces of people not playing guitar",
         "guitars",
         [

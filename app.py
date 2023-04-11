@@ -1,3 +1,4 @@
+import subprocess
 from flask import Flask, request, jsonify
 from utils import *
 from synthesizer import *
@@ -10,16 +11,6 @@ img_to_environment = {}
 device = "cuda" if torch.cuda.is_available() else "cpu"
 model, preprocess_image = clip.load("ViT-B/32", device=device)
 images = []
-
-
-@app.route("/data")
-def hello():
-    global img_to_environment
-    img_to_environment = preprocess(
-        "react-todo-app/src/components/ui/images/", 100)
-    return {
-        'message': img_to_environment
-    }
 
 
 @app.route("/textQuery", methods=['POST'])
@@ -50,10 +41,9 @@ def load_files():
     global img_to_environment
     global images
     data = request.get_json()
-    print('preprocess1')
     img_to_environment = preprocess(
         "react-todo-app/src/components/ui/images/" + data + "/", 100)
-    print('preprocess2')
+    consolidate_environment(img_to_environment)
     images = [preprocess_image(Image.open(image)).unsqueeze(
         0).to(device) for image in img_to_environment.keys()]
     images = torch.cat(images, dim=0)
@@ -78,8 +68,13 @@ def get_synthesis_results():
             | annotated_env
         )
     action = Blur()
-    prog, num_progs = synth.synthesize_top_down(
+    prog, _ = synth.synthesize_top_down(
         annotated_env, action, {}, args)
+    if prog is None:
+        response = {
+            'program': None
+        }
+        return jsonify(response)
     results = []
     for img_dir, env in img_to_environment.items():
         env = env['environment']
@@ -142,7 +137,7 @@ def get_nl_explanation(prog, neg=False):
             'GetLeft': 'is left of ',
             'GetRight': 'is right of ',
             'GetNext': 'is left of ',
-            'GetPrev': 'is right of',
+            'GetPrev': 'is right of ',
             'GetBelow': 'is below ',
             'GetAbove': 'is above ',
             'GetContains': 'is contained in ',

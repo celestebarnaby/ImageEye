@@ -21,7 +21,7 @@ function Sidebar({ allFiles, imgsToAnnotate, changeImage, annotatedImgs, handleT
             />
             <br />
             <button className="button-10" onClick={handleTextSubmit}>Submit</button>
-            <button className="button-10" onClick={() => setSelectedTab("tab1")}>Images to Annotation</button>
+            <button className="button-10" onClick={() => setSelectedTab("tab1")}>Images to Annotate</button>
             <button className="button-10" onClick={() => setSelectedTab("tab2")}>All Images</button>
             <div>
                 {/* <div>
