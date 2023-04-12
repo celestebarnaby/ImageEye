@@ -522,28 +522,60 @@ def preprocess(img_folder, max_faces=10):
 def consolidate_environment(img_to_environment):
     for lib in img_to_environment.values():
         env = lib["environment"]
-        new_env = {}
+        new_details_list = []
         for obj_id, obj in env.items():
             add_face = True
             if obj["Type"] == "Object" and obj["Name"] in {'Adult', 'Child', 'Man', 'Male', 'Woman', 'Female', 'Bride', 'Groom', 'Boy', 'Girl'}:
                 continue
             if obj["Type"] != "Face":
-                new_env[obj_id] = obj
+                new_details_list.append((obj_id, obj))
                 continue
             for _, other_obj in env.items():
                 if other_obj["Type"] != "Object" or other_obj["Name"] != "Person":
                     continue
                 if is_contained(obj['Loc'], other_obj['Loc']):
                     add_face = False
-                    for attr in {"Smile", "MouthOpen", "EyesOpen", "Eyeglasses", "AgeRange"}:
+                    for attr in {"Smile", "MouthOpen", "EyesOpen", "Eyeglasses", "AgeRange", "Index"}:
                         if attr in obj:
                             other_obj[attr] = obj[attr]
+                        other_obj["AlsoFace"] = True
             if add_face:
-                new_env[obj_id] = obj
+                new_details_list.append((obj_id, obj))
+        new_details_list.sort(key=lambda d: d[1]["Loc"][0])
+        new_env = {}
+        for i, (obj_id, obj) in enumerate(new_details_list):
+            obj["ObjPosInImgLeftToRight"] = i
+            new_env[obj_id] = obj
         lib["environment"] = new_env
 
 
+def add_descriptions(img_to_environment):
+    for lib in img_to_environment.values():
+        env = lib["environment"]
+        for obj in env.values():
+            obj["Description"] = get_description(obj)
+
+
+def get_description(obj):
+    obj_str = ""
+    if obj["Type"] == "Object":
+        obj_str += obj["Name"]
+    else:
+        obj_str += obj["Type"]
+    attrs = [attr for attr in {"Smile", "EyesOpen",
+                               "MouthOpen", "Eyeglasses"} if attr in obj]
+    if "AgeRange" in obj:
+        attrs.append("AgeRange: {} to {}".format(
+            obj["AgeRange"]["Low"], obj["AgeRange"]["High"]))
+    if "Text" in obj:
+        attrs.append("Text: {}".format(obj["Text"]))
+    if not attrs:
+        return obj_str
+    return obj_str + "[" + ", ".join(attrs) + "]"
+
 # Replace face hashes with readable face ids
+
+
 def clean_environment(img_to_environment):
     new_id = "0"
     for lib in img_to_environment.values():

@@ -43,7 +43,8 @@ def load_files():
     data = request.get_json()
     img_to_environment = preprocess(
         "react-todo-app/src/components/ui/images/" + data + "/", 100)
-    consolidate_environment(img_to_environment)
+    # consolidate_environment(img_to_environment)
+    add_descriptions(img_to_environment)
     images = [preprocess_image(Image.open(image)).unsqueeze(
         0).to(device) for image in img_to_environment.keys()]
     images = torch.cat(images, dim=0)

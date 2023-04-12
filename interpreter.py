@@ -377,7 +377,8 @@ def partial_eval(extractor, env, output_dict, eval_cache, top_level=False):
             return True
         return False
 
-    faces = {obj for obj in env.keys() if env[obj]["Type"] == "Face"}
+    faces = {obj for obj in env.keys(
+    ) if env[obj]["Type"] == "Face" or "AlsoFace" in env[obj]}
     text_objects = {obj for obj in env.keys() if env[obj]["Type"] == "Text"}
     objects = {obj for obj in env.keys() if env[obj]["Type"] == "Object"}
 
@@ -393,7 +394,7 @@ def partial_eval(extractor, env, output_dict, eval_cache, top_level=False):
         elif not isinstance(extractor.index, int):
             return False
         for (obj_id, details) in env.items():
-            if details["Type"] != "Face":
+            if details["Type"] != "Face" and not "AlsoFace" in details:
                 continue
             if details["Index"] == extractor.index:
                 val.add(obj_id)
@@ -592,16 +593,13 @@ def eval_extractor(
     elif isinstance(extractor, IsFace):
         # list of all face ids in target image
         res = {obj for obj in details.keys() if details[obj]["Type"] == "Face" or (
-            details[obj]["Type"] == "Object" and details[obj]["Name"] == "Person")}
+            "AlsoFace" in details[obj])}
     elif isinstance(extractor, IsText):
         res = {obj for obj in details.keys() if details[obj]["Type"] == "Text"}
     elif isinstance(extractor, GetFace):
         objs = set()
         for (obj_id, obj_details) in details.items():
-            if "Type" not in obj_details:
-                print("hi")
-                print(details)
-            if obj_details["Type"] != "Face":
+            if obj_details["Type"] != "Face" and not "AlsoFace" in obj_details:
                 continue
             if obj_details["Index"] == extractor.index:
                 objs.add(obj_id)

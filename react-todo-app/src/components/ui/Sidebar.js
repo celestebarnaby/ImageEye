@@ -21,8 +21,10 @@ function Sidebar({ allFiles, imgsToAnnotate, changeImage, annotatedImgs, handleT
             />
             <br />
             <button className="button-10" onClick={handleTextSubmit}>Submit</button>
-            <button className="button-10" onClick={() => setSelectedTab("tab1")}>Images to Annotate</button>
-            <button className="button-10" onClick={() => setSelectedTab("tab2")}>All Images</button>
+            <div className="side-by-side">
+                <button className="button-12" onClick={() => setSelectedTab("tab1")}>Images to Annotate</button>
+                <button className="button-12" onClick={() => setSelectedTab("tab2")}>All Images</button>
+            </div>
             <div>
                 {/* <div>
             <h4>Likely a Match</h4>
@@ -38,7 +40,7 @@ function Sidebar({ allFiles, imgsToAnnotate, changeImage, annotatedImgs, handleT
 
 function AnnotationSuggestions(imgsToAnnotate, annotatedImgs, changeImage) {
     return <div>
-        <h3>Images to Annotate</h3>
+        {/* <h3>Images to Annotate</h3> */}
         <ul>
             {imgsToAnnotate ?
                 imgsToAnnotate.map(img => <li><img className={annotatedImgs.includes("react-todo-app/src/components/ui" + img.slice(1)) ? "small-img-grayed-out" : "small-img"} src={require(img)} key="{img}" onClick={() => changeImage(img)} /></li>)
@@ -50,7 +52,7 @@ function AnnotationSuggestions(imgsToAnnotate, annotatedImgs, changeImage) {
 
 function AllImages(allFiles, annotatedImgs, changeImage) {
     return <div>
-        <h3>All Images</h3>
+        {/* <h3>All Images</h3> */}
         <ul>
             {allFiles ?
                 allFiles.map(img => <li><img className={annotatedImgs.includes("react-todo-app/src/components/ui" + img.slice(1)) ? "small-img-grayed-out" : "small-img"} src={require(img)} key="{img}" onClick={() => changeImage(img)} /></li>)
