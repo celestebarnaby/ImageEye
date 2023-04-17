@@ -5,7 +5,7 @@ import SearchResults from '../ui/SearchResults';
 import MenuBar from '../ui/MenuBar';
 import { ReactDialogBox } from 'react-js-dialog-box'
 import 'react-js-dialog-box/dist/index.css'
-import FileUploadButton from '../ui/FileUploadButton';
+// import FileUploadButton from '../ui/FileUploadButton';
 
 function App() {
   // usestate for setting a javascript
@@ -82,18 +82,18 @@ function App() {
 
   let changeImage = (image) => {
     setMainImage(image);
+    setObjectList([]);
   };
 
   let addObject = (index) => {
-    setStupid(stupid + 1);
     if (objectList.includes(index)) {
-      const index = objectList.indexOf(index);
-      objectList.splice(index, 1); // 2nd parameter means remove one item only
+      const other_index = objectList.indexOf(index);
+      objectList.splice(other_index, 1); // 2nd parameter means remove one item only
     }
     else {
       objectList.push(index);
     }
-    setObjectList(objectList);
+    setObjectList([...objectList]);
   }
 
   let addImage = (image) => {

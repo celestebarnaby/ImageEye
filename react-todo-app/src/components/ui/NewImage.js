@@ -15,8 +15,6 @@ export default function NewImage({ image, imgToEnvironment, annotatedImgs, addOb
     let i = -1;
     let objs = Object.values(env);
     let descs = getAnnotationDescriptions(objs, annotations, annotated);
-    console.log('ahoy');
-    console.log(descs);
     objs.sort((a, b) => ((a['Loc'][2] - a['Loc'][0]) * (a['Loc'][3] - a['Loc'][1])) - ((b['Loc'][2] - b['Loc'][0]) * (b['Loc'][3] - b['Loc'][1])))
 
     let areas = objs.map((value) => {

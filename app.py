@@ -183,10 +183,10 @@ def get_nl_explanation(prog, neg=False):
         return get_nl_explanation(prog.extractor, not not_text)
     if isinstance(prog, Map):
         position_to_str = {
-            'GetLeft': 'is left of ',
-            'GetRight': 'is right of ',
-            'GetNext': 'is left of ',
-            'GetPrev': 'is right of ',
+            'GetLeft': 'is right of ',
+            'GetRight': 'is left of ',
+            'GetNext': 'is right of ',
+            'GetPrev': 'is left of ',
             'GetBelow': 'is below ',
             'GetAbove': 'is above ',
             'GetContains': 'is contained in ',
