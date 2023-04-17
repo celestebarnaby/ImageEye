@@ -62,6 +62,7 @@ function App() {
 
   let handleChange = (img_dir) => {
     setIsOpen(false);
+    setIsLoading(true);
     fetch('/loadFiles', {
       method: 'POST',
       headers: {
@@ -74,6 +75,7 @@ function App() {
         setFiles(data.files);
         setSidebarFiles(data.sidebarFiles);
         setMessage(data.message);
+        setIsLoading(false);
         // setMainImage(data.files[0]);
       })
   };
@@ -127,8 +129,8 @@ function App() {
             setIsLoading(false);
           } else {
             setResult(data.program);
-            setSearchResults(data.searchResults);
-            setSidebarFiles(data.sidebarFiles);
+            setSearchResults(data.search_results);
+            setSidebarFiles(data.recs);
             setIsLoading(false);
           }
         })
@@ -182,8 +184,11 @@ function App() {
           <div>
             <h1>Select Image Directory</h1>
             {/* <button className="button-10" onClick={() => handleChange('wedding')}>Wedding</button> */}
-            <button className="button-10" onClick={() => handleChange('receipts')}>Receipts</button>
-            <button className="button-10" onClick={() => handleChange('objects')}>Objects</button>
+            <div className="side-by-side">
+              <button className="button-12" onClick={() => handleChange('receipts')}>Receipts</button>
+              <button className="button-12" onClick={() => handleChange('objects')}>Objects</button>
+              <button className="button-12" onClick={() => handleChange('wedding')}>Wedding</button>
+            </div>
           </div>
         </ReactDialogBox>
         //   </>

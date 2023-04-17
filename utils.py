@@ -457,6 +457,27 @@ def get_type(prog):
         return pos_to_types[str(prog)]
 
 
+def get_obj_str(obj, use_index=False):
+    if obj["Type"] == "Text":
+        return "Text" + obj["Text"]
+    if obj["Type"] == "Object":
+        return "Object" + obj["Name"]
+    else:
+        props = ''.join([prop for prop in [
+            "Smile", "EyesOpen", "MouthOpen"] if prop in obj])
+        if use_index:
+            return "Face" + props + str(obj["Index"])
+        return "Face" + props
+
+
+def get_obj_strs(objs):
+    strs = []
+    for obj in objs:
+        strs.append(get_obj_str(obj))
+        strs.append(get_obj_str(obj, True))
+    return strs
+
+
 def preprocess(img_folder, max_faces=10):
     """
     Given an img_folder, cache all the image's information to a dict, scored by the strategy
@@ -471,7 +492,7 @@ def preprocess(img_folder, max_faces=10):
         with open("test_images_ui.json", "r") as fp:
             test_images = json.load(fp)
             if key in test_images:
-                return test_images[key]
+                return test_images[key], test_images[key + "obj_str"]
     client = get_client()
     client.delete_collection(CollectionId="library2")
     client.create_collection(CollectionId="library2")
@@ -480,6 +501,7 @@ def preprocess(img_folder, max_faces=10):
     img_index = 0
 
     start_time = time.perf_counter()
+    obj_strs = set()
     # loop through all image files to cache information
     for filename in os.listdir(img_folder):
         # print("filename:", filename)
@@ -487,6 +509,7 @@ def preprocess(img_folder, max_faces=10):
         env = get_environment(
             [img_dir], client, img_index, DETAIL_KEYS, prev_env, max_faces
         )
+        obj_strs.update(get_obj_strs(env.values()))
         img = cv2.imread(img_dir, 1)
         height, width, _ = img.shape
         print((width, height))
@@ -509,36 +532,52 @@ def preprocess(img_folder, max_faces=10):
     print("preprocessing finished...")
 
     clean_environment(img_to_environment)
+    obj_strs_sorted = sorted(list(obj_strs))
+    for env in img_to_environment.values():
+        env["vector"] = get_img_vector(
+            env["environment"].values(), obj_strs_sorted)
+    # img_to_environment["obj_strs"] = obj_strs_sorted
+
     print("Num images: ", len(os.listdir(img_folder)))
     print("Total time: ", total_time)
     test_images[key] = img_to_environment
+    test_images[key + "obj_str"] = obj_strs_sorted
     with open("test_images_ui.json", "w") as fp:
         json.dump(test_images, fp)
     print(img_to_environment)
 
-    return img_to_environment
+    return img_to_environment, obj_strs_sorted
+
+
+def get_img_vector(objs, obj_strs):
+    d = {obj_str: 0 for obj_str in obj_strs}
+    for obj in objs:
+        d[get_obj_str(obj)] += 1
+        if obj["Type"] == "Face":
+            d[get_obj_str(obj, True)] += 1
+    return list(d.values())
 
 
 def consolidate_environment(img_to_environment):
-    for lib in img_to_environment.values():
+    for img, lib in img_to_environment.items():
         env = lib["environment"]
         new_details_list = []
         for obj_id, obj in env.items():
             add_face = True
             if obj["Type"] == "Object" and obj["Name"] in {'Adult', 'Child', 'Man', 'Male', 'Woman', 'Female', 'Bride', 'Groom', 'Boy', 'Girl'}:
                 continue
-            if obj["Type"] != "Face":
-                new_details_list.append((obj_id, obj))
-                continue
-            for _, other_obj in env.items():
-                if other_obj["Type"] != "Object" or other_obj["Name"] != "Person":
-                    continue
-                if is_contained(obj['Loc'], other_obj['Loc']):
-                    add_face = False
-                    for attr in {"Smile", "MouthOpen", "EyesOpen", "Eyeglasses", "AgeRange", "Index"}:
-                        if attr in obj:
-                            other_obj[attr] = obj[attr]
-                        other_obj["AlsoFace"] = True
+            # if obj["Type"] != "Face":
+            #     new_details_list.append((obj_id, obj))
+            #     continue
+            # for _, other_obj in env.items():
+            #     if other_obj["Type"] != "Object" or other_obj["Name"] != "Person":
+            #         continue
+            #     if is_contained(obj['Loc'], other_obj['Loc']):
+            #         add_face = False
+            #         for attr in {"Smile", "MouthOpen", "EyesOpen", "Eyeglasses", "AgeRange", "Index"}:
+            #             if attr in obj:
+            #                 other_obj[attr] = obj[attr]
+            #             other_obj["AlsoFace"] = True
             if add_face:
                 new_details_list.append((obj_id, obj))
         new_details_list.sort(key=lambda d: d[1]["Loc"][0])
@@ -550,7 +589,7 @@ def consolidate_environment(img_to_environment):
 
 
 def add_descriptions(img_to_environment):
-    for lib in img_to_environment.values():
+    for img, lib in img_to_environment.items():
         env = lib["environment"]
         for obj in env.values():
             obj["Description"] = get_description(obj)

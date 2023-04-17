@@ -4,13 +4,18 @@ from utils import *
 from synthesizer import *
 import torch
 import clip
+import numpy as np
+from scipy import sparse
 from PIL import Image
+
+
 app = Flask(__name__)
 
 img_to_environment = {}
 device = "cuda" if torch.cuda.is_available() else "cpu"
 model, preprocess_image = clip.load("ViT-B/32", device=device)
 images = []
+obj_strs = []
 
 
 @app.route("/textQuery", methods=['POST'])
@@ -40,10 +45,11 @@ def text_query():
 def load_files():
     global img_to_environment
     global images
+    global obj_strs
     data = request.get_json()
-    img_to_environment = preprocess(
+    img_to_environment, obj_strs = preprocess(
         "react-todo-app/src/components/ui/images/" + data + "/", 100)
-    # consolidate_environment(img_to_environment)
+    consolidate_environment(img_to_environment)
     add_descriptions(img_to_environment)
     images = [preprocess_image(Image.open(image)).unsqueeze(
         0).to(device) for image in img_to_environment.keys()]
@@ -61,6 +67,8 @@ def get_synthesis_results():
     synth = Synthesizer(args, {})
     data = request.get_json()
     annotated_env = {}
+    imgs = ['.' + img_dir.split('ui')[1]
+            for img_dir in list(img_to_environment.keys())]
     for (img_dir, indices) in data.items():
         annotated_env = (
             synth.get_environment(
@@ -68,6 +76,25 @@ def get_synthesis_results():
             )
             | annotated_env
         )
+    vector = np.array(get_img_vector(annotated_env.values(),
+                      obj_strs))
+    # matrix = np.transpose(np.array([env["vector"]
+    #   for env in img_to_environment.values()]))
+    matrix = np.array([env["vector"]
+                       for env in img_to_environment.values()])
+    print('hihiii')
+    print(vector.shape)
+    print(matrix.shape)
+
+    cosine_similarities = np.dot(
+        matrix, vector) / (np.linalg.norm(matrix, axis=1) * np.linalg.norm(vector))
+    indices = np.argsort(cosine_similarities)
+    print(len(indices))
+    # top_5_indices = indices[-5:]
+    # recs = [list(img_to_environment.keys())[i] for i in top_5_indices]
+    # recs = ['.' + img_dir.split('ui')[1] for img_dir in recs]
+    print(data.keys())
+
     action = Blur()
     prog, _ = synth.synthesize_top_down(
         annotated_env, action, {}, args)
@@ -85,10 +112,31 @@ def get_synthesis_results():
         alt_img_dir = '.' + img_dir.split('ui')[1]
         results.append(alt_img_dir)
     explanation = get_nl_explanation(prog).capitalize() + "."
+    alt_used_imgs = ['.' + img_dir.split('ui')[1] for img_dir in data.keys()]
+    # images that are different from annotated images and in search results
+    top_5_indices = []
+    for i in indices:
+        if len(top_5_indices) >= 5:
+            break
+        if imgs[i] in alt_used_imgs:
+            continue
+        if imgs[i] in results:
+            top_5_indices.append(imgs[i])
+    # images that are similar to annotated images but NOT in search results
+    bottom_5_indices = []
+    for i in reversed(indices):
+        if len(bottom_5_indices) >= 5:
+            break
+        if imgs[i] in alt_used_imgs:
+            continue
+        if imgs[i] not in results:
+            bottom_5_indices.append(imgs[i])
+    recs = top_5_indices + bottom_5_indices
+    print(recs)
     response = {
         'program': explanation,
-        'searchResults': results,
-        'sidebarFiles': results[:5]
+        'search_results': results,
+        'recs': recs
     }
     return jsonify(response)
 
