@@ -31,7 +31,20 @@ Our EUSolver implementation is in the `eusolver` directory. You can run it as fo
 2. Run `python3 gen_imgeye_benchmarks.py` from the `eusolver/src/imgeye` directory
 3. Results will be output to `eusolver/src/imgeye/data`
 
-## Command Line Tool
+## Image Search GUI
 
-Our current interface is a pretty simple command line tool, but it gets the job done. To start the tool, run `python3 synthesizer.py -- --imgdir=YOUR_DIRECTORY`. You will be prompted to select an image to annotate. Once the image is displayed, select the objects and the action you would like to apply. Then press q. You will be asked on the command line whether you want to annotate another image. If you answer no, the synthesizer will run. Once a program that matches your example(s) is synthesized, the program will be applied to all images in `YOUR_DIRECTORY`. The edited images will be saved to the `output` directory.
- 
+2. Install dependencies. Make sure you already have [`nodejs`](https://nodejs.org/en/) & [`npm`](https://www.npmjs.com/) installed in your system, and are using python >= 3.10.
+```bash
+$ npm install # or yarn
+$ pip install -r requirements.txt
+```
+
+3. Run it
+```bash
+$ npm start # or yarn start
+```
+from the image-search-gui directory. And, in a separate terminal,
+```bash
+$ python app.py
+```
+from the ImageEye directory.
