@@ -1,9 +1,9 @@
 import React from 'react';
 import ImageMapper from 'react-img-mapper';
 
-export default function NewImage({ image, imgToEnvironment, annotatedImgs, addObject, addImage, getAnnotationDescriptions, removeAnnotation }) {
+export default function NewImage({ image, imgToEnvironment, annotatedImgs, addObject, addImage, getAnnotationDescriptions, removeImage }) {
 
-    let img_dir = image ? "react-todo-app/src/components/ui" + image.slice(1) : null;
+    let img_dir = image ? "image-search-gui/src/components/ui" + image.slice(1) : null;
     let annotated = Object.keys(annotatedImgs).includes(img_dir)
     let annotations = annotated ? annotatedImgs[img_dir] : [];
 
@@ -35,12 +35,11 @@ export default function NewImage({ image, imgToEnvironment, annotatedImgs, addOb
             ],
             id: i,
             preFillColor: ((annotated && annotations.includes(objs[i]['ObjPosInImgLeftToRight'])) ? "rgba(255, 100, 255, 0.5)" : undefined),
-            // preFillColor: "rgba(255, 100, 255, 0.5)"
         };
     });
 
     const map = {
-        name: 'test',
+        name: 'map',
         areas: areas
     };
 
@@ -48,7 +47,7 @@ export default function NewImage({ image, imgToEnvironment, annotatedImgs, addOb
     return (
         <div>
             {image && (
-                annotated ? AnnotatedImage(image, map, addObject, new_width, objs, descs, img_dir, removeAnnotation) : UnannotatedImage(image, map, addObject, new_width, addImage, img_dir, objs, descs))}
+                annotated ? AnnotatedImage(image, map, addObject, new_width, objs, descs, img_dir, removeImage) : UnannotatedImage(image, map, addObject, new_width, addImage, img_dir, objs, descs))}
         </div>
     );
 }
@@ -64,14 +63,14 @@ function UnannotatedImage(image, map, addObject, new_width, addImage, img_dir, o
     </div>
 }
 
-function AnnotatedImage(image, map, addObject, new_width, objs, descs, img_dir, removeAnnotation) {
+function AnnotatedImage(image, map, addObject, new_width, objs, descs, img_dir, removeImage) {
     return <div className="image-container">
         {/* <img src={require(image)} className="center-image"/> */}
         <p>Image has been annotated</p>
         <ImageMapper src={require(image)} map={map} onClick={(area, index) => addObject(objs[index]['ObjPosInImgLeftToRight'])} width={new_width} />
         <div className="buttons-container">
             {/* <button className="button-10-2">Annotate</button> */}
-            <button className="button-10" onClick={() => removeAnnotation(img_dir)}>Unannotate</button>
+            <button className="button-10" onClick={() => removeImage(img_dir)}>Unannotate</button>
         </div>
         {descs.map(desc => <p>{desc}<br /></p>)}
     </div>

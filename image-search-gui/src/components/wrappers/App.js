@@ -1,15 +1,12 @@
-import React, { Component, useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Sidebar from '../ui/Sidebar';
 import NewImage from '../ui/NewImage';
 import SearchResults from '../ui/SearchResults';
 import MenuBar from '../ui/MenuBar';
 import { ReactDialogBox } from 'react-js-dialog-box'
 import 'react-js-dialog-box/dist/index.css'
-// import FileUploadButton from '../ui/FileUploadButton';
 
 function App() {
-  // usestate for setting a javascript
-  // object for storing and using data
   const [message, setMessage] = useState("");
   const [isOpen, setIsOpen] = useState(true);
   const [files, setFiles] = useState(null);
@@ -17,11 +14,10 @@ function App() {
   const [searchResults, setSearchResults] = useState(null);
   const [mainImage, setMainImage] = useState(null);
   const [objectList, setObjectList] = useState([]);
-  const [annotatedImages2, setAnnotatedImages2] = useState({});
+  const [annotatedImages, setAnnotatedImages] = useState({});
   const [result, setResult] = useState(null);
   const [inputText, setInputText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [stupid, setStupid] = useState(0);
   const [errorMessage, setErrorMessage] = useState('');
 
   let closeBox = () => {
@@ -36,10 +32,9 @@ function App() {
     setInputText(event.target.value);
   }
 
-  let removeAnnotation = (img_dir) => {
-    delete annotatedImages2[img_dir]
-    setAnnotatedImages2(annotatedImages2);
-    setStupid(stupid + 1);
+  let removeImage = (img_dir) => {
+    delete annotatedImages[img_dir]
+    setAnnotatedImages({ ...annotatedImages });
   }
 
   let handleTextSubmit = () => {
@@ -76,7 +71,6 @@ function App() {
         setSidebarFiles(data.sidebarFiles);
         setMessage(data.message);
         setIsLoading(false);
-        // setMainImage(data.files[0]);
       })
   };
 
@@ -97,9 +91,8 @@ function App() {
   }
 
   let addImage = (image) => {
-    annotatedImages2[image] = objectList;
-    setAnnotatedImages2(annotatedImages2);
-    setStupid(stupid + 1);
+    annotatedImages[image] = objectList;
+    setAnnotatedImages({ ...annotatedImages });
     setObjectList([]);
   }
 
@@ -110,7 +103,7 @@ function App() {
 
 
   let updateResults = () => {
-    const vals = Object.values(annotatedImages2);
+    const vals = Object.values(annotatedImages);
     var hasPosExample = vals.some(val => val.length > 0);
     if (hasPosExample) {
       setIsLoading(true);
@@ -119,7 +112,7 @@ function App() {
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(annotatedImages2)
+        body: JSON.stringify(annotatedImages)
       })
         .then(response => response.json())
         .then(data => {
@@ -145,30 +138,27 @@ function App() {
 
   return (
     <div>
-      {/* <p>{message}</p> */}
       <Sidebar
         imgsToAnnotate={sidebarFiles}
         allFiles={files}
         changeImage={changeImage}
         handleTextChange={handleTextChange}
         handleTextSubmit={handleTextSubmit}
-        annotatedImgs={Object.keys(annotatedImages2)}
+        annotatedImgs={Object.keys(annotatedImages)}
       />
       <NewImage
         image={mainImage}
-        annotatedImgs={annotatedImages2}
+        annotatedImgs={annotatedImages}
         imgToEnvironment={message}
         addObject={addObject}
         addImage={addImage}
+        removeImage={removeImage}
         getAnnotationDescriptions={getAnnotationDescriptions}
-        removeAnnotation={removeAnnotation}
       />
       <SearchResults files={searchResults} changeImage={changeImage} result={result} />
       <MenuBar updateResults={updateResults} />
-      {/* <button onClick={this.openBox}>Open ReactDialogBox </button> */}
 
       {isOpen && (
-        //   <>
         <ReactDialogBox
           closeBox={closeBox}
           modalWidth='60%'
@@ -183,7 +173,6 @@ function App() {
         >
           <div>
             <h1>Select Image Directory</h1>
-            {/* <button className="button-10" onClick={() => handleChange('wedding')}>Wedding</button> */}
             <div className="side-by-side">
               <button className="button-12" onClick={() => handleChange('receipts')}>Receipts</button>
               <button className="button-12" onClick={() => handleChange('objects')}>Objects</button>
@@ -191,14 +180,10 @@ function App() {
             </div>
           </div>
         </ReactDialogBox>
-        //   </>
       )}
       {isLoading && (
-        //   <>
         <ReactDialogBox
-          // closeBox={closeBox}
           modalWidth='60%'
-          // headerBackgroundColor='red'
           headerTextColor='white'
           headerHeight='65'
           closeButtonColor='white'
@@ -211,10 +196,8 @@ function App() {
             <p>Loading...</p>
           </div>
         </ReactDialogBox>
-        //   </>
       )}
       {(errorMessage !== "") && (
-        //   <>
         <ReactDialogBox
           closeBox={closeError}
           modalWidth='60%'
@@ -231,7 +214,6 @@ function App() {
             <p>{errorMessage}</p>
           </div>
         </ReactDialogBox>
-        //   </>
       )
 
       }

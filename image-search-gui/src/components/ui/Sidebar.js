@@ -1,7 +1,4 @@
 import React, { useState } from 'react';
-// import ResizableTextarea from 'react-resizable-textarea';
-
-
 
 function Sidebar({ allFiles, imgsToAnnotate, changeImage, annotatedImgs, handleTextChange, handleTextSubmit }) {
     const [selectedTab, setSelectedTab] = useState("tab1");
@@ -32,7 +29,7 @@ function AnnotationSuggestions(imgsToAnnotate, annotatedImgs, changeImage) {
     return <div>
         <ul>
             {imgsToAnnotate ?
-                imgsToAnnotate.map(img => <li><img className={annotatedImgs.includes("react-todo-app/src/components/ui" + img.slice(1)) ? "small-img-grayed-out" : "small-img"} src={require(img)} key="{img}" onClick={() => changeImage(img)} /></li>)
+                imgsToAnnotate.map(img => <li><img className={annotatedImgs.includes("image-search-gui/src/components/ui" + img.slice(1)) ? "small-img-grayed-out" : "small-img"} src={require(img)} key="{img}" onClick={() => changeImage(img)} /></li>)
                 : <p>Enter text query to get annotation suggestions.</p>
             }
         </ul>
@@ -43,7 +40,7 @@ function AllImages(allFiles, annotatedImgs, changeImage) {
     return <div>
         <ul>
             {allFiles ?
-                allFiles.map(img => <li><img className={annotatedImgs.includes("react-todo-app/src/components/ui" + img.slice(1)) ? "small-img-grayed-out" : "small-img"} src={require(img)} key="{img}" onClick={() => changeImage(img)} /></li>)
+                allFiles.map(img => <li><img className={annotatedImgs.includes("image-search-gui/src/components/ui" + img.slice(1)) ? "small-img-grayed-out" : "small-img"} src={require(img)} key="{img}" onClick={() => changeImage(img)} /></li>)
                 : <p>Enter text query to get annotation suggestions.</p>
             }
         </ul>
@@ -54,7 +51,7 @@ function AnnotatedImages(allFiles, annotatedImgs, changeImage) {
     return <div>
         <ul>
             {allFiles ?
-                allFiles.filter(img => annotatedImgs.includes("react-todo-app/src/components/ui" + img.slice(1))).map(img => <li><img className={"small-img"} src={require(img)} key="{img}" onClick={() => changeImage(img)} /></li>)
+                allFiles.filter(img => annotatedImgs.includes("image-search-gui/src/components/ui" + img.slice(1))).map(img => <li><img className={"small-img"} src={require(img)} key="{img}" onClick={() => changeImage(img)} /></li>)
                 : <p>Annotated images will be listed here.</p>
             }
         </ul>
