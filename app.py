@@ -8,8 +8,11 @@ import numpy as np
 from scipy import sparse
 from PIL import Image
 
+from flask_cors import CORS, cross_origin
 
 app = Flask(__name__)
+cors = CORS(app)
+app.config['CORS_HEADERS'] = 'Content-Type'
 
 img_to_environment = {}
 device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -19,9 +22,14 @@ obj_strs = []
 
 
 @app.route("/textQuery", methods=['POST'])
+@cross_origin()
 def text_query():
     global img_to_environment
     global images
+
+    print(img_to_environment.keys())
+    print(images)
+
     text_query = request.get_json()
     text = clip.tokenize([text_query, "hi", "hello"]).to(device)
     print(text_query)
@@ -36,30 +44,36 @@ def text_query():
     print(probs_and_imgs)
     imgs = [img for (prob, img) in probs_and_imgs]
     return {
-        'searchResults': ["." + filename.split("/ui")[1] for filename in imgs],
-        'sidebarFiles': ["." + filename.split("/ui")[1] for filename in imgs][:5]
+        'searchResults': [filename for filename in imgs],
+        'sidebarFiles': [filename for filename in imgs][:5]
     }
 
 
 @app.route("/loadFiles", methods=['POST'])
+@cross_origin()
 def load_files():
     global img_to_environment
     global images
     global obj_strs
     data = request.get_json()
     img_to_environment, obj_strs = preprocess(
-        "image-search-gui/src/components/ui/images/" + data + "/", 100)
+        "image-eye-web/public/images/" + data + "/", 100)
     consolidate_environment(img_to_environment)
     add_descriptions(img_to_environment)
     images = [preprocess_image(Image.open(image)).unsqueeze(
         0).to(device) for image in img_to_environment.keys()]
+
     images = torch.cat(images, dim=0)
+
+    print( [filename for filename in img_to_environment.keys()])
+
     return {
         'message': img_to_environment,
-        'files': ["." + filename.split("/ui")[1] for filename in img_to_environment.keys()]
+        'files': [filename for filename in img_to_environment.keys()]
     }
 
 
+@cross_origin()
 @app.route("/synthesize", methods=['POST'])
 def get_synthesis_results():
     global img_to_environment
@@ -67,8 +81,10 @@ def get_synthesis_results():
     synth = Synthesizer(args, {})
     data = request.get_json()
     annotated_env = {}
+
     imgs = ['.' + img_dir.split('/ui')[1]
             for img_dir in list(img_to_environment.keys())]
+
     for (img_dir, indices) in data.items():
         annotated_env = (
             synth.get_environment(
@@ -76,8 +92,7 @@ def get_synthesis_results():
             )
             | annotated_env
         )
-    vector = np.array(get_img_vector(annotated_env.values(),
-                      obj_strs))
+    vector = np.array(get_img_vector(annotated_env.values(), obj_strs))
     # matrix = np.transpose(np.array([env["vector"]
     #   for env in img_to_environment.values()]))
     matrix = np.array([env["vector"]

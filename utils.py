@@ -488,8 +488,12 @@ def preprocess(img_folder, max_faces=10):
     # read the cache if it exists
     key = img_folder + " 2 " + str(max_faces)
     test_images = {}
-    if os.path.exists("test_images_ui.json"):
-        with open("test_images_ui.json", "r") as fp:
+
+    print(os.listdir("."))
+    print(os.path.exists("./test_images_ui.json"))
+
+    if os.path.exists("./test_images_ui.json"):
+        with open("./test_images_ui.json", "r") as fp:
             test_images = json.load(fp)
             if key in test_images:
                 return test_images[key], test_images[key + "obj_str"]
