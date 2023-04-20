@@ -21,17 +21,20 @@ def get_dataset_info():
             img_to_environment = {}
             for name in ["cars", "cats", "guitars"]:
                 img_folder = "test_images/" + name + "/"
-                temp = preprocess(img_folder, args.max_faces) 
+                temp = preprocess(img_folder, args.max_faces)
                 img_to_environment = img_to_environment | temp
         else:
             img_folder = "test_images/" + dataset + "/"
             img_to_environment = preprocess(img_folder, args.max_faces)
-        num_objects_per_img = [len(env['environment']) for env in img_to_environment.values()]
+        num_objects_per_img = [len(env['environment'])
+                               for env in img_to_environment.values()]
         median_objs = statistics.median(num_objects_per_img)
         avg_objs = statistics.mean(num_objects_per_img)
         num_images = len(img_to_environment)
-        prog_size_per_benchmark = [benchmark.ast_size for benchmark in benchmarks if (benchmark.dataset_name == dataset or dataset == 'objects' and benchmark.dataset_name in ["cars", "cats", "guitars"])]
-        prog_depth_per_benchmark = [benchmark.ast_depth for benchmark in benchmarks if (benchmark.dataset_name == dataset or dataset == 'objects' and benchmark.dataset_name in ["cars", "cats", "guitars"])]
+        prog_size_per_benchmark = [benchmark.ast_size for benchmark in benchmarks if (
+            benchmark.dataset_name == dataset or dataset == 'objects' and benchmark.dataset_name in ["cars", "cats", "guitars"])]
+        prog_depth_per_benchmark = [benchmark.ast_depth for benchmark in benchmarks if (
+            benchmark.dataset_name == dataset or dataset == 'objects' and benchmark.dataset_name in ["cars", "cats", "guitars"])]
         avg_prog_size = statistics.mean(prog_size_per_benchmark)
         avg_prog_depth = statistics.mean(prog_depth_per_benchmark)
         num_benchmarks = len(prog_size_per_benchmark)
@@ -47,7 +50,7 @@ def get_dataset_info():
         data.append(row)
 
     if not os.path.exists('data'):
-        os.mkdir('data')    
+        os.mkdir('data')
     name = "data/dataset_info.csv"
     with open(name, "w") as f:
         fw = csv.writer(f)
@@ -69,7 +72,7 @@ def get_dataset_info():
 def test_synthesis(args):
 
     # if args.get_dataset_info:
-        # get_dataset_info()
+    # get_dataset_info()
 
     if not os.path.exists("data"):
         os.mkdir("data")
@@ -86,7 +89,7 @@ def test_synthesis(args):
     for i, benchmark in enumerate(benchmarks):
         if args.benchmark_set and args.benchmark_set != benchmark.dataset_name:
             continue
-        img_folder = "test_images/" + benchmark.dataset_name + "/"
+        img_folder = "../test_images/" + benchmark.dataset_name + "/"
         img_to_environment = preprocess(img_folder, args.max_faces)
         synth.img_to_environment = img_to_environment
         prog = benchmark.gt_prog
@@ -99,6 +102,7 @@ def test_synthesis(args):
             if args.use_examples
             else []
         )
+        perform_synthesis = synth.perform_synthesis_epssy if args.use_active_learning else synth.perform_synthesis
         (
             synth_prog,
             total_time,
@@ -106,10 +110,9 @@ def test_synthesis(args):
             img_dirs,
             num_objects,
             end_condition
-        ) = synth.perform_synthesis(
+        ) = perform_synthesis(
             args,
             gt_prog=prog,
-            example_imgs=example_imgs,
             testing=True,
         )
         benchmark_to_example_imgs[i] = img_dirs

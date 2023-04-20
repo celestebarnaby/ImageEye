@@ -7,8 +7,7 @@ import json
 import csv
 import time
 import numpy as np
-
-# from typesystem import *
+import random
 
 DETAIL_KEYS = [
     "Eyeglasses",
@@ -67,8 +66,7 @@ pos_to_types = {
 }
 
 
-def get_productions(env, states, depth, full_env):
-    word_attrs = [MatchesWord(word) for word in get_valid_words(env)]
+def get_productions(env, states, depth):
 
     positions = [
         GetLeft(),
@@ -95,8 +93,10 @@ def get_productions(env, states, depth, full_env):
             (AboveAge(18), {"Face"}),
         ]
         prods += [(GetFace(i), {"Face"}) for i in get_valid_indices(env)]
-        prods += [(IsObject(obj), {"Object"}) for obj in get_valid_objects(env)]
-        prods += [(MatchesWord(word), {"Text"}) for word in get_valid_words(env)]
+        prods += [(IsObject(obj), {"Object"})
+                  for obj in get_valid_objects(env)]
+        prods += [(MatchesWord(word), {"Text"})
+                  for word in get_valid_words(env)]
     for pos in positions:
         prods.append((Map(None, pos), pos_to_types[str(pos)]))
     prods += [
@@ -348,7 +348,7 @@ def get_args():
         help="max depth of synthesized program",
     )
     parser.add_argument(
-        "--benchmark_set", type=str, default=None, help="set of benchmarks to use"
+        "--benchmark_set", type=str, default="wedding", help="set of benchmarks to use"
     )
     parser.add_argument(
         "--max_faces",
@@ -399,10 +399,20 @@ def get_args():
         help="set to False to turn off partial evaluation"
     )
     parser.add_argument(
+        "--use_active_learning",
+        type=bool,
+        default=True
+    )
+    parser.add_argument(
         "--get_dataset_info",
         type=bool,
         default=True,
         help="if True, outputs info about test dataset"
+    )
+    parser.add_argument(
+        "--use_ground_truth",
+        type=bool,
+        default=True
     )
     args = parser.parse_args()
     return args
@@ -446,7 +456,8 @@ def get_type(prog):
     elif isinstance(prog, IsObject):
         return {"Object"}
     elif isinstance(prog, Map):
-        map_type = get_type(prog.extractor).intersection(get_type(prog.position))
+        map_type = get_type(prog.extractor).intersection(
+            get_type(prog.position))
         if not map_type:
             return map_type
         return get_type(prog.restriction)
@@ -482,13 +493,14 @@ def preprocess(img_folder, max_faces=10):
         # print("filename:", filename)
         img_dir = img_folder + filename
         env = get_environment(
-            [img_dir], client, img_index, DETAIL_KEYS, prev_env, max_faces
+            img_dir, client, img_index, DETAIL_KEYS, prev_env, max_faces
         )
         # print("environment:", env)
         score = len(env)
         # print("score:", score)
         img_to_environment[img_dir] = {
-            "environment": env,
+            "ground_truth": env,
+            "model_env": noisify_env(env),
             "img_index": img_index,
             "score": score,
         }
@@ -512,16 +524,38 @@ def preprocess(img_folder, max_faces=10):
     return img_to_environment
 
 
-# Replace face hashes with readable face ids
+def noisify_env(env):
+    noisy_env = {}
+    for obj_id, details in env.items():
+        new_details = details.copy()
+        noisy_env[obj_id] = new_details
+        if details['Type'] != 'Face':
+            continue
+        for key in {'Smile', 'EyesOpen', 'MouthOpen'}:
+            rand1 = random.random()
+            if rand1 > .8:
+                if key in new_details:
+                    del new_details[key]
+                    continue
+                if key not in new_details:
+                    new_details[key] = True
+    return noisy_env
+
+
+# Replace obj hashes with readable obj ids
 def clean_environment(img_to_environment):
     new_id = "0"
     for lib in img_to_environment.values():
-        new_env = {}
-        env = lib["environment"]
-        for face_hash, face_details in env.items():
-            new_env[new_id] = face_details
+        new_ground_truth = {}
+        new_model_env = {}
+        gt = lib["ground_truth"]
+        labels = lib["model_env"]
+        for obj_hash, details in gt.items():
+            new_ground_truth[new_id] = details
+            new_model_env[new_id] = labels[obj_hash]
             new_id = str(int(new_id) + 1)
-        lib["environment"] = new_env
+        lib["ground_truth"] = new_ground_truth
+        lib["model_env"] = new_model_env
 
 
 def write_logs(logs):
@@ -575,7 +609,8 @@ def get_positions() -> List[Position]:
 
 def get_valid_indices(env, output_under, output_over):
     req_indices = set(
-        [env[obj_id]["Index"] for obj_id in output_under if "Index" in env[obj_id]]
+        [env[obj_id]["Index"]
+            for obj_id in output_under if "Index" in env[obj_id]]
     )
     if len(req_indices) == 1:
         return req_indices
@@ -621,7 +656,8 @@ def get_valid_words(env, output_under, output_over):
 
 def get_valid_objects(env, output_under, output_over):
     req_objects = set(
-        [env[obj_id]["Name"] for obj_id in output_under if "Name" in env[obj_id]]
+        [env[obj_id]["Name"]
+            for obj_id in output_under if "Name" in env[obj_id]]
     )
     if len(req_objects) == 1:
         return req_objects
@@ -630,7 +666,8 @@ def get_valid_objects(env, output_under, output_over):
     return sorted(
         list(
             set(
-                [env[obj_id]["Name"] for obj_id in output_over if "Name" in env[obj_id]]
+                [env[obj_id]["Name"]
+                    for obj_id in output_over if "Name" in env[obj_id]]
             )
         )
     )
@@ -638,7 +675,8 @@ def get_valid_objects(env, output_under, output_over):
 
 def invalid_output(output_over, output_under, prog_output):
     return not (
-        output_under.issubset(prog_output) and prog_output.issubset(output_over)
+        output_under.issubset(
+            prog_output) and prog_output.issubset(output_over)
     )
 
 
