@@ -5,6 +5,7 @@ import random
 from benchmarks import benchmarks
 from dsl import *
 from image_utils import *
+import itertools
 from utils import *
 from typing import Any, List, Dict, Set, Tuple
 
@@ -363,7 +364,7 @@ def eval_map(
         return mapped_objs
 
 
-def partial_eval(extractor, env, output_dict, eval_cache, top_level=False):
+def partial_eval(extractor, env, output_dict, eval_cache):
     if not isinstance(extractor, Extractor):
         return False
 
@@ -445,7 +446,8 @@ def partial_eval(extractor, env, output_dict, eval_cache, top_level=False):
         should_prune = False
         for sub_extr in extractor.extractors:
             should_prune = (
-                partial_eval(sub_extr, env, output_dict, eval_cache) or should_prune
+                partial_eval(sub_extr, env, output_dict,
+                             eval_cache) or should_prune
             )
         vals = []
         none_vals = []
@@ -474,7 +476,8 @@ def partial_eval(extractor, env, output_dict, eval_cache, top_level=False):
         should_prune = False
         for sub_extr in extractor.extractors:
             should_prune = (
-                partial_eval(sub_extr, env, output_dict, eval_cache) or should_prune
+                partial_eval(sub_extr, env, output_dict,
+                             eval_cache) or should_prune
             )
         vals = []
         none_vals = []
@@ -511,7 +514,11 @@ def partial_eval(extractor, env, output_dict, eval_cache, top_level=False):
         or isinstance(extractor, EyesOpen)
         or isinstance(extractor, MouthOpen)
     ):
-        val = {obj for obj in env if str(extractor) in env[obj]}
+        val = {
+            obj
+            for obj in env
+            if str(extractor) in env[obj] and env[obj][str(extractor)]
+        }
     elif isinstance(extractor, Map):
         return partial_eval_map(extractor, env, output_dict, eval_cache)
     if val is not None:
@@ -542,7 +549,8 @@ def update_output_approx(prog, output_under, output_over, env, output_dict):
     prog.output_over = over_str
     if isinstance(prog, Union):
         for sub_extr in prog.extractors:
-            update_output_approx(sub_extr, set(), output_over, env, output_dict)
+            update_output_approx(
+                sub_extr, set(), output_over, env, output_dict)
     elif isinstance(prog, Intersection):
         for sub_extr in prog.extractors:
             update_output_approx(
@@ -557,16 +565,20 @@ def update_output_approx(prog, output_under, output_over, env, output_dict):
             output_dict,
         )
     elif isinstance(prog, Map):
-        update_output_approx(prog.extractor, set(), set(env.keys()), env, output_dict)
+        update_output_approx(prog.extractor, set(),
+                             set(env.keys()), env, output_dict)
         update_output_approx(
             prog.restriction, output_under, set(env.keys()), env, output_dict
         )
     elif isinstance(prog, MatchesWord):
-        update_output_approx(prog.word, output_under, output_over, env, output_dict)
+        update_output_approx(prog.word, output_under,
+                             output_over, env, output_dict)
     elif isinstance(prog, GetFace):
-        update_output_approx(prog.index, output_under, output_over, env, output_dict)
+        update_output_approx(prog.index, output_under,
+                             output_over, env, output_dict)
     elif isinstance(prog, IsObject):
-        update_output_approx(prog.obj, output_under, output_over, env, output_dict)
+        update_output_approx(prog.obj, output_under,
+                             output_over, env, output_dict)
 
 
 def eval_extractor(
@@ -635,7 +647,8 @@ def eval_extractor(
             res = set()
             for sub_extr in extractor.extractors:
                 res = res.union(
-                    eval_extractor(sub_extr, details, rec, output_dict, eval_cache)
+                    eval_extractor(sub_extr, details, rec,
+                                   output_dict, eval_cache)
                 )
             res = res
         else:
@@ -648,7 +661,8 @@ def eval_extractor(
             res = set(details.keys())
             for sub_extr in extractor.extractors:
                 res = res.intersection(
-                    eval_extractor(sub_extr, details, rec, output_dict, eval_cache)
+                    eval_extractor(sub_extr, details, rec,
+                                   output_dict, eval_cache)
                 )
         else:
             res = set()
@@ -670,7 +684,11 @@ def eval_extractor(
         or isinstance(extractor, EyesOpen)
         or isinstance(extractor, MouthOpen)
     ):
-        res = {obj for obj in details if str(extractor) in details[obj]}
+        res = {
+            obj
+            for obj in details
+            if str(extractor) in details[obj] and details[obj][str(extractor)]
+        }
     else:
         print(extractor)
         raise Exception
@@ -697,7 +715,6 @@ def eval_crop(extracted_objs, details_map, imgs):
     left, top, right, bottom = cur_coords
     img = img[top:bottom, left:right]
     return [img]
-
 
 
 def eval_apply_action(
@@ -737,7 +754,7 @@ def eval_program(prog: Program, imgs, details: Dict[str, Dict[str, Any]], client
 def draw_rectangles(img, env):
     for key, details_map in env.items():
         # if key == '236':
-            # continue
+        # continue
         left, top, right, bottom = details_map["Loc"]
         img_height, img_width = img.shape[0], img.shape[1]
         if right > img_width or bottom > img_height:
@@ -749,13 +766,15 @@ def draw_rectangles(img, env):
         features = [feature for feature in details_map if feature in keys]
         features += [str(details_map["Index"])]
         # if "Text" in details_map:
-            # features += [details_map["Text"]]
+        # features += [details_map["Text"]]
         if "Name" in details_map:
             features += [details_map["Name"]]
         # features = [str(details_map["ObjPosInImgLeftToRight"])]
         for i, feature in enumerate(features):
-            cv2.putText(img, feature, (right, bottom + 30 * i), cv2.FONT_HERSHEY_SIMPLEX, 1.2, color, thickness)
-        img = cv2.rectangle(img, (left, top), (right, bottom), color, thickness)
+            cv2.putText(img, feature, (right, bottom + 30 * i),
+                        cv2.FONT_HERSHEY_SIMPLEX, 1.2, color, thickness)
+        img = cv2.rectangle(
+            img, (left, top), (right, bottom), color, thickness)
     return img
 
 
@@ -783,8 +802,8 @@ def test_interpreter(args):
             false_negative = input("Is this due to missing labels?")
             labels = input("What labels are involved?")
             would_prune_val = False if would_not_prune == 'y' else True
-            false_pos_val = True if false_positive == 'y' else False 
-            false_neg_val = True if false_negative == 'y' else False 
+            false_pos_val = True if false_positive == 'y' else False
+            false_neg_val = True if false_negative == 'y' else False
             row = (
                 str(benchmark.gt_prog),
                 benchmark.desc,
@@ -811,7 +830,6 @@ def test_interpreter(args):
         )
         for row in data:
             fw.writerow(row)
-
 
 
 if __name__ == "__main__":

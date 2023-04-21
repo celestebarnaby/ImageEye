@@ -117,7 +117,8 @@ benchmarks = [
     #     ],
     # ),
     Benchmark(
-        Intersection([IsSmiling(), EyesOpen()]),
+        # Intersection([IsSmiling(), EyesOpen()]),
+        IsSmiling(),
         "All faces that are smiling and have eyes open",
         "wedding",
         [

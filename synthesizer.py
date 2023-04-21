@@ -235,8 +235,12 @@ class Synthesizer:
         return incorrect_img_ids
 
     def synthesize_top_down(self, env, eval_cache, args):
-        output = {key for (key, details) in env.items()
-                  if "ActionApplied" in details}
+        if args.use_prediction_sets:
+            output = {key for (key, details) in env[0].items()
+                      if "ActionApplied" in details}
+        else:
+            output = {key for (key, details) in env.items()
+                      if "ActionApplied" in details}
 
         output_dict = {}
         output_dict[str(output)] = output
@@ -247,7 +251,10 @@ class Synthesizer:
         tree.var_nodes.append(0)
         worklist = []
         hq.heappush(worklist, tree)
-        output_objs_str = get_output_objs(env, Blur())
+        if args.use_prediction_sets:
+            output_objs_str = get_output_objs(env[0], Blur())
+        else:
+            output_objs_str = get_output_objs(env, Blur())
         num_progs = 0
         progs = []
         prog_threshold = 20 if args.use_active_learning else 1
@@ -267,8 +274,12 @@ class Synthesizer:
             # EQUIVALENCE REDUCTION
             if args.equiv_reduction:
                 if output_objs_str and args.partial_eval:
-                    should_prune = partial_eval(
-                        prog, env, output_dict, eval_cache, True)
+                    if args.use_prediction_sets:
+                        should_prune = all([partial_eval(
+                            prog.duplicate(), possible_env, output_dict, eval_cache) for possible_env in env])
+                    else:
+                        should_prune = partial_eval(
+                            prog, env, output_dict, eval_cache)
                     if should_prune:
                         continue
                 if not isinstance(prog, Hole):
@@ -278,13 +289,23 @@ class Synthesizer:
                         continue
                     seen_progs.add(str(simplified_prog))
             if not cur_tree.var_nodes:
-                extracted_objs = eval_extractor(
-                    prog, env, output_dict=output_dict, eval_cache=eval_cache
-                )
-                extracted_objs_str = ",".join(sorted(extracted_objs))
-                if len(env) == 0 or extracted_objs_str == output_objs_str:
-                    progs.append(copy.deepcopy(prog))
-                continue
+                if args.use_prediction_sets:
+                    for possible_env in env:
+                        extracted_objs = eval_extractor(
+                            prog, possible_env, output_dict=output_dict, eval_cache=eval_cache
+                        )
+                        extracted_objs_str = ",".join(sorted(extracted_objs))
+                        if len(env) == 0 or extracted_objs_str == output_objs_str:
+                            progs.append(copy.deepcopy(prog))
+                        continue
+                else:
+                    extracted_objs = eval_extractor(
+                        prog, env, output_dict=output_dict, eval_cache=eval_cache
+                    )
+                    extracted_objs_str = ",".join(sorted(extracted_objs))
+                    if len(env) == 0 or extracted_objs_str == output_objs_str:
+                        progs.append(copy.deepcopy(prog))
+                    continue
             if num_progs % 1000 == 0:
                 print(num_progs)
                 print(prog)
@@ -461,6 +482,20 @@ class Synthesizer:
         trace = [(img_index, i) for i in indices]
         env = img_to_environment[img_dir][env_name]
         env = {**env, **img_to_environment[img_dir][env_name]}
+        # env is a LIST of environments
+        if env_name == "model_env_psets":
+            for possible_env in env:
+                for details_map in possible_env.values():
+                    if "ActionApplied" in details_map:
+                        del details_map["ActionApplied"]
+                for (img_index, index) in trace:
+                    for details_map in possible_env.values():
+                        if (
+                            details_map["ObjPosInImgLeftToRight"] == index
+                            and details_map["ImgIndex"] == img_index
+                        ):
+                            details_map["ActionApplied"] = action
+            return env
         for details_map in env.values():
             if "ActionApplied" in details_map:
                 del details_map["ActionApplied"]
@@ -492,6 +527,8 @@ class Synthesizer:
         total_synthesis_time = 0
         annotated_env = {}
         img_options = list(img_to_environment.keys())
+        model_env_name = "model_env_psets" if args.use_prediction_sets else "model_env"
+        env_name = "ground_truth" if args.use_ground_truth else model_env_name
         while rounds <= self.max_rounds:
             signal.signal(signal.SIGALRM, handler)
             signal.alarm(args.time_limit)
@@ -512,7 +549,6 @@ class Synthesizer:
                             # TODO: (maybe) Support multiple actions?
                             (action, indices) = list(
                                 action_to_objects.items())[0]
-                            env_name = "ground_truth" if args.use_ground_truth else "model_env"
                             annotated_env = (
                                 self.annotate_environment(
                                     indices, img_dir, img_to_environment, env_name, action
@@ -529,7 +565,7 @@ class Synthesizer:
                         img_dir, _ = min(
                             [
                                 (img_dir,
-                                 img_to_environment[img_dir]["model_env"])
+                                 img_to_environment[img_dir][model_env_name])
                                 for img_dir in img_options
                             ],
                             key=lambda tup: (len(tup[1]), str(tup[0])),
@@ -537,17 +573,25 @@ class Synthesizer:
                         print("New image: ", img_dir)
                         # image is labelled based on ground truth
                         gt_env = img_to_environment[img_dir]["ground_truth"]
+                        print("yoohoo")
+                        print(gt_prog)
+                        print(gt_env)
                         indices = self.get_indices(gt_env, gt_prog)
                         if rounds == 1 and not indices:
                             img_options.remove(img_dir)
                             continue
                         img_dirs.append(img_dir)
-                        env_name = "ground_truth" if args.use_ground_truth else "model_env"
-                        annotated_env = (
-                            self.annotate_environment(
+                        if args.use_prediction_sets:
+                            new_annotated_env = self.annotate_environment(
                                 indices, img_dir, img_to_environment, env_name)
-                            | annotated_env
-                        )
+                            annotated_env = [l[0] | l[1] for l in itertools.product(
+                                *[annotated_env, new_annotated_env])]
+                        else:
+                            annotated_env = (
+                                self.annotate_environment(
+                                    indices, img_dir, img_to_environment, env_name)
+                                | annotated_env
+                            )
                 num_attributes = get_num_attributes(annotated_env)
                 construction_start_time = time.perf_counter()
                 prog, num_progs = self.synthesize_top_down(
@@ -692,11 +736,17 @@ class Synthesizer:
                         # img_options.remove(img_dir)
                         # continue
                         img_dirs.append(img_dir)
-                        annotated_env = (
-                            self.annotate_environment(
-                                indices, img_dir, img_to_environment, "ground_truth")
-                            | annotated_env
-                        )
+                        if args.use_prediction_sets:
+                            new_annotated_env = self.annotate_environment(
+                                indices, img_dir, img_to_environment, env_name)
+                            annotated_env = [l[0] | l[1] for l in itertools.product(
+                                *[annotated_env, new_annotated_env])]
+                        else:
+                            annotated_env = (
+                                self.annotate_environment(
+                                    indices, img_dir, img_to_environment, env_name)
+                                | annotated_env
+                            )
                 construction_start_time = time.perf_counter()
                 if rounds > 1:
                     rec_output = eval_extractor(rec, env)

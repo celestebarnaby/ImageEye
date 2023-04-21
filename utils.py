@@ -8,6 +8,7 @@ import csv
 import time
 import numpy as np
 import random
+import itertools
 
 DETAIL_KEYS = [
     "Eyeglasses",
@@ -401,7 +402,7 @@ def get_args():
     parser.add_argument(
         "--use_active_learning",
         type=bool,
-        default=True
+        default=False
     )
     parser.add_argument(
         "--get_dataset_info",
@@ -413,6 +414,11 @@ def get_args():
         "--use_ground_truth",
         type=bool,
         default=True
+    )
+    parser.add_argument(
+        "--use_prediction_sets",
+        type=bool,
+        default=False
     )
     args = parser.parse_args()
     return args
@@ -475,11 +481,11 @@ def preprocess(img_folder, max_faces=10):
     # read the cache if it exists
     key = img_folder + " 2 " + str(max_faces)
     test_images = {}
-    if os.path.exists("test_images.json"):
-        with open("test_images.json", "r") as fp:
-            test_images = json.load(fp)
-            if key in test_images:
-                return test_images[key]
+    # if os.path.exists("test_images.json"):
+    #     with open("test_images.json", "r") as fp:
+    #         test_images = json.load(fp)
+    #         if key in test_images:
+    #             return test_images[key]
     client = get_client()
     client.delete_collection(CollectionId="library2")
     client.create_collection(CollectionId="library2")
@@ -492,22 +498,36 @@ def preprocess(img_folder, max_faces=10):
     for filename in os.listdir(img_folder):
         # print("filename:", filename)
         img_dir = img_folder + filename
-        env = get_environment(
-            img_dir, client, img_index, DETAIL_KEYS, prev_env, max_faces
+        gt_env = get_environment(
+            img_dir, client, img_index, False, False, DETAIL_KEYS, prev_env, max_faces
         )
+        model_env = get_environment(
+            img_dir, client, img_index, False, True, DETAIL_KEYS, prev_env, max_faces
+        )
+        model_env_with_prediction_sets = get_environment(
+            img_dir, client, img_index, True, True, DETAIL_KEYS, prev_env, max_faces
+        )
+        for obj_id, obj in model_env_with_prediction_sets.items():
+            print("hi3")
+            model_env_with_prediction_sets[obj_id] = get_all_versions_of_object(
+                obj)
+        # this is a LIST of environments
+        model_env_with_prediction_sets = get_all_versions_of_image(
+            model_env_with_prediction_sets)
         # print("environment:", env)
-        score = len(env)
+        score = len(gt_env)
         # print("score:", score)
         img_to_environment[img_dir] = {
-            "ground_truth": env,
-            "model_env": noisify_env(env),
+            "ground_truth": gt_env,
+            "model_env": model_env,
+            "model_env_psets": model_env_with_prediction_sets,
             "img_index": img_index,
             "score": score,
         }
-        if not env:
+        if not gt_env:
             continue
         img_index += 1
-        prev_env = prev_env | env
+        prev_env = prev_env | gt_env
     end_time = time.perf_counter()
     total_time = end_time - start_time
 
@@ -522,6 +542,39 @@ def preprocess(img_folder, max_faces=10):
     print(img_to_environment)
 
     return img_to_environment
+
+
+def get_all_versions_of_object(obj):
+    # obj_lists = get_all_versions_helper(list(obj.items()))
+    if not obj["Type"] == "Face":
+        return [obj]
+    options = [obj["Smile"], obj["EyesOpen"],
+               obj["MouthOpen"], obj["Eyeglasses"]]
+    all_lists = list(itertools.product(*options))
+    all_dicts = [
+        {"Smile": l[0], "EyesOpen": l[1],
+            "MouthOpen": l[2], "Eyeglasses": l[3]}
+        for l in all_lists
+    ]
+    for key in {"Smile", "EyesOpen", "MouthOpen", "Eyeglasses"}:
+        del obj[key]
+    all_full_dicts = []
+    for d in all_dicts:
+        all_full_dicts.append(d | obj)
+    return all_full_dicts
+
+
+def get_all_versions_of_image(env):
+    print("hi1")
+    keys = list(env.keys())
+    vals = list(env.values())
+    print(len(vals))
+    print([len(l) for l in vals])
+    all_lists = list(itertools.product(*vals))
+    print(len(all_lists))
+    all_envs = [{keys[i]: l[i] for i in range(len(l))} for l in all_lists]
+    print("hi2")
+    return all_envs
 
 
 def noisify_env(env):
@@ -546,16 +599,21 @@ def noisify_env(env):
 def clean_environment(img_to_environment):
     new_id = "0"
     for lib in img_to_environment.values():
-        new_ground_truth = {}
-        new_model_env = {}
         gt = lib["ground_truth"]
         labels = lib["model_env"]
+        pset_labels = lib["model_env_psets"]
+        new_ground_truth = {}
+        new_model_env = {}
+        new_model_env_psets = [{} for _ in pset_labels]
         for obj_hash, details in gt.items():
             new_ground_truth[new_id] = details
             new_model_env[new_id] = labels[obj_hash]
+            for i, possible_pset_label in enumerate(pset_labels):
+                new_model_env_psets[i][new_id] = possible_pset_label[obj_hash]
             new_id = str(int(new_id) + 1)
         lib["ground_truth"] = new_ground_truth
         lib["model_env"] = new_model_env
+        lib["model_env_psts"] = new_model_env_psets
 
 
 def write_logs(logs):

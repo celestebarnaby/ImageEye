@@ -6,6 +6,7 @@ import re
 from typing import Any, List, Dict
 from dsl import Blur, Blackout, Crop, Brighten, Recolor
 import numpy as np
+import random
 
 
 # Since we don't construct class here, some static variables to track things
@@ -109,7 +110,7 @@ def get_client():
 
 
 def get_environment(
-    img_dir: str, client, img_index, keys=[], prev_environment=None, max_faces=10
+    img_dir: str, client, img_index, use_prediction_sets, add_noise, keys=[], prev_environment=None, max_faces=10
 ) -> Dict[str, Dict[str, Any]]:
     # The same face in a different photo has a different entry in the library,
     # but the SAME Index
@@ -135,7 +136,7 @@ def get_environment(
     object_responses.append(object_response)
     imgs.append(img)
     return get_details(
-        face_responses, text_responses, object_responses, keys, imgs, client, img_index, prev_environment
+        face_responses, text_responses, object_responses, keys, imgs, client, img_index, use_prediction_sets, add_noise, prev_environment
     )
 
 
@@ -374,6 +375,8 @@ def get_details(
     imgs,
     client,
     img_index,
+    use_prediction_sets,
+    add_noise,
     prev_environment=None,
     max_faces=10,
 ) -> Dict[str, Dict[str, Any]]:
@@ -397,18 +400,40 @@ def get_details(
             details_map = {}
             details_map["Type"] = "Face"
             for key in keys:
-                if key == "Emotions":
-                    details_map[key] = []
-                    emotion_list = details[key]
-                    for emotion in emotion_list:
-                        if emotion["Confidence"] > 75:
-                            details_map[key].append(emotion["Type"])
-                elif key == "AgeRange":
-                    details_map[key] = details[key]
+                if use_prediction_sets:
+                    if key in {
+                        "Emotions",
+                        "AgeRange",
+                    }:
+                        details_map[key] = details[key]
+                    if key in {
+                        "Smile",
+                        "Eyeglasses",
+                        "EyesOpen",
+                        "MouthOpen",
+                    }:
+                        if add_noise and random.random() > .98:
+                            details[key]["Confidence"] = random.random() * 100
+                        if details[key]["Confidence"] > 75:
+                            details_map[key] = [details[key]["Value"]]
+                        # These are binary values so we can do this without a problem
+                        else:
+                            details_map[key] = [True, False]
                 else:
-                    if details[key]["Value"] and details[key]["Confidence"] > 75:
-                        # The value doesn't matter here
-                        details_map[key] = True
+                    if key in {"Smile", "Eyeglasses", "EyesOpen", "MouthOpen"}:
+                        if add_noise and random.random() > .98:
+                            details[key]["Confidence"] = random.random() * 100
+                        if details[key]["Confidence"] > 75:
+                            # The value doesn't matter here
+                            details_map[key] = True
+                    if key == "Emotions":
+                        details_map[key] = []
+                        emotion_list = details[key]
+                        for emotion in emotion_list:
+                            if emotion["Confidence"] > 75:
+                                details_map[key].append(emotion["Type"])
+                    elif key == "AgeRange":
+                        details_map[key] = details[key]
             details_map["Loc"] = get_loc(img, face["Face"]["BoundingBox"])
             # Check if this face matches another face in the library
             if face_hash in face_hash_to_id:
@@ -465,7 +490,7 @@ def get_details(
                 if instance["Confidence"] < 75:
                     continue
                 # Remove redundant objects
-                if obj["Name"] in {'Adult', 'Child', 'Man', 'Male', 'Woman', 'Female', 'Bride', 'Groom'}:
+                if obj["Name"] in {'Adult', 'Child', 'Man', 'Male', 'Woman', 'Female', 'Bride', 'Groom', 'Boy', 'Girl'}:
                     continue
                 details_map = {}
                 details_map["Type"] = "Object"
@@ -480,45 +505,5 @@ def get_details(
         for i, details_map in enumerate(details_list):
             details_map["ObjPosInImgLeftToRight"] = i
             details_maps[i + len(prev_environment)] = details_map
-
-        for target_obj_id, target_details in details_maps.items():
-            prev_obj = False
-            next_obj = False
-            left_obj = False
-            right_obj = False
-            front_obj = False
-            back_obj = False
-            target_pos = target_details["ObjPosInImgLeftToRight"]
-            target_left, target_top, target_right, target_bottom = target_details["Loc"]
-            for obj_id, details in details_maps.items():
-                if obj_id == target_obj_id:
-                    continue
-                pos = details["ObjPosInImgLeftToRight"]
-                left, top, right, bottom = details["Loc"]
-                if pos < target_pos:
-                    prev_obj = True
-                else:
-                    next_obj = True
-                if bottom >= target_top and top <= target_bottom:
-                    if left < target_left:
-                        left_obj = True
-                    else:
-                        right_obj = True
-                if top < target_top:
-                    back_obj = True
-                else:
-                    front_obj = True
-            if not prev_obj:
-                target_details["Prevmost"] = True
-            if not next_obj:
-                target_details["Nextmost"] = True
-            if not left_obj:
-                target_details["Leftmost"] = True
-            if not right_obj:
-                target_details["Rightmost"] = True
-            if not front_obj:
-                target_details["Bottommost"] = True
-            if not back_obj:
-                target_details["Topmost"] = True
 
     return details_maps
