@@ -65,7 +65,7 @@ def load_files():
 
     images = torch.cat(images, dim=0)
 
-    print( [filename for filename in img_to_environment.keys()])
+    print([filename for filename in img_to_environment.keys()])
 
     return {
         'message': img_to_environment,
@@ -82,6 +82,7 @@ def get_synthesis_results():
     data = request.get_json()
     annotated_env = {}
 
+    print(list(img_to_environment.keys()))
     imgs = ['.' + img_dir.split('/ui')[1]
             for img_dir in list(img_to_environment.keys())]
 

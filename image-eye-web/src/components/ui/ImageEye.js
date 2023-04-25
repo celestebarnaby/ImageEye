@@ -7,7 +7,7 @@ import SearchResults from './SearchResults';
 import Box from '@mui/material/Box';
 
 
-export function ImageEye({ data }) {
+export function ImageEye({ data, updateResults, handleTextSubmit }) {
 
   const [message, setMessage] = useState(data.message);
   const [files, setFiles] = useState(data.files);
@@ -31,25 +31,6 @@ export function ImageEye({ data }) {
     delete annotatedImages[img_dir]
     setAnnotatedImages({ ...annotatedImages });
   }
-
-  let handleTextSubmit = () => {
-    setIsLoading(true);
-    fetch('http://127.0.0.1:5000/textQuery', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(inputText)
-    })
-      .then(response => response.json())
-      .then(data => {
-        setSearchResults(data.searchResults);
-        setSidebarFiles(data.sidebarFiles);
-        setIsLoading(false);
-        setMainImage(data.sidebarFiles[0]);
-      })
-  }
-
 
 
   let changeImage = (image) => {
@@ -80,43 +61,8 @@ export function ImageEye({ data }) {
   }
 
 
-  let updateResults = () => {
-    const vals = Object.values(annotatedImages);
-    var hasPosExample = vals.some(val => val.length > 0);
-    if (hasPosExample) {
-      setIsLoading(true);
-      fetch('http://127.0.0.1:5000/synthesize', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(annotatedImages)
-      })
-        .then(response => response.json())
-        .then(data => {
-          console.log('Success:', data);
-          if (data.program === null) {
-            setErrorMessage("Synthesizer timed out");
-            setIsLoading(false);
-          } else {
-            setResult(data.program);
-            setSearchResults(data.search_results);
-            setSidebarFiles(data.recs);
-            setIsLoading(false);
-          }
-        })
-        .catch((error) => {
-          console.error('Error:', error);
-        });
-    } else {
-      setErrorMessage("You need at least one positive example!");
-    }
-
-  }
-
-
   return (
-    <Box sx={{display: "flex", flexDirection: "row", height: "100%"}}>
+    <Box sx={{ display: "flex", flexDirection: "row", height: "100%" }}>
       <Sidebar
         imgsToAnnotate={sidebarFiles}
         allFiles={files}
@@ -126,7 +72,7 @@ export function ImageEye({ data }) {
         annotatedImgs={Object.keys(annotatedImages)}
         updateResults={updateResults}
       />
-      <Box sx={{flex: 1}}>
+      <Box sx={{ flex: 1 }}>
         <NewImage
           image={mainImage}
           annotatedImgs={annotatedImages}
@@ -139,7 +85,7 @@ export function ImageEye({ data }) {
       </Box>
       <SearchResults files={searchResults} changeImage={changeImage} result={result} />
 
-      
+
     </Box>
   );
 }

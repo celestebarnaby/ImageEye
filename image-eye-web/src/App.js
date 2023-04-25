@@ -65,23 +65,77 @@ export default function App() {
     })
       .then(response => response.json())
       .then(data => {
-        
+
         setDataset(data)
         setIsLoading(false);
       })
   };
 
+  let handleTextSubmit = () => {
+    setIsLoading(true);
+    fetch('http://127.0.0.1:5000/textQuery', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(inputText)
+    })
+      .then(response => response.json())
+      .then(data => {
+        setSearchResults(data.searchResults);
+        setSidebarFiles(data.sidebarFiles);
+        setIsLoading(false);
+        setMainImage(data.sidebarFiles[0]);
+      })
+  }
+
+
+  let updateResults = (annotatedImages) => {
+    const vals = Object.values(annotatedImages);
+    var hasPosExample = vals.some(val => val.length > 0);
+    if (hasPosExample) {
+      setIsLoading(true);
+      fetch('http://127.0.0.1:5000/synthesize', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(annotatedImages)
+      })
+        .then(response => response.json())
+        .then(data => {
+          console.log('Success:', data);
+          if (data.program === null) {
+            setErrorMessage("Synthesizer timed out");
+            setIsLoading(false);
+          } else {
+            setResult(data.program);
+            setSearchResults(data.search_results);
+            setSidebarFiles(data.recs);
+            setIsLoading(false);
+          }
+        })
+        .catch((error) => {
+          console.error('Error:', error);
+        });
+    } else {
+      setErrorMessage("You need at least one positive example!");
+    }
+
+  }
+
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Box sx={{display: "block"}}>
+      <Box sx={{ display: "block" }}>
         <AppBar position="relative">
           <Toolbar>
             <CameraIcon sx={{ mr: 2 }} />
             <Typography variant="h6" color="inherit" noWrap>
               Image Eye
             </Typography>
-            <Button variant="outlined" sx={{color: "white"}}>Upload Images</Button>
+            <Button variant="outlined" sx={{ color: "white" }}>Upload Images</Button>
           </Toolbar>
         </AppBar>
         <Box
@@ -90,13 +144,13 @@ export default function App() {
             height: "calc(100vh - 64px)"
           }}
         >
-          {dataset ? <ImageEye data={dataset}/> : <Typography sx={{margin: "auto"}}>Select a dataset to get started.</Typography>}
+          {dataset ? <ImageEye data={dataset} updateResults={updateResults} handleTextSubmit={handleTextSubmit} /> : <Typography sx={{ margin: "auto" }}>Select a dataset to get started.</Typography>}
         </Box>
       </Box>
       <Dialog onClose={closeBox} open={isOpen}>
         <DialogTitle>Select Image Directory</DialogTitle>
         <DialogContent>
-        {isLoading ? <p>Loading...</p> : <div>
+          {isLoading ? <p>Loading...</p> : <div>
             <div className="side-by-side">
               <button className="button-12" onClick={() => handleChange('receipts')}>Receipts</button>
               <button className="button-12" onClick={() => handleChange('objects')}>Objects</button>
