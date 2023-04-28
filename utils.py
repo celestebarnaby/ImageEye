@@ -402,7 +402,7 @@ def get_args():
     parser.add_argument(
         "--use_active_learning",
         type=bool,
-        default=False
+        default=True
     )
     parser.add_argument(
         "--get_dataset_info",
@@ -413,12 +413,12 @@ def get_args():
     parser.add_argument(
         "--use_ground_truth",
         type=bool,
-        default=True
+        default=False
     )
     parser.add_argument(
         "--use_prediction_sets",
         type=bool,
-        default=False
+        default=True
     )
     args = parser.parse_args()
     return args
@@ -481,11 +481,11 @@ def preprocess(img_folder, max_faces=10):
     # read the cache if it exists
     key = img_folder + " 2 " + str(max_faces)
     test_images = {}
-    # if os.path.exists("test_images.json"):
-    #     with open("test_images.json", "r") as fp:
-    #         test_images = json.load(fp)
-    #         if key in test_images:
-    #             return test_images[key]
+    if os.path.exists("test_images.json"):
+        with open("test_images.json", "r") as fp:
+            test_images = json.load(fp)
+            if key in test_images:
+                return test_images[key]
     client = get_client()
     client.delete_collection(CollectionId="library2")
     client.create_collection(CollectionId="library2")
@@ -539,7 +539,7 @@ def preprocess(img_folder, max_faces=10):
     test_images[key] = img_to_environment
     with open("test_images.json", "w") as fp:
         json.dump(test_images, fp)
-    print(img_to_environment)
+    # print(img_to_environment)
 
     return img_to_environment
 
@@ -767,3 +767,31 @@ def get_num_attributes(env):
                 preds.add(key)
         all_preds.update(preds)
     return len(all_preds)
+
+
+def get_ast_depth(prog):
+    if isinstance(prog, Union) or isinstance(prog, Intersection):
+        return max([get_ast_depth(extr) for extr in prog.extractors]) + 1
+    if isinstance(prog, Complement) or isinstance(prog, Map):
+        return get_ast_depth(prog.extractor) + 1
+    if isinstance(prog, IsFace) or isinstance(prog, IsText) or isinstance(prog, IsPhoneNumber) or isinstance(prog, IsPrice) or isinstance(prog, IsSmiling) or isinstance(prog, EyesOpen) or isinstance(prog, MouthOpen):
+        return 2
+    else:
+        return 3
+
+
+def get_ast_size(prog):
+    if isinstance(prog, Union) or isinstance(prog, Intersection):
+        return sum([get_ast_size(extr) for extr in prog.extractors]) + 1
+    if isinstance(prog, Complement):
+        return get_ast_size(prog.extractor) + 1
+    if isinstance(prog, Map):
+        if isinstance(prog.position, GetIsContained):
+            extra_size = 1
+        else:
+            extra_size = 2
+        return get_ast_size(prog.extractor) + get_ast_size(prog.restriction) + extra_size - 1
+    if isinstance(prog, IsFace) or isinstance(prog, IsText) or isinstance(prog, IsPhoneNumber) or isinstance(prog, IsPrice) or isinstance(prog, IsSmiling) or isinstance(prog, EyesOpen) or isinstance(prog, MouthOpen):
+        return 2
+    else:
+        return 3

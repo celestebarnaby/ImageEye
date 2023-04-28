@@ -1,0 +1,2 @@
+Ground Truth Prog,Synthesized Prog,Dataset,Correct,Total Time,# Examples,# Objects,Ending condition,Description,AST Depth,AST Size
+"Intersection[Smile, EyesOpen]",None,wedding,False,0,1,0,0,All faces that are smiling and have eyes open,3,5

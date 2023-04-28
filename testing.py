@@ -69,6 +69,40 @@ def get_dataset_info():
             fw.writerow(row)
 
 
+def test_model_accuracy(args):
+    img_folder = "../test_images/wedding/"
+    lib = preprocess(img_folder, args.max_faces)
+    correct_pairs = 0
+    total_pairs = 0
+    for benchmark in benchmarks:
+        for img_dir in lib.keys():
+            gt_env = lib[img_dir]["ground_truth"]
+            model_env = lib[img_dir]["model_env"]
+            ids1 = eval_extractor(benchmark.gt_prog, gt_env)
+            ids2 = eval_extractor(benchmark.gt_prog, model_env)
+            if set(ids1) == set(ids2):
+                correct_pairs += 1
+            total_pairs += 1
+    print("percent of (benchmark, image) pairs with suitable labels: " +
+          str(correct_pairs/total_pairs))
+    print("num images: " + str(len(lib)))
+
+
+def test_benchmarks(args):
+    img_folder = "../test_images/wedding/"
+    lib = preprocess(img_folder, args.max_faces)
+    for benchmark in benchmarks:
+        num_nonempty_outputs = 0
+        for img_dir in lib.keys():
+            gt_env = lib[img_dir]["ground_truth"]
+            output = eval_extractor(benchmark.gt_prog, gt_env)
+            if output:
+                num_nonempty_outputs += 1
+        print(str(benchmark.gt_prog))
+        print(num_nonempty_outputs)
+        print()
+
+
 def test_synthesis(args):
 
     # if args.get_dataset_info:
@@ -87,8 +121,8 @@ def test_synthesis(args):
     pr.enable()
     benchmark_to_example_imgs = {}
     for i, benchmark in enumerate(benchmarks):
-        if args.benchmark_set and args.benchmark_set != benchmark.dataset_name:
-            continue
+        # if args.benchmark_set and args.benchmark_set != benchmark.dataset_name:
+        # continue
         img_folder = "../test_images/" + benchmark.dataset_name + "/"
         img_to_environment = preprocess(img_folder, args.max_faces)
         synth.img_to_environment = img_to_environment
@@ -114,6 +148,7 @@ def test_synthesis(args):
             args,
             gt_prog=prog,
             testing=True,
+            example_images=benchmark.example_imgs
         )
         benchmark_to_example_imgs[i] = img_dirs
         if args.interactive:
@@ -175,5 +210,6 @@ def test_synthesis(args):
 if __name__ == "__main__":
 
     args = get_args()
-
+    # test_model_accuracy(args)
+    # test_benchmarks(args)
     test_synthesis(args)

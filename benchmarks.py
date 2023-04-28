@@ -1,4 +1,5 @@
 from dsl import *
+from utils import *
 
 
 class Benchmark:
@@ -11,35 +12,100 @@ class Benchmark:
         self.example_imgs = example_imgs
 
 
-def get_ast_depth(prog):
-    if isinstance(prog, Union) or isinstance(prog, Intersection):
-        return max([get_ast_depth(extr) for extr in prog.extractors]) + 1
-    if isinstance(prog, Complement) or isinstance(prog, Map):
-        return get_ast_depth(prog.extractor) + 1
-    if isinstance(prog, IsFace) or isinstance(prog, IsText) or isinstance(prog, IsPhoneNumber) or isinstance(prog, IsPrice) or isinstance(prog, IsSmiling) or isinstance(prog, EyesOpen) or isinstance(prog, MouthOpen):
-        return 2
-    else:
-        return 3
-
-
-def get_ast_size(prog):
-    if isinstance(prog, Union) or isinstance(prog, Intersection):
-        return sum([get_ast_size(extr) for extr in prog.extractors]) + 1
-    if isinstance(prog, Complement):
-        return get_ast_size(prog.extractor) + 1
-    if isinstance(prog, Map):
-        if isinstance(prog.position, GetIsContained):
-            extra_size = 1
-        else:
-            extra_size = 2
-        return get_ast_size(prog.extractor) + get_ast_size(prog.restriction) + extra_size - 1
-    if isinstance(prog, IsFace) or isinstance(prog, IsText) or isinstance(prog, IsPhoneNumber) or isinstance(prog, IsPrice) or isinstance(prog, IsSmiling) or isinstance(prog, EyesOpen) or isinstance(prog, MouthOpen):
-        return 2
-    else:
-        return 3
-
-
 benchmarks = [
+    # Benchmark(
+    #     Map(Union([GetFace(34), IsSmiling(), EyesOpen()]),
+    #         IsObject("Person"), GetBelow()),
+    #     "Bodies of faces that have id 34, are smiling, or have eyes open",
+    #     "wedding",
+    #     # [
+    #     #     "Ana Maria Photography-80.jpg",
+    #     #     "Ana Maria Photography-38.jpg",
+    #     #     "Ana Maria Photography-33.jpg",
+    #     #     "Ana Maria Photography-49.jpg",
+    #     #     "Ana Maria Photography-102.jpg",
+    #     # ],
+    # ),
+    # Benchmark(
+    #     Intersection([Complement(IsSmiling()), Map(
+    #         IsFace(), IsFace(), GetAbove())]),
+    #     "All faces in back that are not smiling",
+    #     "wedding",
+    #     [
+    #         "../test_images/wedding/Ana Maria Photography-172.jpg",
+    #         # "Ana Maria Photography-101.jpg",
+    #         # "Ana Maria Photography-53.jpg",
+    #         # "Ana Maria Photography-49.jpg",
+    #         # "Ana Maria Photography-102.jpg",
+    #     ],
+    # ),
+    Benchmark(
+        # Intersection([IsSmiling(), EyesOpen()]),
+        IsFace(),
+        # IsSmiling(),
+        "All faces that are smiling and have eyes open",
+        "wedding",
+        # [
+        #     "Ana Maria Photography-80.jpg",
+        #     "Ana Maria Photography-38.jpg",
+        #     "Ana Maria Photography-33.jpg",
+        #     "Ana Maria Photography-49.jpg",
+        #     "Ana Maria Photography-102.jpg",
+        # ],
+    ),
+    # Benchmark(
+    #     Intersection([IsFace(), Complement(
+    #         Intersection([IsSmiling(), EyesOpen()]))]),
+    #     "All faces that are not smiling and have eyes open",
+    #     "wedding",
+    #     # [
+    #     #     "Ana Maria Photography-102.jpg",
+    #     #     "Ana Maria Photography-54.jpg",
+    #     #     "Ana Maria Photography-55.jpg",
+    #     #     "Ana Maria Photography-33.jpg",
+    #     #     "Ana Maria Photography-49.jpg",
+    #     # ],
+    # ),
+    # Benchmark(
+    #     Intersection([IsSmiling(), EyesOpen(), Complement(GetFace(8))]),
+    #     "All faces that are smiling and have eyes open, except face 8",
+    #     "wedding",
+    #     [
+    #         "../test_images/wedding/Ana Maria Photography-54.jpg",
+    #         # "Ana Maria Photography-68.jpg",
+    #         # "Ana Maria Photography-40.jpg",
+    #         # "Ana Maria Photography-102.jpg",
+    #         # "Ana Maria Photography-33.jpg",
+    #     ],
+    # ),
+    # Benchmark(
+    #     Union([GetFace(8), Intersection([IsSmiling(), EyesOpen()])]),
+    #     "Face with id 8, plus faces that are smiling and have eyes open",
+    #     "wedding",
+    #     # [
+    #     #     "Ana Maria Photography-40.jpg",
+    #     #     "Ana Maria Photography-68.jpg",
+    #     #     "Ana Maria Photography-96.jpg",
+    #     #     "Ana Maria Photography-49.jpg",
+    #     #     "Ana Maria Photography-102.jpg",
+    #     # ],
+    # ),
+    # Benchmark(
+    #     Union([Intersection([IsFace(), Complement(IsSmiling())]), BelowAge(18)]),
+    #     "Faces that are not smiling or are below 18",
+    #     "wedding",
+    #     # [
+    #     #     "Ana Maria Photography-93.jpg",
+    #     #     "Ana Maria Photography-40.jpg",
+    #     #     "Ana Maria Photography-54.jpg",
+    #     #     "Ana Maria Photography-49.jpg",
+    #     #     "Ana Maria Photography-102.jpg",
+    #     # ],
+    # ),
+]
+
+
+benchmarks2 = [
     # Benchmark(
     #     Map(Union([GetFace(34), IsSmiling(), EyesOpen()]),
     #         IsObject("Person"), GetBelow()),
@@ -116,19 +182,18 @@ benchmarks = [
     #         "Ana Maria Photography-2.jpg",
     #     ],
     # ),
-    Benchmark(
-        # Intersection([IsSmiling(), EyesOpen()]),
-        IsSmiling(),
-        "All faces that are smiling and have eyes open",
-        "wedding",
-        [
-            "Ana Maria Photography-80.jpg",
-            "Ana Maria Photography-38.jpg",
-            "Ana Maria Photography-33.jpg",
-            "Ana Maria Photography-49.jpg",
-            "Ana Maria Photography-102.jpg",
-        ],
-    ),
+    # Benchmark(
+    #     Intersection([IsSmiling(), EyesOpen()]),
+    #     "All faces that are smiling and have eyes open",
+    #     "wedding",
+    #     [
+    #         "Ana Maria Photography-80.jpg",
+    #         "Ana Maria Photography-38.jpg",
+    #         "Ana Maria Photography-33.jpg",
+    #         "Ana Maria Photography-49.jpg",
+    #         "Ana Maria Photography-102.jpg",
+    #     ],
+    # ),
     # Benchmark(
     #     Intersection([IsFace(), Complement(
     #         Intersection([IsSmiling(), EyesOpen()]))]),

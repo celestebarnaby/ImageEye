@@ -412,7 +412,7 @@ def get_details(
                         "EyesOpen",
                         "MouthOpen",
                     }:
-                        if add_noise and random.random() > .98:
+                        if add_noise and random.random() > .9:
                             details[key]["Confidence"] = random.random() * 100
                         if details[key]["Confidence"] > 75:
                             details_map[key] = [details[key]["Value"]]
@@ -421,7 +421,7 @@ def get_details(
                             details_map[key] = [True, False]
                 else:
                     if key in {"Smile", "Eyeglasses", "EyesOpen", "MouthOpen"}:
-                        if add_noise and random.random() > .98:
+                        if add_noise and random.random() > .9:
                             details[key]["Confidence"] = random.random() * 100
                         if details[key]["Confidence"] > 75:
                             # The value doesn't matter here

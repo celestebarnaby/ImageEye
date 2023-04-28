@@ -237,7 +237,7 @@ class Synthesizer:
     def synthesize_top_down(self, env, eval_cache, args):
         if args.use_prediction_sets:
             output = {key for (key, details) in env[0].items()
-                      if "ActionApplied" in details}
+                      if "ActionApplied" in details} if env else set()
         else:
             output = {key for (key, details) in env.items()
                       if "ActionApplied" in details}
@@ -252,7 +252,7 @@ class Synthesizer:
         worklist = []
         hq.heappush(worklist, tree)
         if args.use_prediction_sets:
-            output_objs_str = get_output_objs(env[0], Blur())
+            output_objs_str = get_output_objs(env[0], Blur()) if env else ""
         else:
             output_objs_str = get_output_objs(env, Blur())
         num_progs = 0
@@ -260,15 +260,15 @@ class Synthesizer:
         prog_threshold = 20 if args.use_active_learning else 1
 
         while worklist:
-            if len(progs) >= prog_threshold:
+            num_progs += 1
+            cur_tree = hq.heappop(worklist)
+            prog = construct_prog_from_tree(cur_tree)
+            if len(progs) >= prog_threshold or num_progs > 100000:
                 print([str(prog) for prog in progs])
                 if args.use_active_learning:
                     return progs, num_progs
                 else:
                     return progs[0], num_progs
-            num_progs += 1
-            cur_tree = hq.heappop(worklist)
-            prog = construct_prog_from_tree(cur_tree)
             if not get_type(prog):
                 continue
             # EQUIVALENCE REDUCTION
@@ -290,14 +290,16 @@ class Synthesizer:
                     seen_progs.add(str(simplified_prog))
             if not cur_tree.var_nodes:
                 if args.use_prediction_sets:
+                    if len(env) == 0:
+                        progs.append(copy.deepcopy(prog))
                     for possible_env in env:
                         extracted_objs = eval_extractor(
                             prog, possible_env, output_dict=output_dict, eval_cache=eval_cache
                         )
                         extracted_objs_str = ",".join(sorted(extracted_objs))
-                        if len(env) == 0 or extracted_objs_str == output_objs_str:
+                        if extracted_objs_str == output_objs_str:
                             progs.append(copy.deepcopy(prog))
-                        continue
+                            break
                 else:
                     extracted_objs = eval_extractor(
                         prog, env, output_dict=output_dict, eval_cache=eval_cache
@@ -305,7 +307,7 @@ class Synthesizer:
                     extracted_objs_str = ",".join(sorted(extracted_objs))
                     if len(env) == 0 or extracted_objs_str == output_objs_str:
                         progs.append(copy.deepcopy(prog))
-                    continue
+                continue
             if num_progs % 1000 == 0:
                 print(num_progs)
                 print(prog)
@@ -326,7 +328,7 @@ class Synthesizer:
                     parent_node,
                     output_dict[hole.output_over],
                     output_dict[hole.output_under],
-                    env,
+                    env[0] if env else {},
                 )
             elif node_type == "attr":
                 new_sub_extrs = get_attributes(
@@ -371,15 +373,28 @@ class Synthesizer:
                 if isinstance(sub_extr, Node):
                     sub_extr.output_over = str(hole.output_over)
                     sub_extr.output_under = str(hole.output_under)
-                prog_output = get_prog_output(sub_extr, env, parent_node)
+                if args.use_prediction_sets:
+                    prog_output = [get_prog_output(
+                        sub_extr, possible_env, parent_node) for possible_env in env]
+                else:
+                    prog_output = get_prog_output(sub_extr, env, parent_node)
                 # OUTPUT ESTIMATION-BASED PRUNING
                 if args.goal_inference:
-                    if prog_output and invalid_output(
-                        output_dict[hole.output_over],
-                        output_dict[hole.output_under],
-                        prog_output,
-                    ):
-                        continue
+                    if args.use_prediction_sets:
+                        if prog_output and all([invalid_output(
+                            output_dict[hole.output_over],
+                            output_dict[hole.output_under],
+                            possible_prog_output,
+                        ) for possible_prog_output in prog_output]
+                        ):
+                            continue
+                    else:
+                        if prog_output and invalid_output(
+                            output_dict[hole.output_over],
+                            output_dict[hole.output_under],
+                            prog_output,
+                        ):
+                            continue
                 new_tree = cur_tree.duplicate(next(self.program_counter))
                 new_tree.nodes[hole_num] = sub_extr
                 new_tree.size += size
@@ -405,11 +420,13 @@ class Synthesizer:
                 hq.heappush(worklist, new_tree)
         return None
 
-    def minimax(self, progs, img_to_environment, env_name):
+    def minimax(self, progs, img_to_environment, env_name, used_imgs):
         min_progs = 0
         min_img = None
         finished = True
         for img, env in img_to_environment.items():
+            if img in used_imgs:
+                continue
             env = env[env_name]
             inds_to_num_progs = {}
             for prog in progs:
@@ -447,12 +464,21 @@ class Synthesizer:
     def is_distinguishable(self, prog1, prog2, img_to_environment, env_name):
         for _, env in img_to_environment.items():
             env = env[env_name]
-            prog1_output = eval_extractor(prog1, env)
-            prog1_output_str = ",".join(sorted(prog1_output))
-            prog2_output = eval_extractor(prog2, env)
-            prog2_output_str = ",".join(sorted(prog2_output))
-            if prog1_output_str != prog2_output_str:
-                return True
+            if env_name == "model_env_psets":
+                for possible_env in env:
+                    prog1_output = eval_extractor(prog1, possible_env)
+                    prog1_output_str = ",".join(sorted(prog1_output))
+                    prog2_output = eval_extractor(prog2, possible_env)
+                    prog2_output_str = ",".join(sorted(prog2_output))
+                    if prog1_output_str != prog2_output_str:
+                        return True
+            else:
+                prog1_output = eval_extractor(prog1, env)
+                prog1_output_str = ",".join(sorted(prog1_output))
+                prog2_output = eval_extractor(prog2, env)
+                prog2_output_str = ",".join(sorted(prog2_output))
+                if prog1_output_str != prog2_output_str:
+                    return True
         return False
 
     def get_challengeable_query(self, rec, progs, img_to_environment, used_imgs, env_name):
@@ -462,19 +488,36 @@ class Synthesizer:
             if img in used_imgs:
                 continue
             env = env[env_name]
-            rec_output = eval_extractor(rec, env)
-            if not rec_output:
-                continue
-            rec_output_str = ",".join(sorted(rec_output))
-            num_progs_with_same_output = 0
-            for prog in progs_dist_from_rec:
-                prog_output = eval_extractor(prog, env)
-                prog_output_str = ",".join(sorted(prog_output))
-                if rec_output_str == prog_output_str:
-                    num_progs_with_same_output += 1
-            if num_progs_with_same_output < len(progs) * .25:
-                return img
-        _, img, _ = self.minimax(progs, img_to_environment, env_name)
+            if env_name != "model_env_psets":
+                rec_output = eval_extractor(rec, env)
+                if not rec_output:
+                    continue
+                rec_output_str = ",".join(sorted(rec_output))
+                num_progs_with_same_output = 0
+                for prog in progs_dist_from_rec:
+                    prog_output = eval_extractor(prog, env)
+                    prog_output_str = ",".join(sorted(prog_output))
+                    if rec_output_str == prog_output_str:
+                        num_progs_with_same_output += 1
+                if num_progs_with_same_output < len(progs) * .25:
+                    return img
+            else:
+                # TODO: think more about if this is the right way to handle prediction sets
+                for possible_env in env:
+                    rec_output = eval_extractor(rec, possible_env)
+                    if not rec_output:
+                        continue
+                    rec_output_str = ",".join(sorted(rec_output))
+                    num_progs_with_same_output = 0
+                    for prog in progs_dist_from_rec:
+                        prog_output = eval_extractor(prog, possible_env)
+                        prog_output_str = ",".join(sorted(prog_output))
+                        if rec_output_str == prog_output_str:
+                            num_progs_with_same_output += 1
+                    if num_progs_with_same_output < len(progs) * .25:
+                        return img
+        _, img, _ = self.minimax(
+            progs, img_to_environment, env_name, used_imgs)
         return img
 
     def annotate_environment(self, indices, img_dir, img_to_environment, env_name, action=Blur()):
@@ -573,9 +616,10 @@ class Synthesizer:
                         print("New image: ", img_dir)
                         # image is labelled based on ground truth
                         gt_env = img_to_environment[img_dir]["ground_truth"]
-                        print("yoohoo")
-                        print(gt_prog)
-                        print(gt_env)
+                        if gt_env != img_to_environment[img_dir][model_env_name]:
+                            print("ground truth DIFFERENT from model output")
+                        else:
+                            print("ground truth same as model output")
                         indices = self.get_indices(gt_env, gt_prog)
                         if rounds == 1 and not indices:
                             img_options.remove(img_dir)
@@ -680,6 +724,7 @@ class Synthesizer:
         args,
         gt_prog=None,
         testing=True,
+        example_images=None
     ):
         print("Starting synthesis!")
         print()
@@ -687,15 +732,14 @@ class Synthesizer:
             print("Ground truth program: ", gt_prog)
         img_to_environment = self.img_to_environment.copy()
         img_dirs = []
-        # assuming one action for now
-        action = Blur()
         rounds = 1
         total_synthesis_time = 0
-        annotated_env = {}
-        env_name = "ground_truth" if args.use_ground_truth else "model_env"
+        model_env_name = "model_env_psets" if args.use_prediction_sets else "model_env"
+        env_name = "ground_truth" if args.use_ground_truth else model_env_name
+        annotated_env = {} if env_name != "model_env_psets" else []
         c = 0
         rec = None
-        while rounds <= self.max_rounds:
+        while rounds <= 20:
             signal.signal(signal.SIGALRM, handler)
             signal.alarm(args.time_limit)
             try:
@@ -732,10 +776,25 @@ class Synthesizer:
                         # User labels based on ground truth
                         env = img_to_environment[img_dir]["ground_truth"]
                         indices = self.get_indices(env, gt_prog)
+                        img_dirs.append(img_dir)
                         # if rounds == 1 and not indices:
                         # img_options.remove(img_dir)
                         # continue
-                        img_dirs.append(img_dir)
+                        if args.use_prediction_sets:
+                            new_annotated_env = self.annotate_environment(
+                                indices, img_dir, img_to_environment, env_name)
+                            annotated_env = [l[0] | l[1] for l in itertools.product(
+                                *[annotated_env, new_annotated_env])]
+                        else:
+                            annotated_env = (
+                                self.annotate_environment(
+                                    indices, img_dir, img_to_environment, env_name)
+                                | annotated_env
+                            )
+                    elif example_images:
+                        img_dir = example_images.pop()
+                        env = img_to_environment[img_dir]["ground_truth"]
+                        indices = self.get_indices(env, gt_prog)
                         if args.use_prediction_sets:
                             new_annotated_env = self.annotate_environment(
                                 indices, img_dir, img_to_environment, env_name)
@@ -775,6 +834,27 @@ class Synthesizer:
                         )
                 progs, num_progs = self.synthesize_top_down(
                     annotated_env, {}, args)
+                if not progs:
+                    print("Synthesis failed.")
+                    print(rounds)
+                    return None, 0, rounds, img_dirs, len(annotated_env), 0
+                if len(progs) == 1:
+                    print("Finished synthesis.")
+                    print("Program: ", str(progs[0]))
+                    end_time = time.perf_counter()
+                    cur_round_time = end_time - start_time
+                    total_synthesis_time += cur_round_time
+                    print("Number of rounds: ", str(rounds))
+                    print("Total Synthesis Time: ",
+                          str(total_synthesis_time))
+                    return (
+                        progs[0],
+                        cur_round_time,
+                        len(img_dirs),
+                        img_dirs,
+                        len(annotated_env),
+                        "one synthesized prog"
+                    )
                 if rec is None or c == 0:
                     rec = progs[0]
                 if rounds == 1:

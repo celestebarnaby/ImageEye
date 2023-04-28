@@ -1,0 +1,8 @@
+Ground Truth Prog,Synthesized Prog,Dataset,Correct,Total Time,# Examples,# Objects,Ending condition,Description,AST Depth,AST Size
+"Map(Union[GetFace(34), Smile, EyesOpen], IsObject(Person), GetBelow)","Map(Union[Smile, EyesOpen], IsObject(Person), GetBelow)",wedding,True,0.21601751691196114,7,93,occur number,"Bodies of faces that have id 34, are smiling, or have eyes open",5,12
+"Intersection[Complement(Smile), Map(IsFace, IsFace, GetAbove)]","Intersection[Complement(Smile), Map(IsFace, IsFace, GetAbove)]",wedding,True,100.5532210849924,12,222,one synthesized prog,All faces in back that are not smiling,4,9
+"Intersection[Smile, EyesOpen]","Intersection[Smile, EyesOpen]",wedding,True,0.35033072903752327,5,62,recommendation,All faces that are smiling and have eyes open,3,5
+"Intersection[IsFace, Complement(Intersection[Smile, EyesOpen])]","Complement(Union[Complement(IsFace), Intersection[EyesOpen, Smile]])",wedding,True,39.44479291699827,4,73,one synthesized prog,All faces that are not smiling and have eyes open,5,9
+"Intersection[Smile, EyesOpen, Complement(GetFace(8))]","Intersection[Smile, EyesOpen, Complement(GetFace(8))]",wedding,True,29.703653980977833,3,55,one synthesized prog,"All faces that are smiling and have eyes open, except face 8",5,9
+"Union[GetFace(8), Intersection[Smile, EyesOpen]]","Union[GetFace(8), Intersection[Smile, EyesOpen]]",wedding,True,0.030721720890142024,8,107,recommendation,"Face with id 8, plus faces that are smiling and have eyes open",4,9
+"Union[Intersection[IsFace, Complement(Smile)], BelowAge(18)]","Union[BelowAge(18), Intersection[IsFace, Complement(Smile)]]",wedding,True,42.636446363059804,6,89,one synthesized prog,Faces that are not smiling or are below 18,5,10

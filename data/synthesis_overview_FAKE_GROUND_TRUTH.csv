@@ -1,0 +1,46 @@
+Ground Truth Program,Extracted Program,Round,# Objects,FTA Construction Time,# Enumerated Programs
+"Map(Union[GetFace(34), Smile, EyesOpen], IsObject(Person), GetBelow)","Map(IsFace, IsObject(Person), GetBelow)",1,3,0.13853068999014795,336
+"Map(Union[GetFace(34), Smile, EyesOpen], IsObject(Person), GetBelow)","Map(EyesOpen, IsObject(Person), GetBelow)",2,38,0.11820242798421532,396
+"Map(Union[GetFace(34), Smile, EyesOpen], IsObject(Person), GetBelow)","Map(Union[EyesOpen, MouthOpen], IsObject(Person), GetBelow)",3,49,1.2930471919244155,5007
+"Intersection[Complement(Smile), Map(IsFace, IsFace, GetAbove)]",GetFace(248),1,17,0.004225366050377488,10
+"Intersection[Complement(Smile), Map(IsFace, IsFace, GetAbove)]","Map(IsFace, IsFace, GetAbove)",2,30,0.0898703490383923,176
+"Intersection[Complement(Smile), Map(IsFace, IsFace, GetAbove)]","Map(BelowAge(18), EyesOpen, GetNext)",3,35,0.08500642201397568,294
+"Intersection[Complement(Smile), Map(IsFace, IsFace, GetAbove)]","Map(IsFace, GetFace(248), GetAbove)",4,40,0.7077934190165251,1070
+"Intersection[Complement(Smile), Map(IsFace, IsFace, GetAbove)]","Map(Map(MouthOpen, Smile, GetNext), IsFace, GetAbove)",5,61,6.000707354047336,16587
+"Intersection[Complement(Smile), Map(IsFace, IsFace, GetAbove)]","Map(Map(MouthOpen, Smile, GetNext), IsFace, GetAbove)",6,61,13.094498996972106,16587
+"Intersection[Complement(Smile), Map(IsFace, IsFace, GetAbove)]","Map(Map(MouthOpen, Smile, GetNext), IsFace, GetAbove)",7,61,7.829176065977663,16587
+"Intersection[Complement(Smile), Map(IsFace, IsFace, GetAbove)]","Map(Map(MouthOpen, Smile, GetNext), IsFace, GetAbove)",8,61,5.86185506999027,16587
+"Intersection[Complement(Smile), Map(IsFace, IsFace, GetAbove)]","Map(Map(MouthOpen, Smile, GetNext), IsFace, GetAbove)",9,61,6.894980047014542,16587
+"Intersection[Complement(Smile), Map(IsFace, IsFace, GetAbove)]","Map(Map(MouthOpen, Smile, GetNext), IsFace, GetAbove)",10,61,6.123017161036842,16587
+"Intersection[Smile, EyesOpen]",IsFace,1,3,0.001522117992863059,2
+"Intersection[Smile, EyesOpen]",Smile,2,6,0.0009465289767831564,5
+"Intersection[Smile, EyesOpen]","Intersection[Smile, Complement(BelowAge(18))]",3,13,0.10032866697292775,489
+"Intersection[Smile, EyesOpen]","Intersection[Smile, Complement(Map(IsFace, MouthOpen, GetPrev))]",4,18,12.007451731013134,42371
+"Intersection[Smile, EyesOpen]","Intersection[Smile, Complement(Map(Smile, BelowAge(18), GetPrev))]",5,22,12.22498283709865,42812
+"Intersection[Smile, EyesOpen]","Intersection[Smile, Complement(Map(MouthOpen, BelowAge(18), GetPrev))]",6,29,13.96661770006176,44971
+"Intersection[Smile, EyesOpen]","Union[Intersection[Smile, EyesOpen], Map(IsFace, Smile, GetNext)]",7,36,27.136148369987495,88005
+"Intersection[IsFace, Complement(Intersection[Smile, EyesOpen])]",IsFace,1,3,0.0067196490708738565,2
+"Intersection[IsFace, Complement(Intersection[Smile, EyesOpen])]",GetFace(308),2,6,0.0027317829662933946,10
+"Intersection[IsFace, Complement(Intersection[Smile, EyesOpen])]","Intersection[IsFace, Complement(Smile)]",3,10,0.12174839689396322,362
+"Intersection[IsFace, Complement(Intersection[Smile, EyesOpen])]","Union[GetFace(8), GetFace(308)]",4,17,0.7895462919259444,1531
+"Intersection[IsFace, Complement(Intersection[Smile, EyesOpen])]","Union[BelowAge(18), Intersection[IsFace, Complement(Smile)]]",5,21,2.3073325030272827,6021
+"Intersection[IsFace, Complement(Intersection[Smile, EyesOpen])]","Union[Intersection[MouthOpen, BelowAge(18)], Intersection[IsFace, Complement(Smile)]]",6,26,46.10629363497719,94455
+"Intersection[Smile, EyesOpen, Complement(GetFace(8))]",IsFace,1,3,0.0011008459841832519,2
+"Intersection[Smile, EyesOpen, Complement(GetFace(8))]",Smile,2,6,0.001211164053529501,5
+"Intersection[Smile, EyesOpen, Complement(GetFace(8))]",GetFace(51),3,10,0.003198289079591632,10
+"Intersection[Smile, EyesOpen, Complement(GetFace(8))]","Map(IsObject(Person), Smile, GetAbove)",4,13,0.5786543809808791,559
+"Intersection[Smile, EyesOpen, Complement(GetFace(8))]","Intersection[Smile, Complement(GetFace(8))]",5,17,0.8977684900164604,2017
+"Intersection[Smile, EyesOpen, Complement(GetFace(8))]","Intersection[MouthOpen, Complement(GetFace(8))]",6,24,0.8912115239072591,2260
+"Intersection[Smile, EyesOpen, Complement(GetFace(8))]","Intersection[Smile, EyesOpen, Complement(GetFace(8))]",7,30,2.479807191994041,6615
+"Union[GetFace(8), Intersection[Smile, EyesOpen]]",IsFace,1,3,0.0025190559681504965,2
+"Union[GetFace(8), Intersection[Smile, EyesOpen]]",Smile,2,6,0.005581475095823407,5
+"Union[GetFace(8), Intersection[Smile, EyesOpen]]",MouthOpen,3,10,0.006183820078149438,5
+"Union[GetFace(8), Intersection[Smile, EyesOpen]]","Union[Smile, GetFace(8)]",4,15,0.16557688103057444,351
+"Union[GetFace(8), Intersection[Smile, EyesOpen]]","Union[MouthOpen, GetFace(8)]",5,22,0.1091914928983897,331
+"Union[GetFace(8), Intersection[Smile, EyesOpen]]","Union[MouthOpen, GetFace(8), GetFace(48)]",6,28,2.313517439062707,3176
+"Union[GetFace(8), Intersection[Smile, EyesOpen]]","Union[GetFace(8), Intersection[Smile, EyesOpen]]",7,33,3.3871460399823263,6371
+"Union[Intersection[IsFace, Complement(Smile)], BelowAge(18)]",IsFace,1,3,0.001102317008189857,2
+"Union[Intersection[IsFace, Complement(Smile)], BelowAge(18)]",GetFace(308),2,6,0.03256257507018745,10
+"Union[Intersection[IsFace, Complement(Smile)], BelowAge(18)]","Intersection[IsFace, Complement(Smile)]",3,10,0.5686997890006751,362
+"Union[Intersection[IsFace, Complement(Smile)], BelowAge(18)]","Intersection[IsFace, Complement(GetFace(51))]",4,15,1.2458546590059996,1906
+"Union[Intersection[IsFace, Complement(Smile)], BelowAge(18)]","Union[BelowAge(18), Intersection[IsFace, Complement(Smile)]]",5,18,4.324324910994619,7502
