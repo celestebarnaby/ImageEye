@@ -7,6 +7,8 @@ import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
 import { Divider } from '@mui/material';
+import IconButton from '@mui/material/IconButton';
+import DeleteIcon from '@mui/icons-material/Delete';
 
 export default function NewImage({ image, imgToEnvironment, annotatedImgs, addObject, addObjectsByName, addImage, getAnnotationDescriptions, removeImage, objectList }) {
     const [hoveredObjectList, setHoveredObjectList] = useState([]);
@@ -94,6 +96,7 @@ export default function NewImage({ image, imgToEnvironment, annotatedImgs, addOb
 }
 
 function UnannotatedImage(image, map, addObject, addObjectsByName, new_width, addImage, img_dir, objs, descs, full_object_names, hoverOverObjects, removeHover) {
+    console.log(descs);
     return <Box>
         {/* <img src={require(image)} className="center-image"/> */}
         <ImageMapper src={image.replace("image-eye-web/public/", "./")} map={map} onClick={(area, index) => addObject(objs[index]['ObjPosInImgLeftToRight'])} toggleHighlighted={true} stayMultiHighlighted={true} width={new_width} />
@@ -103,7 +106,11 @@ function UnannotatedImage(image, map, addObject, addObjectsByName, new_width, ad
         {full_object_names.map(name => <Button sx={{ marginLeft: 1, marginRight: 1, marginTop: 1, marginBottom: 1 }} variant="contained" onClick={() => addObjectsByName(name, objs)} onMouseOver={() => hoverOverObjects(name, objs)} onMouseOut={() => removeHover()}>{name}</Button>)}
         {/* // onMouseOver={hoverOverObjects(name, objs)} onMouseOut={removeHover()} */}
         <List>
-            {descs.map(desc => <div><ListItem><ListItemText primary={desc} /></ListItem><Divider /></div>)}
+            {descs.map(desc => <div><ListItem secondaryAction={
+                <IconButton edge="end" aria-label="delete" onClick={() => addObject(desc[1])}>
+                    <DeleteIcon />
+                </IconButton>
+            }><ListItemText primary={desc[0]} /></ListItem><Divider /></div>)}
         </List>
     </Box>
 }
@@ -118,7 +125,7 @@ function AnnotatedImage(image, map, addObject, new_width, objs, descs, img_dir, 
             <Button sx={{ margin: "auto" }} variant="outlined" onClick={() => removeImage(img_dir)}>Remove from the example set</Button>
         </Box>
         <List>
-            {descs.map(desc => <div><ListItem><ListItemText primary={desc} /></ListItem><Divider /></div>)}
+            {descs.map((desc, index) => <div><ListItem><ListItemText primary={desc} /></ListItem><Divider /></div>)}
         </List>
     </Box>
 }

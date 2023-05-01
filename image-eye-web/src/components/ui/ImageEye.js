@@ -18,7 +18,7 @@ export function ImageEye({ data, updateResults, handleTextChange, handleTextSubm
 
   function getAnnotationDescriptions(objs, annotations, annotated) {
     let l = annotated ? annotations : objectList;
-    return l.map(i => objs[i]["Description"]);
+    return l.map(i => [objs[i]["Description"], objs[i]["ObjPosInImgLeftToRight"]]);
   }
 
 
