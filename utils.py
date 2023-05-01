@@ -600,21 +600,19 @@ def add_descriptions(img_to_environment):
 
 
 def get_description(obj):
-    obj_str = ""
     if obj["Type"] == "Object":
-        obj_str += obj["Name"]
+        return obj["Name"]
+    if obj["Type"] == "Text":
+        return "Text that reads '{}'".format(obj["Text"])
+    addl_features = []
+    if "Smile" in obj:
+        addl_features.append("is smiling")
+    if "EyesOpen" in obj:
+        addl_features.append("has eyes open")
+    if addl_features:
+        return "Face that {}, and is between {} and {} years old".format(", ".join(addl_features), obj["AgeRange"]["Low"], obj["AgeRange"]["High"])
     else:
-        obj_str += obj["Type"]
-    attrs = [attr for attr in {"Smile", "EyesOpen",
-                               "MouthOpen", "Eyeglasses"} if attr in obj]
-    if "AgeRange" in obj:
-        attrs.append("AgeRange: {} to {}".format(
-            obj["AgeRange"]["Low"], obj["AgeRange"]["High"]))
-    if "Text" in obj:
-        attrs.append("Text: {}".format(obj["Text"]))
-    if not attrs:
-        return obj_str
-    return obj_str + "[" + ", ".join(attrs) + "]"
+        return "Face that is between {} and {} years old".format(obj["AgeRange"]["Low"], obj["AgeRange"]["High"])
 
 # Replace face hashes with readable face ids
 

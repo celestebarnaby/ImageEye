@@ -34,7 +34,7 @@ function Sidebar({ allFiles, imgsToAnnotate, changeImage, annotatedImgs, handleT
                         AnnotatedImages(allFiles, annotatedImgs, changeImage))}
             </div>
             <Box>
-                <Button variant="contained" fullWidth onClick={() => updateResults(annotatedImgs)}>Filter images by example</Button>
+                <Button variant="contained" fullWidth onClick={() => updateResults()}>Filter images by example</Button>
             </Box>
         </Box>
     );

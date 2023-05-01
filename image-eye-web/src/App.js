@@ -43,6 +43,13 @@ export default function App() {
   const [isOpen, setIsOpen] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [inputText, setInputText] = useState("");
+  const [searchResults, setSearchResults] = useState(null);
+  const [sidebarFiles, setSidebarFiles] = useState([]);
+  const [mainImage, setMainImage] = useState(null);
+  const [objectList, setObjectList] = useState([]);
+  const [annotatedImages, setAnnotatedImages] = useState({});
+  const [result, setResult] = useState(null);
 
 
   let closeError = () => {
@@ -53,23 +60,48 @@ export default function App() {
     setIsOpen(false);
   };
 
-  let handleChange = (img_dir) => {
-    setIsOpen(false);
-    setIsLoading(true);
-    fetch('http://127.0.0.1:5000/loadFiles', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(img_dir)
-    })
-      .then(response => response.json())
-      .then(data => {
-
-        setDataset(data)
-        setIsLoading(false);
-      })
+  let changeImage = (image) => {
+    setMainImage(image);
+    setObjectList([]);
   };
+
+  let handleTextChange = (event) => {
+    setInputText(event.target.value);
+  }
+
+  let addObject = (index) => {
+    if (objectList.includes(index)) {
+      const other_index = objectList.indexOf(index);
+      objectList.splice(other_index, 1); // 2nd parameter means remove one item only
+    }
+    else {
+      objectList.push(index);
+    }
+    setObjectList([...objectList]);
+  }
+
+  let addObjectsByName = (name, objs) => {
+    if (name != "Face" && name != "Text") {
+      let new_indices = objs.filter(obj => obj['Name'] == name).map(obj => obj['ObjPosInImgLeftToRight']);
+      new_indices.forEach(index => addObject(index));
+    }
+    else {
+      let new_indices = objs.filter(obj => obj['Type'] == name).map(obj => obj['ObjPosInImgLeftToRight']);
+      new_indices.forEach(index => addObject(index));
+    }
+    setObjectList([...objectList]);
+  }
+
+  let addImage = (image) => {
+    annotatedImages[image] = objectList;
+    setAnnotatedImages({ ...annotatedImages });
+    setObjectList([]);
+  }
+
+  let removeImage = (img_dir) => {
+    delete annotatedImages[img_dir]
+    setAnnotatedImages({ ...annotatedImages });
+  }
 
   let handleTextSubmit = () => {
     setIsLoading(true);
@@ -89,8 +121,25 @@ export default function App() {
       })
   }
 
+  let handleChange = (img_dir) => {
+    setIsOpen(false);
+    setIsLoading(true);
+    fetch('http://127.0.0.1:5000/loadFiles', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(img_dir)
+    })
+      .then(response => response.json())
+      .then(data => {
 
-  let updateResults = (annotatedImages) => {
+        setDataset(data)
+        setIsLoading(false);
+      })
+  };
+
+  let updateResults = () => {
     const vals = Object.values(annotatedImages);
     var hasPosExample = vals.some(val => val.length > 0);
     if (hasPosExample) {
@@ -144,10 +193,26 @@ export default function App() {
             height: "calc(100vh - 64px)"
           }}
         >
-          {dataset ? <ImageEye data={dataset} updateResults={updateResults} handleTextSubmit={handleTextSubmit} /> : <Typography sx={{ margin: "auto" }}>Select a dataset to get started.</Typography>}
+          {dataset ? <ImageEye
+            data={dataset}
+            updateResults={updateResults}
+            handleTextChange={handleTextChange}
+            handleTextSubmit={handleTextSubmit}
+            searchResults={searchResults}
+            sidebarFiles={sidebarFiles}
+            mainImage={mainImage}
+            changeImage={changeImage}
+            addObject={addObject}
+            addObjectsByName={addObjectsByName}
+            addImage={addImage}
+            removeImage={removeImage}
+            objectList={objectList}
+            annotatedImages={annotatedImages}
+            result={result}
+          /> : <Typography sx={{ margin: "auto" }}>Select a dataset to get started.</Typography>}
         </Box>
       </Box>
-      <Dialog onClose={closeBox} open={isOpen}>
+      <Dialog onClose={closeBox} open={isOpen || isLoading}>
         <DialogTitle>Select Image Directory</DialogTitle>
         <DialogContent>
           {isLoading ? <p>Loading...</p> : <div>

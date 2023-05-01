@@ -82,9 +82,7 @@ def get_synthesis_results():
     data = request.get_json()
     annotated_env = {}
 
-    print(list(img_to_environment.keys()))
-    imgs = ['.' + img_dir.split('/ui')[1]
-            for img_dir in list(img_to_environment.keys())]
+    imgs = list(img_to_environment.keys())
 
     for (img_dir, indices) in data.items():
         annotated_env = (
@@ -117,16 +115,18 @@ def get_synthesis_results():
         output = eval_extractor(prog, env)
         if not output:
             continue
-        alt_img_dir = '.' + img_dir.split('/ui')[1]
-        results.append(alt_img_dir)
+        # alt_img_dir = '.' + img_dir.split('/ui')[1]
+        # results.append(alt_img_dir)
+        results.append(img_dir)
     explanation = get_nl_explanation(prog).capitalize() + "."
-    alt_used_imgs = ['.' + img_dir.split('/ui')[1] for img_dir in data.keys()]
+    # alt_used_imgs = ['.' + img_dir.split('/ui')[1] for img_dir in data.keys()]
+    used_imgs = list(data.keys())
     # images that are different from annotated images and in search results
     top_5_indices = []
     for i in indices:
         if len(top_5_indices) >= 5:
             break
-        if imgs[i] in alt_used_imgs:
+        if imgs[i] in used_imgs:
             continue
         if imgs[i] in results:
             top_5_indices.append(imgs[i])
@@ -135,7 +135,7 @@ def get_synthesis_results():
     for i in reversed(indices):
         if len(bottom_5_indices) >= 5:
             break
-        if imgs[i] in alt_used_imgs:
+        if imgs[i] in used_imgs:
             continue
         if imgs[i] not in results:
             bottom_5_indices.append(imgs[i])
