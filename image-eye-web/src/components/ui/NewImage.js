@@ -96,18 +96,18 @@ export default function NewImage({ image, imgToEnvironment, annotatedImgs, addOb
 }
 
 function UnannotatedImage(image, map, addObject, addObjectsByName, new_width, addImage, img_dir, objs, descs, full_object_names, hoverOverObjects, removeHover) {
-    console.log(descs);
     return <Box>
         {/* <img src={require(image)} className="center-image"/> */}
-        <ImageMapper src={image.replace("image-eye-web/public/", "./")} map={map} onClick={(area, index) => addObject(objs[index]['ObjPosInImgLeftToRight'])} toggleHighlighted={true} stayMultiHighlighted={true} width={new_width} />
+        <ImageMapper src={image.replace("image-eye-web/public/", "./")} map={map} onClick={(area, index) => addObject(objs[index]['ObjPosInImgLeftToRight'], true)} toggleHighlighted={true} stayMultiHighlighted={true} width={new_width} />
         <Box className="buttons-container">
             <Button sx={{ margin: "auto" }} variant="outlined" onClick={() => addImage(img_dir)}>Add as an annotated example</Button>
         </Box>
         {full_object_names.map(name => <Button sx={{ marginLeft: 1, marginRight: 1, marginTop: 1, marginBottom: 1 }} variant="contained" onClick={() => addObjectsByName(name, objs)} onMouseOver={() => hoverOverObjects(name, objs)} onMouseOut={() => removeHover()}>{name}</Button>)}
         {/* // onMouseOver={hoverOverObjects(name, objs)} onMouseOut={removeHover()} */}
+        <p>Selected Objects</p>
         <List>
             {descs.map(desc => <div><ListItem secondaryAction={
-                <IconButton edge="end" aria-label="delete" onClick={() => addObject(desc[1])}>
+                <IconButton edge="end" aria-label="delete" onClick={() => addObject(desc[1], true)}>
                     <DeleteIcon />
                 </IconButton>
             }><ListItemText primary={desc[0]} /></ListItem><Divider /></div>)}

@@ -69,10 +69,12 @@ export default function App() {
     setInputText(event.target.value);
   }
 
-  let addObject = (index) => {
+  let addObject = (index, remove_if_already_present) => {
     if (objectList.includes(index)) {
-      const other_index = objectList.indexOf(index);
-      objectList.splice(other_index, 1); // 2nd parameter means remove one item only
+      if (remove_if_already_present) {
+        const other_index = objectList.indexOf(index);
+        objectList.splice(other_index, 1); // 2nd parameter means remove one item only
+      }
     }
     else {
       objectList.push(index);
@@ -83,11 +85,15 @@ export default function App() {
   let addObjectsByName = (name, objs) => {
     if (name != "Face" && name != "Text") {
       let new_indices = objs.filter(obj => obj['Name'] == name).map(obj => obj['ObjPosInImgLeftToRight']);
-      new_indices.forEach(index => addObject(index));
+      let already_added = objs.filter(obj => obj['Name'] == name && objectList.includes(obj['ObjPosInImgLeftToRight']));
+      let remove_if_already_present = (new_indices.length == already_added.length)
+      new_indices.forEach(index => addObject(index, remove_if_already_present));
     }
     else {
       let new_indices = objs.filter(obj => obj['Type'] == name).map(obj => obj['ObjPosInImgLeftToRight']);
-      new_indices.forEach(index => addObject(index));
+      let already_added = objs.filter(obj => obj['Type'] == name && objectList.includes(obj['ObjPosInImgLeftToRight']));
+      let remove_if_already_present = (new_indices.length == already_added.length)
+      new_indices.forEach(index => addObject(index, remove_if_already_present));
     }
     setObjectList([...objectList]);
   }
