@@ -9,8 +9,11 @@ import ListItemText from '@mui/material/ListItemText';
 import { Divider } from '@mui/material';
 import IconButton from '@mui/material/IconButton';
 import DeleteIcon from '@mui/icons-material/Delete';
+import ImageList from '@mui/material/ImageList';
+import ImageListItem from '@mui/material/ImageListItem';
+import { alignProperty } from '@mui/material/styles/cssUtils';
 
-export default function NewImage({ image, imgToEnvironment, annotatedImgs, addObject, addObjectsByName, addImage, getAnnotationDescriptions, removeImage, objectList }) {
+export default function NewImage({ image, imgToEnvironment, annotatedImgs, addObject, addObjectsByName, addImage, getAnnotationDescriptions, removeImage, objectList, changeImage, updateResults }) {
     const [hoveredObjectList, setHoveredObjectList] = useState([]);
 
     let addHoveredObject = (index) => {
@@ -88,11 +91,33 @@ export default function NewImage({ image, imgToEnvironment, annotatedImgs, addOb
 
 
     return (
-        <Box className="image-container">
-            {image && (
-                annotated ? AnnotatedImage(image, map, addObject, new_width, objs, descs, img_dir, removeImage) : UnannotatedImage(image, map, addObject, addObjectsByName, new_width, addImage, img_dir, objs, descs, full_object_names, hoverOverObjects, removeHover))}
-        </Box>
+        <div>
+            <Box className="image-container">
+                {image && (
+                    annotated ? AnnotatedImage(image, map, addObject, new_width, objs, descs, img_dir, removeImage) : UnannotatedImage(image, map, addObject, addObjectsByName, new_width, addImage, img_dir, objs, descs, full_object_names, hoverOverObjects, removeHover))}
+            </Box>
+            {ExampleSet(Object.keys(annotatedImgs), changeImage, updateResults)}
+        </div>
     );
+}
+
+function ExampleSet(annotatedImgs, changeImage, updateResults) {
+    let height = annotatedImgs.length > 0 ? 200 : 0;
+    return <Box sx={{ paddingLeft: "80px", paddingRight: "80px", paddingTop: "20px", display: "auto" }}>
+        {annotatedImgs.length > 0 ? <h3>Examples</h3> : <></>}
+        <ImageList sx={{ width: "100%", height: height, overflowX: "auto" }} cols={3} rowHeight={164}>
+            {annotatedImgs.length > 0 ?
+                annotatedImgs.map(img => {
+                    return <ImageListItem key={img} onClick={() => changeImage(img)}>
+                        <img
+                            src={`${img.replace("image-eye-web/public/", "./")}`}
+                            loading="lazy"
+                        />
+                    </ImageListItem>
+                }) : <></>}
+        </ImageList>
+        <Button fullWidth variant="contained" onClick={() => updateResults()}>Filter images by examples</Button>
+    </Box>
 }
 
 function UnannotatedImage(image, map, addObject, addObjectsByName, new_width, addImage, img_dir, objs, descs, full_object_names, hoverOverObjects, removeHover) {
@@ -100,22 +125,28 @@ function UnannotatedImage(image, map, addObject, addObjectsByName, new_width, ad
         {/* <img src={require(image)} className="center-image"/> */}
         <ImageMapper src={image.replace("image-eye-web/public/", "./")} map={map} onClick={(area, index) => addObject(objs[index]['ObjPosInImgLeftToRight'], true)} toggleHighlighted={true} stayMultiHighlighted={true} width={new_width} />
         <Box className="buttons-container">
-            <Button sx={{ margin: "auto" }} variant="outlined" onClick={() => addImage(img_dir)}>Add as an annotated example</Button>
+            <Button sx={{ margin: "auto" }} variant="outlined" onClick={() => addImage(img_dir)}>Add Example</Button>
         </Box>
-        <p>Objects found in image</p>
-        <div style={{ width: "500px" }}>
-            {full_object_names.map(name => <Button sx={{ marginLeft: 1, marginRight: 1, marginTop: 1, marginBottom: 1 }} variant="contained" onClick={() => addObjectsByName(name, objs)} onMouseOver={() => hoverOverObjects(name, objs)} onMouseOut={() => removeHover()}>{name}</Button>)}
-        </div>
-        {/* // onMouseOver={hoverOverObjects(name, objs)} onMouseOut={removeHover()} */}
-        <p>Selected Objects</p>
-        <div style={{ height: "200px", overflow: "scroll" }}>
-            <List>
-                {descs.map(desc => <div><ListItem secondaryAction={
-                    <IconButton edge="end" aria-label="delete" onClick={() => addObject(desc[1], true)}>
-                        <DeleteIcon />
-                    </IconButton>
-                }><ListItemText primary={desc[0]} /></ListItem><Divider /></div>)}
-            </List>
+        <div className="side-by-side">
+            <div>
+                <h3>Objects found in image</h3>
+                <div style={{ width: "300px" }}>
+                    {full_object_names.map(name => <Button sx={{ marginLeft: 1, marginRight: 1, marginTop: 1, marginBottom: 1 }} variant="contained" onClick={() => addObjectsByName(name, objs)} onMouseOver={() => hoverOverObjects(name, objs)} onMouseOut={() => removeHover()}>{name}</Button>)}
+                </div>
+            </div>
+            {/* // onMouseOver={hoverOverObjects(name, objs)} onMouseOut={removeHover()} */}
+            <div>
+                <h3>Selected Objects</h3>
+                <div style={{ height: "200px", overflow: "scroll" }}>
+                    <List>
+                        {descs.map(desc => <div><ListItem secondaryAction={
+                            <IconButton edge="end" aria-label="delete" onClick={() => addObject(desc[1], true)}>
+                                <DeleteIcon />
+                            </IconButton>
+                        }><ListItemText primary={desc[0]} /></ListItem><Divider /></div>)}
+                    </List>
+                </div>
+            </div>
         </div>
     </Box>
 }
@@ -127,7 +158,7 @@ function AnnotatedImage(image, map, addObject, new_width, objs, descs, img_dir, 
         <ImageMapper src={image.replace("image-eye-web/public/", "./")} map={map} onClick={(area, index) => addObject(objs[index]['ObjPosInImgLeftToRight'])} width={new_width} />
         <Box className="buttons-container">
             {/* <button className="button-10-2">Annotate</button> */}
-            <Button sx={{ margin: "auto" }} variant="outlined" onClick={() => removeImage(img_dir)}>Remove from the example set</Button>
+            <Button sx={{ margin: "auto" }} variant="outlined" onClick={() => removeImage(img_dir)}>Remove Example</Button>
         </Box>
         <List>
             {descs.map(desc => <div><ListItem><ListItemText primary={desc[0]} /></ListItem><Divider /></div>)}

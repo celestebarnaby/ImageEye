@@ -3,19 +3,17 @@ body {
     color: #555;
 }
 
-.small-img {
-    width: 150px;
-    height: auto;
-}
+/* .small-img { */
+/*  */
+/* } */
 
-.small-img-grayed-out {
-    width: 150px;
-    height: auto;
+.grayed-out {
     filter: grayscale(25%);
     opacity: 0.5;
 }
 
 .side-by-side {
+    padding-top: 15px;
     display: flex;
     flex-direction: row;
 }
@@ -42,6 +40,7 @@ li {
     justify-content: center;
     align-items: center;
     height: 100%;
+    padding-top: 50px;
 }
 
 .center-image {
@@ -61,15 +60,6 @@ li {
     padding-right: 20px;
 }
 
-.todolist {
-    background-color: #fff;
-    padding: 20px 20px 10px 20px;
-    width: 600px;
-    margin: 30px auto;
-    border: 1px solid #ddd;
-    border-radius: 2px;
-    position: relative;
-}
 
 h3 {
     margin: 0;
@@ -157,18 +147,7 @@ h4 {
     outline: 0;
 }
 
-.todolist .info {
-    position: absolute;
-    margin-top: 20px;
-    left: 0;
-    right: 0;
-    color: #999;
-    text-align: center;
-}
 
-.form-control {
-    border-radius: 0;
-}
 
 li.ui-state-default {
     background: #fff;

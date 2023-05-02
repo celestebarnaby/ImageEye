@@ -44,6 +44,8 @@ export function ImageEye({ files, message, updateResults, handleTextChange, hand
           removeImage={removeImage}
           getAnnotationDescriptions={getAnnotationDescriptions}
           objectList={objectList}
+          changeImage={changeImage}
+          updateResults={updateResults}
         />
       </Box>
       <SearchResults files={searchResults} changeImage={changeImage} result={result} />
