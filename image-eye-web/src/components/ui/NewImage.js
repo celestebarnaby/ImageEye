@@ -102,16 +102,21 @@ function UnannotatedImage(image, map, addObject, addObjectsByName, new_width, ad
         <Box className="buttons-container">
             <Button sx={{ margin: "auto" }} variant="outlined" onClick={() => addImage(img_dir)}>Add as an annotated example</Button>
         </Box>
-        {full_object_names.map(name => <Button sx={{ marginLeft: 1, marginRight: 1, marginTop: 1, marginBottom: 1 }} variant="contained" onClick={() => addObjectsByName(name, objs)} onMouseOver={() => hoverOverObjects(name, objs)} onMouseOut={() => removeHover()}>{name}</Button>)}
+        <p>Objects found in image</p>
+        <div style={{ width: "500px" }}>
+            {full_object_names.map(name => <Button sx={{ marginLeft: 1, marginRight: 1, marginTop: 1, marginBottom: 1 }} variant="contained" onClick={() => addObjectsByName(name, objs)} onMouseOver={() => hoverOverObjects(name, objs)} onMouseOut={() => removeHover()}>{name}</Button>)}
+        </div>
         {/* // onMouseOver={hoverOverObjects(name, objs)} onMouseOut={removeHover()} */}
         <p>Selected Objects</p>
-        <List>
-            {descs.map(desc => <div><ListItem secondaryAction={
-                <IconButton edge="end" aria-label="delete" onClick={() => addObject(desc[1], true)}>
-                    <DeleteIcon />
-                </IconButton>
-            }><ListItemText primary={desc[0]} /></ListItem><Divider /></div>)}
-        </List>
+        <div style={{ height: "200px", overflow: "scroll" }}>
+            <List>
+                {descs.map(desc => <div><ListItem secondaryAction={
+                    <IconButton edge="end" aria-label="delete" onClick={() => addObject(desc[1], true)}>
+                        <DeleteIcon />
+                    </IconButton>
+                }><ListItemText primary={desc[0]} /></ListItem><Divider /></div>)}
+            </List>
+        </div>
     </Box>
 }
 
@@ -125,7 +130,7 @@ function AnnotatedImage(image, map, addObject, new_width, objs, descs, img_dir, 
             <Button sx={{ margin: "auto" }} variant="outlined" onClick={() => removeImage(img_dir)}>Remove from the example set</Button>
         </Box>
         <List>
-            {descs.map((desc, index) => <div><ListItem><ListItemText primary={desc} /></ListItem><Divider /></div>)}
+            {descs.map(desc => <div><ListItem><ListItemText primary={desc[0]} /></ListItem><Divider /></div>)}
         </List>
     </Box>
 }

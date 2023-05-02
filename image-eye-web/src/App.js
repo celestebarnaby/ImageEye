@@ -38,7 +38,7 @@ const theme = createTheme();
 
 export default function App() {
 
-  const [dataset, setDataset] = useState(null);
+  // const [dataset, setDataset] = useState(null);
 
   const [isOpen, setIsOpen] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
@@ -50,6 +50,8 @@ export default function App() {
   const [objectList, setObjectList] = useState([]);
   const [annotatedImages, setAnnotatedImages] = useState({});
   const [result, setResult] = useState(null);
+  const [message, setMessage] = useState({});
+  const [files, setFiles] = useState([]);
 
 
   let closeError = () => {
@@ -120,7 +122,8 @@ export default function App() {
     })
       .then(response => response.json())
       .then(data => {
-        setSearchResults(data.searchResults);
+        setFiles(data.files);
+        // setDataset([]);
         setSidebarFiles(data.sidebarFiles);
         setIsLoading(false);
         setMainImage(data.sidebarFiles[0]);
@@ -140,7 +143,8 @@ export default function App() {
       .then(response => response.json())
       .then(data => {
 
-        setDataset(data)
+        setFiles(data.files);
+        setMessage(data.message);
         setIsLoading(false);
       })
   };
@@ -199,8 +203,9 @@ export default function App() {
             height: "calc(100vh - 64px)"
           }}
         >
-          {dataset ? <ImageEye
-            data={dataset}
+          {files ? <ImageEye
+            files={files}
+            message={message}
             updateResults={updateResults}
             handleTextChange={handleTextChange}
             handleTextSubmit={handleTextSubmit}

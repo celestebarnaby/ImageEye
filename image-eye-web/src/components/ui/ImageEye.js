@@ -7,10 +7,10 @@ import SearchResults from './SearchResults';
 import Box from '@mui/material/Box';
 
 
-export function ImageEye({ data, updateResults, handleTextChange, handleTextSubmit, searchResults, sidebarFiles, mainImage, changeImage, addObject, addObjectsByName, addImage, removeImage, objectList, annotatedImages, result }) {
+export function ImageEye({ files, message, updateResults, handleTextChange, handleTextSubmit, searchResults, sidebarFiles, mainImage, changeImage, addObject, addObjectsByName, addImage, removeImage, objectList, annotatedImages, result }) {
 
-  const [message, setMessage] = useState(data.message);
-  const [files, setFiles] = useState(data.files);
+  // const [message, setMessage] = useState(message);
+  // const [files, setFiles] = useState(files);
 
   // setFiles(data.files);
   //       setSidebarFiles(data.sidebarFiles);

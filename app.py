@@ -44,7 +44,7 @@ def text_query():
     print(probs_and_imgs)
     imgs = [img for (prob, img) in probs_and_imgs]
     return {
-        'searchResults': [filename for filename in imgs],
+        'files': [filename for filename in imgs],
         'sidebarFiles': [filename for filename in imgs][:5]
     }
 
@@ -118,7 +118,7 @@ def get_synthesis_results():
         # alt_img_dir = '.' + img_dir.split('/ui')[1]
         # results.append(alt_img_dir)
         results.append(img_dir)
-    explanation = get_nl_explanation(prog).capitalize() + "."
+    explanation = "Images that " + get_nl_explanation(prog) + "."
     # alt_used_imgs = ['.' + img_dir.split('/ui')[1] for img_dir in data.keys()]
     used_imgs = list(data.keys())
     # images that are different from annotated images and in search results
@@ -149,8 +149,9 @@ def get_synthesis_results():
     return jsonify(response)
 
 
-def get_nl_explanation(prog, neg=False):
-    not_text = "not " if neg else ""
+def get_nl_explanation(prog, neg=False, use_is=False):
+
+    not_text = "not " if neg and use_is else "do not " if neg else ""
     if isinstance(prog, Union):
         sub_expls = [get_nl_explanation(sub_prog, neg)
                      for sub_prog in prog.extractors]
@@ -163,32 +164,34 @@ def get_nl_explanation(prog, neg=False):
         if neg:
             return " or ".join(sub_expls)
         return " and ".join(sub_expls)
+    first_part = "is {}".format(
+        not_text) if use_is else "{}have".format(not_text)
     if isinstance(prog, IsFace):
-        return "is {}face".format(not_text)
+        return "{} a face".format(first_part)
     if isinstance(prog, IsText):
-        return "is {}text".format(not_text)
+        return "{} text".format(first_part)
     if isinstance(prog, GetFace):
-        return "is {}face with id ".format(not_text) + str(prog.index)
+        return "{} a face with id ".format(first_part) + str(prog.index)
     if isinstance(prog, IsObject):
-        return "is {}".format(not_text) + prog.obj
+        return "{} a {}".format(first_part, prog.obj.lower())
     if isinstance(prog, MatchesWord):
-        return "is {}text matching term '{}'".format(not_text, prog.word)
+        return "{} text matching term '{}'".format(first_part, prog.word)
     if isinstance(prog, IsPhoneNumber):
-        return "is {}phone number".format(not_text)
+        return "{} a phone number".format(first_part)
     if isinstance(prog, IsPrice):
-        return "is {}price".format(not_text)
+        return "{} a price".format(first_part)
     if isinstance(prog, IsSmiling):
-        return "is {}smiling face".format(not_text)
+        return "{} a smiling face".format(first_part)
     if isinstance(prog, EyesOpen):
-        return "is {}face with eyes open".format(not_text)
+        return "{} a face with eyes open".format(first_part)
     if isinstance(prog, MouthOpen):
-        return "is {}face with mouth open".format(not_text)
+        return "{} a face with mouth open".format(first_part)
     if isinstance(prog, AboveAge):
-        return "is {}above age ".format(not_text) + str(prog.age)
+        return "{} a face that is above age {}".format(first_part, prog.age)
     if isinstance(prog, BelowAge):
-        return "is {}below age ".format(not_text) + str(prog.age)
+        return "{} a face that is below age {}".format(first_part, prog.age)
     if isinstance(prog, Complement):
-        return get_nl_explanation(prog.extractor, not not_text)
+        return get_nl_explanation(prog.extractor, not first_part)
     if isinstance(prog, Map):
         position_to_str = {
             'GetLeft': 'is right of ',
@@ -201,8 +204,8 @@ def get_nl_explanation(prog, neg=False):
             'GetIsContained': 'contains ',
         }
         position_str = position_to_str[str(prog.position)]
-        sub_expl1 = get_nl_explanation(prog.restriction)
-        sub_expl2 = get_nl_explanation(prog.extractor)
+        sub_expl1 = get_nl_explanation(prog.restriction, use_is)
+        sub_expl2 = get_nl_explanation(prog.extractor, use_is=True)
         expl = sub_expl1 + " that " + position_str + "an object that " + sub_expl2
         if neg:
             expl = expl[:2] + " not" + expl[2:]

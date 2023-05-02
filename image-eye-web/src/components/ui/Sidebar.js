@@ -21,7 +21,7 @@ function Sidebar({ allFiles, imgsToAnnotate, changeImage, annotatedImgs, handleT
                 sx={{ background: "white" }}
                 onChange={handleTextChange}
             />
-            <Button sx={{ marginTop: 1, marginBottom: 1 }} fullWidth variant="contained" onClick={handleTextSubmit}>Filter images by description</Button>
+            <Button sx={{ marginTop: 1, marginBottom: 1 }} fullWidth variant="contained" onClick={handleTextSubmit}>Sort images by description</Button>
             <Divider />
             <div className="side-by-side">
                 <button className="button-12" onClick={() => setSelectedTab("tab1")}>All Images</button>
