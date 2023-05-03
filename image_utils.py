@@ -95,7 +95,7 @@ def get_source_bytes(img: str):
 
 
 def get_client():
-    with open("credentials.csv", "r") as _input:
+    with open("../credentials.csv", "r") as _input:
         next(_input)
         reader = csv.reader(_input)
         for line in reader:

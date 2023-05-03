@@ -27,25 +27,19 @@ def text_query():
     global img_to_environment
     global images
 
-    print(img_to_environment.keys())
-    print(images)
-
     text_query = request.get_json()
     text = clip.tokenize([text_query, "hi", "hello"]).to(device)
     print(text_query)
     with torch.no_grad():
         logits_per_image, _ = model(images, text)
-        print("get probs")
         probs = logits_per_image.softmax(dim=-1).cpu().numpy()
     probs = [prob[0] for prob in probs]
-    print(len(img_to_environment.keys()))
     probs_and_imgs = zip(probs, img_to_environment.keys())
     probs_and_imgs = sorted(probs_and_imgs, reverse=True)
-    print(probs_and_imgs)
     imgs = [img for (prob, img) in probs_and_imgs]
     return {
         'files': [filename for filename in imgs],
-        'sidebarFiles': [filename for filename in imgs][:5]
+        # 'sidebarFiles': [filename for filename in imgs][:5]
     }
 
 
@@ -64,8 +58,6 @@ def load_files():
         0).to(device) for image in img_to_environment.keys()]
 
     images = torch.cat(images, dim=0)
-
-    print([filename for filename in img_to_environment.keys()])
 
     return {
         'message': img_to_environment,
@@ -140,7 +132,6 @@ def get_synthesis_results():
         if imgs[i] not in results:
             bottom_5_indices.append(imgs[i])
     recs = top_5_indices + bottom_5_indices
-    print(recs)
     response = {
         'program': explanation,
         'search_results': results,
@@ -153,17 +144,18 @@ def get_nl_explanation(prog, neg=False, use_is=False):
 
     not_text = "not " if neg and use_is else "do not " if neg else ""
     if isinstance(prog, Union):
-        sub_expls = [get_nl_explanation(sub_prog, neg)
+        sub_expls = [get_nl_explanation(sub_prog, neg=neg, use_is=True)
                      for sub_prog in prog.extractors]
+        extra = "have an object that " if not use_is else ""
         if neg:
-            return " and ".join(sub_expls)
-        return " or ".join(sub_expls)
+            return extra + " and ".join(sub_expls)
+        return extra + " or ".join(sub_expls)
     if isinstance(prog, Intersection):
-        sub_expls = [get_nl_explanation(sub_prog, neg)
+        sub_expls = [get_nl_explanation(sub_prog, neg=neg, use_is=True)
                      for sub_prog in prog.extractors]
         if neg:
-            return " or ".join(sub_expls)
-        return " and ".join(sub_expls)
+            return extra + " or ".join(sub_expls)
+        return extra + " and ".join(sub_expls)
     first_part = "is {}".format(
         not_text) if use_is else "{}have".format(not_text)
     if isinstance(prog, IsFace):
@@ -191,7 +183,7 @@ def get_nl_explanation(prog, neg=False, use_is=False):
     if isinstance(prog, BelowAge):
         return "{} a face that is below age {}".format(first_part, prog.age)
     if isinstance(prog, Complement):
-        return get_nl_explanation(prog.extractor, not first_part)
+        return get_nl_explanation(prog.extractor, neg=not neg, use_is=use_is)
     if isinstance(prog, Map):
         position_to_str = {
             'GetLeft': 'is right of ',
@@ -208,7 +200,10 @@ def get_nl_explanation(prog, neg=False, use_is=False):
         sub_expl2 = get_nl_explanation(prog.extractor, use_is=True)
         expl = sub_expl1 + " that " + position_str + "an object that " + sub_expl2
         if neg:
-            expl = expl[:2] + " not" + expl[2:]
+            if use_is:
+                expl = expl[:2] + " not" + expl[2:]
+            else:
+                expl = "do not " + expl
         return expl
 
 

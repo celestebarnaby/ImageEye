@@ -124,7 +124,7 @@ export default function App() {
       .then(data => {
         setFiles(data.files);
         // setDataset([]);
-        setSidebarFiles(data.sidebarFiles);
+        // setSidebarFiles(data.sidebarFiles);
         setIsLoading(false);
         setMainImage(data.sidebarFiles[0]);
       })
@@ -231,6 +231,7 @@ export default function App() {
               <button className="button-12" onClick={() => handleChange('receipts')}>Receipts</button>
               <button className="button-12" onClick={() => handleChange('objects')}>Objects</button>
               <button className="button-12" onClick={() => handleChange('wedding')}>Wedding</button>
+              <button className="button-12" onClick={() => handleChange('concert')}>Concert</button>
             </div>
           </div>}
         </DialogContent>
