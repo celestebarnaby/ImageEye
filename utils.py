@@ -400,15 +400,15 @@ def get_args():
         help="set to False to turn off partial evaluation"
     )
     parser.add_argument(
-        "--use_active_learning",
-        type=bool,
-        default=True
-    )
-    parser.add_argument(
         "--get_dataset_info",
         type=bool,
         default=True,
         help="if True, outputs info about test dataset"
+    )
+    parser.add_argument(
+        "--use_active_learning",
+        type=bool,
+        default=True
     )
     parser.add_argument(
         "--use_ground_truth",
@@ -481,8 +481,8 @@ def preprocess(img_folder, max_faces=10):
     # read the cache if it exists
     key = img_folder + " 2 " + str(max_faces)
     test_images = {}
-    if os.path.exists("test_images.json"):
-        with open("test_images.json", "r") as fp:
+    if os.path.exists("test_images2.json"):
+        with open("test_images2.json", "r") as fp:
             test_images = json.load(fp)
             if key in test_images:
                 return test_images[key]
@@ -508,7 +508,6 @@ def preprocess(img_folder, max_faces=10):
             img_dir, client, img_index, True, True, DETAIL_KEYS, prev_env, max_faces
         )
         for obj_id, obj in model_env_with_prediction_sets.items():
-            print("hi3")
             model_env_with_prediction_sets[obj_id] = get_all_versions_of_object(
                 obj)
         # this is a LIST of environments
@@ -537,7 +536,7 @@ def preprocess(img_folder, max_faces=10):
     print("Num images: ", len(os.listdir(img_folder)))
     print("Total time: ", total_time)
     test_images[key] = img_to_environment
-    with open("test_images.json", "w") as fp:
+    with open("test_images2.json", "w") as fp:
         json.dump(test_images, fp)
     # print(img_to_environment)
 
@@ -546,7 +545,7 @@ def preprocess(img_folder, max_faces=10):
 
 def get_all_versions_of_object(obj):
     # obj_lists = get_all_versions_helper(list(obj.items()))
-    if not obj["Type"] == "Face":
+    if obj["Type"] != "Face":
         return [obj]
     options = [obj["Smile"], obj["EyesOpen"],
                obj["MouthOpen"], obj["Eyeglasses"]]
