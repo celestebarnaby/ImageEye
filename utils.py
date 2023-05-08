@@ -481,8 +481,8 @@ def preprocess(img_folder, max_faces=10):
     # read the cache if it exists
     key = img_folder + " 2 " + str(max_faces)
     test_images = {}
-    if os.path.exists("test_images2.json"):
-        with open("test_images2.json", "r") as fp:
+    if os.path.exists("test_images.json"):
+        with open("test_images.json", "r") as fp:
             test_images = json.load(fp)
             if key in test_images:
                 return test_images[key]
@@ -509,7 +509,7 @@ def preprocess(img_folder, max_faces=10):
         )
         for obj_id, obj in model_env_with_prediction_sets.items():
             model_env_with_prediction_sets[obj_id] = get_all_versions_of_object(
-                obj)
+                obj, gt_env[obj_id])
         # this is a LIST of environments
         model_env_with_prediction_sets = get_all_versions_of_image(
             model_env_with_prediction_sets)
@@ -536,15 +536,17 @@ def preprocess(img_folder, max_faces=10):
     print("Num images: ", len(os.listdir(img_folder)))
     print("Total time: ", total_time)
     test_images[key] = img_to_environment
-    with open("test_images2.json", "w") as fp:
+    with open("test_images.json", "w") as fp:
         json.dump(test_images, fp)
     # print(img_to_environment)
 
     return img_to_environment
 
 
-def get_all_versions_of_object(obj):
+def get_all_versions_of_object(obj, gt_obj):
     # obj_lists = get_all_versions_helper(list(obj.items()))
+    model_obj = {key: obj[key] for key in [
+        "Smile", "EyesOpen", "MouthOpen", "Eyeglasses"] if key in obj}
     if obj["Type"] != "Face":
         return [obj]
     options = [obj["Smile"], obj["EyesOpen"],
@@ -560,6 +562,17 @@ def get_all_versions_of_object(obj):
     all_full_dicts = []
     for d in all_dicts:
         all_full_dicts.append(d | obj)
+    gt_obj = {key: gt_obj[key] for key in [
+        "Smile", "EyesOpen", "MouthOpen", "Eyeglasses"] if key in gt_obj}
+    print("!!@#$!@#$!")
+    print(gt_obj)
+    print(model_obj)
+
+    print(options)
+    print(all_lists)
+
+    print(all_dicts)
+    print()
     return all_full_dicts
 
 

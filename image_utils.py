@@ -402,7 +402,7 @@ def get_details(
             for key in keys:
                 if use_prediction_sets:
                     if key in {
-                        "Emotions",
+                        # "Emotions",
                         "AgeRange",
                     }:
                         details_map[key] = details[key]
@@ -425,7 +425,7 @@ def get_details(
                             details[key]["Confidence"] = random.random() * 100
                         if details[key]["Confidence"] > 75:
                             # The value doesn't matter here
-                            details_map[key] = True
+                            details_map[key] = details[key]["Value"]
                     if key == "Emotions":
                         details_map[key] = []
                         emotion_list = details[key]
@@ -490,7 +490,7 @@ def get_details(
                 if instance["Confidence"] < 75:
                     continue
                 # Remove redundant objects
-                if obj["Name"] in {'Adult', 'Child', 'Man', 'Male', 'Woman', 'Female', 'Bride', 'Groom', 'Boy', 'Girl'}:
+                if obj["Name"] in {'Adult', 'Child', 'Man', 'Male', 'Woman', 'Female', 'Bride', 'Groom', 'Boy', 'Girl', 'Teen'}:
                     continue
                 details_map = {}
                 details_map["Type"] = "Object"

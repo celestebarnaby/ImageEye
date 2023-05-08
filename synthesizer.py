@@ -293,22 +293,14 @@ class Synthesizer:
                     if len(env) == 0:
                         progs.append(copy.deepcopy(prog))
                         continue
-                    if str(prog) == "Smile":
-                        print("Smile")
-                        print(output_objs_str)
                     for possible_env in env:
                         extracted_objs = eval_extractor(
                             prog, possible_env,  # output_dict=output_dict, eval_cache=eval_cache
                         )
                         extracted_objs_str = ",".join(sorted(extracted_objs))
-                        if str(prog) == "Smile":
-                            print(extracted_objs_str)
-                            print()
                         if extracted_objs_str == output_objs_str:
                             progs.append(copy.deepcopy(prog))
                             break
-                    if str(prog) == "Smile":
-                        raise TypeError
                 else:
                     extracted_objs = eval_extractor(
                         prog, env, output_dict=output_dict, eval_cache=eval_cache
@@ -403,12 +395,6 @@ class Synthesizer:
                             possible_prog_output,
                         ) for possible_prog_output in prog_output]
                         ):
-                            if sub_extr == "Smile":
-                                print("!!")
-                                print(prog_output)
-                                print(output_dict[hole.output_over])
-                                print(output_dict[hole.output_under])
-                                raise TypeError
                             continue
                     else:
                         if prog_output and invalid_output(
@@ -842,10 +828,6 @@ class Synthesizer:
                         # User labels based on ground truth
                         env = img_to_environment[img_dir]["ground_truth"]
                         indices = self.get_indices(env, gt_prog)
-                        print("Indices: " + str(indices))
-                        print(env)
-                        print(
-                            len(img_to_environment[img_dir]["model_env_psets"]))
                         img_dirs.append(img_dir)
                         # if rounds == 1 and not indices:
                         # img_options.remove(img_dir)
@@ -855,12 +837,6 @@ class Synthesizer:
                                 indices, img_dir, img_to_environment, env_name)
                             annotated_env = [l[0] | l[1] for l in itertools.product(
                                 *[annotated_env, new_annotated_env])] if annotated_env else new_annotated_env
-                            print("# possible environments: " +
-                                  str(len(annotated_env)))
-                            # print("asdf")
-                            # print(new_annotated_env)
-                            # print(annotated_env)
-                            # print()
                         else:
                             annotated_env = (
                                 self.annotate_environment(
