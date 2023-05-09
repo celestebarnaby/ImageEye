@@ -44,7 +44,7 @@ def get_attributes(output_over, output_under, dataset=None):
         (IsPhoneNumber(), [], [], [], 0),
         (IsSmiling(), [], [], [], 0),
         (EyesOpen(), [], [], [], 0),
-        (MouthOpen(), [], [], [], 0),
+        # (MouthOpen(), [], [], [], 0),
         (MatchesWord(None), ["word"], [output_over], [output_under], 1),
         (IsObject(None), ["obj"], [output_over], [output_under], 0),
         (GetFace(None), ["index"], [output_over], [output_under], 1),

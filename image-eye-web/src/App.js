@@ -230,7 +230,7 @@ export default function App() {
             <div className="side-by-side">
               <button className="button-12" onClick={() => handleChange('receipts')}>Receipts</button>
               <button className="button-12" onClick={() => handleChange('objects')}>Objects</button>
-              <button className="button-12" onClick={() => handleChange('wedding')}>Wedding</button>
+              <button className="button-12" onClick={() => handleChange('wedding2')}>Wedding</button>
               <button className="button-12" onClick={() => handleChange('concert')}>Concert</button>
             </div>
           </div>}

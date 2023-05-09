@@ -609,6 +609,8 @@ def get_description(obj):
         addl_features.append("is smiling")
     if "EyesOpen" in obj:
         addl_features.append("has eyes open")
+    if "Index" in obj:
+        addl_features.append("has id {}".format(obj["Index"]))
     if addl_features:
         return "Face that {}, and is between {} and {} years old".format(", ".join(addl_features), obj["AgeRange"]["Low"], obj["AgeRange"]["High"])
     else:
