@@ -44,12 +44,10 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [inputText, setInputText] = useState("");
-  const [searchResults, setSearchResults] = useState(null);
+  const [searchResults, setSearchResults] = useState([]);
   const [sidebarFiles, setSidebarFiles] = useState([]);
   const [mainImage, setMainImage] = useState(null);
   const [objectList, setObjectList] = useState([]);
-  const [annotatedImages, setAnnotatedImages] = useState({});
-  const [result, setResult] = useState(null);
   const [message, setMessage] = useState({});
   const [files, setFiles] = useState([]);
 
@@ -100,17 +98,6 @@ export default function App() {
     setObjectList([...objectList]);
   }
 
-  let addImage = (image) => {
-    annotatedImages[image] = objectList;
-    setAnnotatedImages({ ...annotatedImages });
-    setObjectList([]);
-  }
-
-  let removeImage = (img_dir) => {
-    delete annotatedImages[img_dir]
-    setAnnotatedImages({ ...annotatedImages });
-  }
-
   let handleTextSubmit = () => {
     setIsLoading(true);
     fetch('http://127.0.0.1:5000/textQuery', {
@@ -125,6 +112,16 @@ export default function App() {
         setSearchResults(data.search_results);
         setIsLoading(false);
       })
+  }
+
+  let handleSearchResults = (img_dir) => {
+    if (searchResults.includes(img_dir)) {
+      const index = searchResults.indexOf(img_dir);
+      searchResults.splice(index, 1);
+    } else {
+      searchResults.push(img_dir);
+    }
+    setSearchResults([...searchResults]);
   }
 
 
@@ -164,52 +161,18 @@ export default function App() {
       })
   };
 
-  let updateResults = () => {
-    const vals = Object.values(annotatedImages);
-    var hasPosExample = vals.some(val => val.length > 0);
-    if (hasPosExample) {
-      setIsLoading(true);
-      fetch('http://127.0.0.1:5000/synthesize', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(annotatedImages)
-      })
-        .then(response => response.json())
-        .then(data => {
-          console.log('Success:', data);
-          if (data.program === null) {
-            setErrorMessage("Synthesizer timed out");
-            setIsLoading(false);
-          } else {
-            setResult(data.program);
-            setSearchResults(data.search_results);
-            setSidebarFiles(data.recs);
-            setIsLoading(false);
-          }
-        })
-        .catch((error) => {
-          console.error('Error:', error);
-        });
-    } else {
-      setErrorMessage("You need at least one positive example!");
-    }
-
-  }
-
 
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <Box sx={{ display: "block" }}>
         <AppBar position="relative">
-          <Toolbar>
+          <Toolbar sx={{ backgroundColor: "#D27519" }}>
             <CameraIcon sx={{ mr: 2 }} />
             <Typography variant="h6" color="inherit" noWrap>
-              Image Eye
+              Search by Text/Image
             </Typography>
-            <Button variant="outlined" sx={{ color: "white" }}>Upload Images</Button>
+            {/* <Button variant="outlined" sx={{ color: "white" }}>Upload Images</Button> */}
           </Toolbar>
         </AppBar>
         <Box
@@ -221,21 +184,14 @@ export default function App() {
           {files ? <ImageEye
             files={files}
             message={message}
-            updateResults={updateResults}
             handleTextChange={handleTextChange}
             handleTextSubmit={handleTextSubmit}
             handleImageSubmit={handleImageSubmit}
+            handleSearchResults={handleSearchResults}
             searchResults={searchResults}
             sidebarFiles={sidebarFiles}
             mainImage={mainImage}
             changeImage={changeImage}
-            addObject={addObject}
-            addObjectsByName={addObjectsByName}
-            addImage={addImage}
-            removeImage={removeImage}
-            objectList={objectList}
-            annotatedImages={annotatedImages}
-            result={result}
           /> : <Typography sx={{ margin: "auto" }}>Select a dataset to get started.</Typography>}
         </Box>
       </Box>

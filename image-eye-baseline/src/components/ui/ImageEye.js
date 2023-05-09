@@ -7,20 +7,9 @@ import SearchResults from './SearchResults';
 import Box from '@mui/material/Box';
 
 
-export function ImageEye({ files, message, updateResults, handleTextChange, handleTextSubmit, handleImageSubmit, searchResults, sidebarFiles, mainImage, changeImage, addObject, addObjectsByName, addImage, removeImage, objectList, annotatedImages, result }) {
+export function ImageEye({ files, handleTextChange, handleTextSubmit, handleImageSubmit, searchResults, sidebarFiles, mainImage, changeImage, handleSearchResults }) {
 
-  // const [message, setMessage] = useState(message);
-  // const [files, setFiles] = useState(files);
-
-  // setFiles(data.files);
-  //       setSidebarFiles(data.sidebarFiles);
-  //       setMessage(data.message);
-
-  function getAnnotationDescriptions(objs, annotations, annotated) {
-    let l = annotated ? annotations : objectList;
-    return l.map(i => [objs[i]["Description"], objs[i]["ObjPosInImgLeftToRight"]]);
-  }
-
+  const imgInResults = searchResults.includes(mainImage);
 
   return (
     <Box sx={{ display: "flex", flexDirection: "row", height: "100%" }}>
@@ -30,16 +19,16 @@ export function ImageEye({ files, message, updateResults, handleTextChange, hand
         changeImage={changeImage}
         handleTextChange={handleTextChange}
         handleTextSubmit={handleTextSubmit}
-        annotatedImgs={Object.keys(annotatedImages)}
-        updateResults={updateResults}
       />
       <Box sx={{ flex: 1 }}>
         <NewImage
           image={mainImage}
           handleImageSubmit={handleImageSubmit}
+          handleSearchResults={handleSearchResults}
+          imgInResults={imgInResults}
         />
       </Box>
-      <SearchResults files={searchResults} changeImage={changeImage} result={result} />
+      <SearchResults files={searchResults} changeImage={changeImage} />
 
 
     </Box>

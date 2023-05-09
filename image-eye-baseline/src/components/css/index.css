@@ -26,10 +26,14 @@ li {
     padding-top: 20px;
 }
 
+button {
+    background-color: #D27519;
+}
+
 .search-results {
     width: 500px;
     height: 100%;
-    background-color: #ddebf7;
+    background-color: #F7E9DD;
     overflow-x: hidden;
     padding-top: 20px;
 }
@@ -53,7 +57,7 @@ li {
 .sidebar {
     width: 420px;
     height: 100%;
-    background-color: #ddebf7;
+    background-color: #F7E9DD;
     overflow-x: hidden;
     padding-top: 20px;
     padding-left: 20px;
@@ -88,9 +92,9 @@ h4 {
     margin: 10px;
 
     color: #fff;
-    background: linear-gradient(180deg, #4b91f7 0%, #367af6 100%);
+    background: linear-gradient(180deg, #F7B14B 0%, #F6B236 100%);
     background-origin: border-box;
-    box-shadow: 0px 0.5px 1.5px rgba(54, 122, 246, 0.25),
+    box-shadow: 0px 0.5px 1.5px #F6B236,
         inset 0px 0.8px 0px -0.25px rgba(255, 255, 255, 0.2);
     user-select: none;
     -webkit-user-select: none;
@@ -116,7 +120,7 @@ h4 {
 }
 
 .button-12:focus {
-    box-shadow: inset 0px 0.8px 0px -0.25px rgba(255, 255, 255, 0.2), 0px 0.5px 1px rgba(0, 0, 0, 0.1), 0px 0px 0px 3.5px rgba(58, 108, 217, 0.5);
+    box-shadow: inset 0px 0.8px 0px -0.25px rgba(255, 255, 255, 0.2), 0px 0.5px 1px rgba(0, 0, 0, 0.1), 0px 0px 0px 3.5px #D9A73A;
     outline: 0;
 }
 
@@ -133,7 +137,7 @@ h4 {
     color: #fff;
     background: linear-gradient(180deg, #54575c 0%, #383b42 100%);
     background-origin: border-box;
-    box-shadow: 0px 0.5px 1.5px rgba(54, 122, 246, 0.25),
+    box-shadow: 0px 0.5px 1.5px #F6B236,
         inset 0px 0.8px 0px -0.25px rgba(255, 255, 255, 0.2);
     user-select: none;
     -webkit-user-select: none;
@@ -142,8 +146,8 @@ h4 {
 
 .button-10:focus {
     box-shadow: inset 0px 0.8px 0px -0.25px rgba(255, 255, 255, 0.2),
-        0px 0.5px 1.5px rgba(54, 122, 246, 0.25),
-        0px 0px 0px 3.5px rgba(58, 108, 217, 0.5);
+        0px 0.5px 1.5px #F6B236,
+        0px 0px 0px 3.5px #D9A73A;
     outline: 0;
 }
 

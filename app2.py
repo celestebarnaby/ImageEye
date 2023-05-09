@@ -96,6 +96,7 @@ def get_top_N_images(query, top_K=4, search_criterion="text"):
     image_names = img_to_embedding.keys()
     image_embeddings = [img_to_embedding[name][1]
                         for name in image_names]
+    threshold = .2 if search_criterion == "text" else .75
 
    # Text to image Search
     if search_criterion.lower() == "text":
@@ -108,8 +109,10 @@ def get_top_N_images(query, top_K=4, search_criterion="text"):
     cos_sim = [x[0][0] for x in cos_sim]
     cos_sim_per_image = zip(cos_sim, image_names)
     most_similar = sorted(cos_sim_per_image, reverse=True)
+    print(most_similar)
     # [1:top_K+1]  # line 24
-    top_images = [img for (_, img) in most_similar]
+    top_images = [img for (cos_sim, img)
+                  in most_similar if cos_sim > threshold]
     return top_images
 
 
@@ -120,6 +123,7 @@ def load_files():
     global obj_strs
     global img_to_embedding
     data = request.get_json()
+    img_to_embedding = {}
     img_to_environment, obj_strs = preprocess(
         "image-eye-web/public/images/" + data + "/", 100)
     consolidate_environment(img_to_environment)

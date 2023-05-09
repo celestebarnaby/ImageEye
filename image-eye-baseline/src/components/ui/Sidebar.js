@@ -21,9 +21,9 @@ function Sidebar({ allFiles, imgsToAnnotate, changeImage, annotatedImgs, handleT
                 sx={{ background: "white" }}
                 onChange={handleTextChange}
             />
-            <Button sx={{ marginTop: 1, marginBottom: 1 }} fullWidth variant="contained" onClick={handleTextSubmit}>Search by Text</Button>
+            <Button sx={{ marginTop: 1, marginBottom: 1, backgroundColor: "#D27519" }} fullWidth variant="contained" onClick={handleTextSubmit}>Search by Text</Button>
             <Divider />
-            {AllImages(allFiles, annotatedImgs, imgsToAnnotate, changeImage)}
+            {AllImages(allFiles, changeImage)}
             {/* <Box>
                 <Button variant="contained" fullWidth onClick={() => updateResults()}>Filter images by example</Button>
             </Box> */}
@@ -43,38 +43,17 @@ function Sidebar({ allFiles, imgsToAnnotate, changeImage, annotatedImgs, handleT
 //     </div>
 // }
 
-function AllImages(allFiles, annotatedImgs, imgsToAnnotate, changeImage) {
-    let height = imgsToAnnotate.length > 0 ? 200 : 0;
-
-    return <div>
-        {imgsToAnnotate.length > 0 ? <h3>Recommended images to annotate</h3> : <></>}
-        <ImageList sx={{ width: "100%", height: height }} cols={3} rowHeight={164}>
-            {imgsToAnnotate.length > 0 ?
-                imgsToAnnotate.map(img => {
-                    let class_name = annotatedImgs.includes(img) ? "grayed-out" : "";
-                    return <ImageListItem key={img} onClick={() => changeImage(img)}>
-                        <img
-                            src={`${img.replace("image-eye-web/public/", "./")}`}
-                            className={class_name}
-                            loading="lazy"
-                        />
-                    </ImageListItem>
-                }) : <></>}
-        </ImageList>
-        {imgsToAnnotate.length > 0 ? <hr /> : <></>}
-        {/* {allFiles ? <h3>All Images</h3> : {}} */}
-        <ImageList sx={{ width: "100%", height: "100%" }} cols={3} rowHeight={164}>
-            {allFiles.map(img => {
-                let class_name = annotatedImgs.includes(img) ? "grayed-out" : "";
-                return <ImageListItem key={img} onClick={() => changeImage(img)}>
-                    <img
-                        src={`${img.replace("image-eye-web/public/", "./")}`}
-                        className={class_name}
-                        loading="lazy"
-                    />
-                </ImageListItem>
-            })}
-        </ImageList></div>
+function AllImages(allFiles, changeImage) {
+    return <ImageList sx={{ width: "100%", height: "100%" }} cols={3} rowHeight={164}>
+        {allFiles.map(img => {
+            return <ImageListItem key={img} onClick={() => changeImage(img)}>
+                <img
+                    src={`${img.replace("image-eye-web/public/", "./")}`}
+                    loading="lazy"
+                />
+            </ImageListItem>
+        })}
+    </ImageList>
 }
 
 // function AnnotatedImages(allFiles, annotatedImgs, changeImage) {
