@@ -7,7 +7,7 @@ import SearchResults from './SearchResults';
 import Box from '@mui/material/Box';
 
 
-export function ImageEye({ files, handleTextChange, handleTextSubmit, handleImageSubmit, searchResults, sidebarFiles, mainImage, changeImage, handleSearchResults }) {
+export function ImageEye({ files, handleTextChange, handleTextSubmit, handleImageSubmit, searchResults, sidebarFiles, mainImage, changeImage, handleSearchResults, submitResults }) {
 
   const imgInResults = searchResults.includes(mainImage);
 
@@ -28,7 +28,7 @@ export function ImageEye({ files, handleTextChange, handleTextSubmit, handleImag
           imgInResults={imgInResults}
         />
       </Box>
-      <SearchResults files={searchResults} changeImage={changeImage} />
+      <SearchResults files={searchResults} changeImage={changeImage} submitResults={submitResults} />
 
 
     </Box>

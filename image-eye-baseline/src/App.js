@@ -2,13 +2,7 @@ import React, { useState } from 'react';
 import AppBar from '@mui/material/AppBar';
 import Button from '@mui/material/Button';
 import CameraIcon from '@mui/icons-material/PhotoCamera';
-import Card from '@mui/material/Card';
-import CardActions from '@mui/material/CardActions';
-import CardContent from '@mui/material/CardContent';
-import CardMedia from '@mui/material/CardMedia';
 import CssBaseline from '@mui/material/CssBaseline';
-import Grid from '@mui/material/Grid';
-import Stack from '@mui/material/Stack';
 import Box from '@mui/material/Box';
 import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
@@ -16,6 +10,7 @@ import Container from '@mui/material/Container';
 import Link from '@mui/material/Link';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { ImageEye } from './components/ui/ImageEye';
+import { SubmittedResults } from './components/ui/SubmittedResults';
 import DialogTitle from '@mui/material/DialogTitle';
 import Dialog from '@mui/material/Dialog';
 import DialogContent from '@mui/material/DialogContent';
@@ -47,9 +42,12 @@ export default function App() {
   const [searchResults, setSearchResults] = useState([]);
   const [sidebarFiles, setSidebarFiles] = useState([]);
   const [mainImage, setMainImage] = useState(null);
-  const [objectList, setObjectList] = useState([]);
   const [message, setMessage] = useState({});
   const [files, setFiles] = useState([]);
+  const [tentativeSubmit, setTentativeSubmit] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [manuallyAdded, setManuallyAdded] = useState(new Set());
+  const [manuallyRemoved, setManuallyRemoved] = useState(new Set());
 
 
   let closeError = () => {
@@ -62,40 +60,29 @@ export default function App() {
 
   let changeImage = (image) => {
     setMainImage(image);
-    setObjectList([]);
   };
 
   let handleTextChange = (event) => {
     setInputText(event.target.value);
   }
 
-  let addObject = (index, remove_if_already_present) => {
-    if (objectList.includes(index)) {
-      if (remove_if_already_present) {
-        const other_index = objectList.indexOf(index);
-        objectList.splice(other_index, 1); // 2nd parameter means remove one item only
-      }
-    }
-    else {
-      objectList.push(index);
-    }
-    setObjectList([...objectList]);
+  let submitResults = () => {
+    setTentativeSubmit(true);
   }
 
-  let addObjectsByName = (name, objs) => {
-    if (name != "Face" && name != "Text") {
-      let new_indices = objs.filter(obj => obj['Name'] == name).map(obj => obj['ObjPosInImgLeftToRight']);
-      let already_added = objs.filter(obj => obj['Name'] == name && objectList.includes(obj['ObjPosInImgLeftToRight']));
-      let remove_if_already_present = (new_indices.length == already_added.length)
-      new_indices.forEach(index => addObject(index, remove_if_already_present));
+  let submitResults2 = (val) => {
+    setSubmitted(val);
+    setTentativeSubmit(false);
+    if (val) {
+      fetch('http://127.0.0.1:5000/submitResults', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        // body: JSON.stringify(searchResults)
+        body: JSON.stringify({ results: searchResults, manually_added: Array.from(manuallyAdded), manually_removed: Array.from(manuallyRemoved) })
+      })
     }
-    else {
-      let new_indices = objs.filter(obj => obj['Type'] == name).map(obj => obj['ObjPosInImgLeftToRight']);
-      let already_added = objs.filter(obj => obj['Type'] == name && objectList.includes(obj['ObjPosInImgLeftToRight']));
-      let remove_if_already_present = (new_indices.length == already_added.length)
-      new_indices.forEach(index => addObject(index, remove_if_already_present));
-    }
-    setObjectList([...objectList]);
   }
 
   let handleTextSubmit = () => {
@@ -110,6 +97,8 @@ export default function App() {
       .then(response => response.json())
       .then(data => {
         setSearchResults(data.search_results);
+        setManuallyAdded(new Set());
+        setManuallyRemoved(new Set());
         setIsLoading(false);
       })
   }
@@ -118,10 +107,14 @@ export default function App() {
     if (searchResults.includes(img_dir)) {
       const index = searchResults.indexOf(img_dir);
       searchResults.splice(index, 1);
+      manuallyRemoved.add(img_dir)
     } else {
       searchResults.push(img_dir);
+      manuallyAdded.add(img_dir)
     }
     setSearchResults([...searchResults]);
+    setManuallyAdded(manuallyAdded);
+    setManuallyRemoved(manuallyRemoved);
   }
 
 
@@ -137,12 +130,14 @@ export default function App() {
       .then(response => response.json())
       .then(data => {
         setSearchResults(data.search_results);
+        setManuallyAdded(new Set());
+        setManuallyRemoved(new Set());
         setIsLoading(false);
       })
   }
 
 
-  let handleChange = (img_dir) => {
+  let handleChange = (task_num) => {
     setIsOpen(false);
     setIsLoading(true);
     fetch('http://127.0.0.1:5000/loadFiles', {
@@ -150,7 +145,7 @@ export default function App() {
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(img_dir)
+      body: JSON.stringify(task_num)
     })
       .then(response => response.json())
       .then(data => {
@@ -181,7 +176,7 @@ export default function App() {
             height: "calc(100vh - 64px)"
           }}
         >
-          {files ? <ImageEye
+          {!submitted ? <ImageEye
             files={files}
             message={message}
             handleTextChange={handleTextChange}
@@ -192,20 +187,31 @@ export default function App() {
             sidebarFiles={sidebarFiles}
             mainImage={mainImage}
             changeImage={changeImage}
-          /> : <Typography sx={{ margin: "auto" }}>Select a dataset to get started.</Typography>}
+            submitResults={submitResults}
+          /> : <SubmittedResults searchResults={searchResults} />}
         </Box>
       </Box>
-      <Dialog onClose={closeBox} open={isOpen || isLoading}>
-        <DialogTitle>Select Image Directory</DialogTitle>
+      <Dialog open={isOpen}>
+        <DialogTitle>Select Task</DialogTitle>
         <DialogContent>
-          {isLoading ? <p>Loading...</p> : <div>
-            <div className="side-by-side">
-              <button className="button-12" onClick={() => handleChange('receipts')}>Receipts</button>
-              <button className="button-12" onClick={() => handleChange('objects')}>Objects</button>
-              <button className="button-12" onClick={() => handleChange('wedding2')}>Wedding</button>
-              <button className="button-12" onClick={() => handleChange('concert')}>Concert</button>
-            </div>
-          </div>}
+          <div className="side-by-side">
+            <button className="button-12" onClick={() => handleChange(1)}>1</button>
+            <button className="button-12" onClick={() => handleChange(2)}>2</button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={isLoading}>
+        <DialogContent>
+          <p>Loading...</p>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={tentativeSubmit}>
+        <DialogTitle>Are you sure you want to submit your results?</DialogTitle>
+        <DialogContent>
+          <div className="side-by-side">
+            <button className="button-12" onClick={() => submitResults2(true)}>Yes</button>
+            <button className="button-12" onClick={() => submitResults2(false)}>No</button>
+          </div>
         </DialogContent>
       </Dialog>
     </ThemeProvider>

@@ -29,8 +29,16 @@ function Image(image, new_width, handleImageSubmit, handleSearchResults, img_dir
         {/* <img src={require(image)} className="center-image"/> */}
         <ImageMapper src={image.replace("image-eye-web/public/", "./")} toggleHighlighted={true} stayMultiHighlighted={true} width={new_width} />
         <Box className="buttons-container">
-            <Button sx={{ margin: "auto", backgroundColor: "#D27519", color: "#fff" }} onClick={() => handleImageSubmit(img_dir)}>Search for Similar Images</Button>
-            <Button sx={{ margin: "auto", backgroundColor: "#D27519", color: "#fff" }} onClick={() => handleSearchResults(img_dir)}>{button_text}</Button>
+            <Button sx={{
+                margin: "auto", backgroundColor: "#D27519", color: "#fff", '&:hover': {
+                    backgroundColor: '#e8933e'
+                },
+            }} onClick={() => handleImageSubmit(img_dir)}>Search for Similar Images</Button>
+            <Button sx={{
+                margin: "auto", backgroundColor: "#D27519", color: "#fff", '&:hover': {
+                    backgroundColor: '#e8933e'
+                },
+            }} onClick={() => handleSearchResults(img_dir)}>{button_text}</Button>
         </Box>
     </Box>
 }

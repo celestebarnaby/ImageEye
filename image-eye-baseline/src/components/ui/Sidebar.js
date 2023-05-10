@@ -8,8 +8,7 @@ import TextField from '@mui/material/TextField';
 import Divider from '@mui/material/Divider';
 
 
-function Sidebar({ allFiles, imgsToAnnotate, changeImage, annotatedImgs, handleTextChange, handleTextSubmit, updateResults }) {
-    const [selectedTab, setSelectedTab] = useState("tab1");
+function Sidebar({ allFiles, changeImage, handleTextChange, handleTextSubmit }) {
 
     return (
         <Box sx={{ height: "100%" }} className="sidebar">
@@ -21,7 +20,11 @@ function Sidebar({ allFiles, imgsToAnnotate, changeImage, annotatedImgs, handleT
                 sx={{ background: "white" }}
                 onChange={handleTextChange}
             />
-            <Button sx={{ marginTop: 1, marginBottom: 1, backgroundColor: "#D27519" }} fullWidth variant="contained" onClick={handleTextSubmit}>Search by Text</Button>
+            <Button sx={{
+                marginTop: 1, marginBottom: 1, backgroundColor: "#D27519", '&:hover': {
+                    backgroundColor: '#e8933e'
+                },
+            }} fullWidth variant="contained" onClick={handleTextSubmit}>Search by Text</Button>
             <Divider />
             {AllImages(allFiles, changeImage)}
             {/* <Box>
@@ -31,20 +34,8 @@ function Sidebar({ allFiles, imgsToAnnotate, changeImage, annotatedImgs, handleT
     );
 }
 
-// function AnnotationSuggestions(imgsToAnnotate, annotatedImgs, changeImage) {
-//     return <div>
-//         <ul>
-//             {imgsToAnnotate ?
-//                 imgsToAnnotate.map(img => <li><img className={annotatedImgs.includes(img) ? "small-img-grayed-out" : "small-img"}
-//                     src={img.replace("image-eye-web/public/", "./")} key="{img}" onClick={() => changeImage(img)} /></li>)
-//                 : <p>Enter text query to get annotation suggestions.</p>
-//             }
-//         </ul>
-//     </div>
-// }
-
 function AllImages(allFiles, changeImage) {
-    return <ImageList sx={{ width: "100%", height: "100%" }} cols={3} rowHeight={164}>
+    return <ImageList sx={{ width: "100%", height: "87%" }} cols={3} rowHeight={164}>
         {allFiles.map(img => {
             return <ImageListItem key={img} onClick={() => changeImage(img)}>
                 <img
@@ -55,17 +46,5 @@ function AllImages(allFiles, changeImage) {
         })}
     </ImageList>
 }
-
-// function AnnotatedImages(allFiles, annotatedImgs, changeImage) {
-//     return <div>
-//         <ul>
-//             {allFiles ?
-//                 allFiles.filter(img => annotatedImgs.includes(img)).map(img => <li><img className={"small-img"}
-//                     src={img.replace("image-eye-web/public/", "./")} key="{img}" onClick={() => changeImage(img)} /></li>)
-//                 : <p>Annotated images will be listed here.</p>
-//             }
-//         </ul>
-//     </div>
-// }
 
 export default Sidebar;
