@@ -7,6 +7,9 @@ import json
 import csv
 import time
 import numpy as np
+import torch
+from transformers import CLIPProcessor, CLIPModel, CLIPTokenizer
+from sklearn.metrics.pairwise import cosine_similarity
 
 # from typesystem import *
 
@@ -781,3 +784,125 @@ def get_num_attributes(env):
                 preds.add(key)
         all_preds.update(preds)
     return len(all_preds)
+
+
+def get_text_embedding(text, tokenizer, model):
+    inputs = tokenizer(text, return_tensors="pt")
+    text_embeddings = model.get_text_features(**inputs)
+    # convert the embeddings to numpy array
+    embedding_as_np = text_embeddings.cpu().detach().numpy()
+    return embedding_as_np
+
+
+def get_image_embedding(image, processor, device, model):
+    image = processor(
+        text=None,
+        images=image,
+        return_tensors="pt"
+    )["pixel_values"].to(device)
+    embedding = model.get_image_features(image)
+    embedding_as_np = embedding.cpu().detach().numpy()
+    return embedding_as_np
+
+
+def get_model_info(model_ID, device):
+    # Save the model to device
+    model = CLIPModel.from_pretrained(model_ID).to(device)
+    # Get the processor
+    processor = CLIPProcessor.from_pretrained(model_ID)
+    # Get the tokenizer
+    tokenizer = CLIPTokenizer.from_pretrained(model_ID)
+   # Return model, processor & tokenizer
+    return model, processor, tokenizer
+
+
+def get_top_N_images(query, tokenizer, model, processor, device, top_K=4, search_criterion="text"):
+    global img_to_embedding
+    image_names = img_to_embedding.keys()
+    image_embeddings = [img_to_embedding[name][1]
+                        for name in image_names]
+    threshold = .2 if search_criterion == "text" else .75
+
+   # Text to image Search
+    if search_criterion.lower() == "text":
+        query_vect = get_text_embedding(query, tokenizer, model)
+    # Image to image Search
+    else:
+        query_vect = get_image_embedding(query, processor, device, model)
+    # Run similarity Search
+    cos_sim = [cosine_similarity(query_vect, x) for x in image_embeddings]
+    cos_sim = [x[0][0] for x in cos_sim]
+    cos_sim_per_image = zip(cos_sim, image_names)
+    most_similar = sorted(cos_sim_per_image, reverse=True)
+    print(most_similar)
+    # [1:top_K+1]  # line 24
+    top_images = [img for (cos_sim, img)
+                  in most_similar if cos_sim > threshold]
+    return top_images
+
+
+def get_nl_explanation(prog, neg=False, use_is=False):
+
+    not_text = "not " if neg and use_is else "do not " if neg else ""
+    if isinstance(prog, Union):
+        sub_expls = [get_nl_explanation(sub_prog, neg=neg, use_is=True)
+                     for sub_prog in prog.extractors]
+        extra = "have an object that " if not use_is else ""
+        if neg:
+            return extra + " and ".join(sub_expls)
+        return extra + " or ".join(sub_expls)
+    if isinstance(prog, Intersection):
+        sub_expls = [get_nl_explanation(sub_prog, neg=neg, use_is=True)
+                     for sub_prog in prog.extractors]
+        if neg:
+            return extra + " or ".join(sub_expls)
+        return extra + " and ".join(sub_expls)
+    first_part = "is {}".format(
+        not_text) if use_is else "{}have".format(not_text)
+    if isinstance(prog, IsFace):
+        return "{} a face".format(first_part)
+    if isinstance(prog, IsText):
+        return "{} text".format(first_part)
+    if isinstance(prog, GetFace):
+        return "{} a face with id ".format(first_part) + str(prog.index)
+    if isinstance(prog, IsObject):
+        return "{} a {}".format(first_part, prog.obj.lower())
+    if isinstance(prog, MatchesWord):
+        return "{} text matching term '{}'".format(first_part, prog.word)
+    if isinstance(prog, IsPhoneNumber):
+        return "{} a phone number".format(first_part)
+    if isinstance(prog, IsPrice):
+        return "{} a price".format(first_part)
+    if isinstance(prog, IsSmiling):
+        return "{} a smiling face".format(first_part)
+    if isinstance(prog, EyesOpen):
+        return "{} a face with eyes open".format(first_part)
+    if isinstance(prog, MouthOpen):
+        return "{} a face with mouth open".format(first_part)
+    if isinstance(prog, AboveAge):
+        return "{} a face that is above age {}".format(first_part, prog.age)
+    if isinstance(prog, BelowAge):
+        return "{} a face that is below age {}".format(first_part, prog.age)
+    if isinstance(prog, Complement):
+        return get_nl_explanation(prog.extractor, neg=not neg, use_is=use_is)
+    if isinstance(prog, Map):
+        position_to_str = {
+            'GetLeft': 'is right of ',
+            'GetRight': 'is left of ',
+            'GetNext': 'is right of ',
+            'GetPrev': 'is left of ',
+            'GetBelow': 'is below ',
+            'GetAbove': 'is above ',
+            'GetContains': 'is contained in ',
+            'GetIsContained': 'contains ',
+        }
+        position_str = position_to_str[str(prog.position)]
+        sub_expl1 = get_nl_explanation(prog.restriction, use_is)
+        sub_expl2 = get_nl_explanation(prog.extractor, use_is=True)
+        expl = sub_expl1 + " that " + position_str + "an object that " + sub_expl2
+        if neg:
+            if use_is:
+                expl = expl[:2] + " not" + expl[2:]
+            else:
+                expl = "do not " + expl
+        return expl

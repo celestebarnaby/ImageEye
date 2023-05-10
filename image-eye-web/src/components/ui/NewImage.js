@@ -13,7 +13,7 @@ import ImageList from '@mui/material/ImageList';
 import ImageListItem from '@mui/material/ImageListItem';
 import { alignProperty } from '@mui/material/styles/cssUtils';
 
-export default function NewImage({ image, imgToEnvironment, annotatedImgs, addObject, addObjectsByName, addImage, getAnnotationDescriptions, removeImage, objectList, changeImage, updateResults }) {
+export default function NewImage({ image, imgToEnvironment, annotatedImgs, addObject, addObjectsByName, addImage, getAnnotationDescriptions, removeImage, objectList, changeImage, updateResults, imgInResults, handleSearchResults }) {
     const [hoveredObjectList, setHoveredObjectList] = useState([]);
 
     let addHoveredObject = (index) => {
@@ -94,7 +94,7 @@ export default function NewImage({ image, imgToEnvironment, annotatedImgs, addOb
         <div>
             <Box className="image-container">
                 {image && (
-                    annotated ? AnnotatedImage(image, map, addObject, new_width, objs, descs, img_dir, removeImage) : UnannotatedImage(image, map, addObject, addObjectsByName, new_width, addImage, img_dir, objs, descs, full_object_names, hoverOverObjects, removeHover))}
+                    annotated ? AnnotatedImage(image, map, addObject, new_width, objs, descs, img_dir, removeImage, imgInResults, handleSearchResults) : UnannotatedImage(image, map, addObject, addObjectsByName, new_width, addImage, img_dir, objs, descs, full_object_names, hoverOverObjects, removeHover, imgInResults, handleSearchResults))}
             </Box>
             {ExampleSet(Object.keys(annotatedImgs), changeImage, updateResults)}
         </div>
@@ -116,16 +116,27 @@ function ExampleSet(annotatedImgs, changeImage, updateResults) {
                     </ImageListItem>
                 }) : <></>}
         </ImageList>
-        <Button fullWidth variant="contained" onClick={() => updateResults()}>Filter images by examples</Button>
+        {annotatedImgs.length > 0 && <Button fullWidth variant="contained" onClick={() => updateResults()}>Filter images by examples</Button>}
     </Box>
 }
 
-function UnannotatedImage(image, map, addObject, addObjectsByName, new_width, addImage, img_dir, objs, descs, full_object_names, hoverOverObjects, removeHover) {
+function UnannotatedImage(image, map, addObject, addObjectsByName, new_width, addImage, img_dir, objs, descs, full_object_names, hoverOverObjects, removeHover, imgInResults, handleSearchResults) {
+    const button_text = imgInResults ? "Remove from Search Results" : "Add to Search Results";
+
     return <Box>
         {/* <img src={require(image)} className="center-image"/> */}
         <ImageMapper src={image.replace("image-eye-web/public/", "./")} map={map} onClick={(area, index) => addObject(objs[index]['ObjPosInImgLeftToRight'], true)} toggleHighlighted={true} stayMultiHighlighted={true} width={new_width} />
         <Box className="buttons-container">
-            <Button sx={{ margin: "auto" }} variant="outlined" onClick={() => addImage(img_dir)}>Add Example</Button>
+            <Button sx={{
+                margin: "auto", color: "#fff", background: "#1976D2", '&:hover': {
+                    backgroundColor: '#305fc4'
+                },
+            }} onClick={() => addImage(img_dir)}>Add Example</Button>
+            <Button sx={{
+                margin: "auto", color: "#fff", background: "#1976D2", '&:hover': {
+                    backgroundColor: '#305fc4'
+                },
+            }} onClick={() => handleSearchResults(img_dir)}>{button_text}</Button>
         </Box>
         <div className="side-by-side">
             <div>
@@ -151,14 +162,26 @@ function UnannotatedImage(image, map, addObject, addObjectsByName, new_width, ad
     </Box>
 }
 
-function AnnotatedImage(image, map, addObject, new_width, objs, descs, img_dir, removeImage) {
+function AnnotatedImage(image, map, addObject, new_width, objs, descs, img_dir, removeImage, imgInResults, handleSearchResults) {
+
+    const button_text = imgInResults ? "Remove from Search Results" : "Add to Search Results";
+
     return <Box>
         {/* <img src={require(image)} className="center-image"/> */}
         <Typography>Image has been annotated</Typography>
         <ImageMapper src={image.replace("image-eye-web/public/", "./")} map={map} onClick={(area, index) => addObject(objs[index]['ObjPosInImgLeftToRight'])} width={new_width} />
         <Box className="buttons-container">
             {/* <button className="button-10-2">Annotate</button> */}
-            <Button sx={{ margin: "auto" }} variant="outlined" onClick={() => removeImage(img_dir)}>Remove Example</Button>
+            <Button sx={{
+                margin: "auto", color: "#fff", background: "#1976D2", '&:hover': {
+                    backgroundColor: '#305fc4'
+                },
+            }} onClick={() => addImage(img_dir)}>Add Example</Button>
+            <Button sx={{
+                margin: "auto", color: "#fff", background: "#1976D2", '&:hover': {
+                    backgroundColor: '#305fc4'
+                },
+            }} onClick={() => handleSearchResults(img_dir)}>{button_text}</Button>
         </Box>
         <List>
             {descs.map(desc => <div><ListItem><ListItemText primary={desc[0]} /></ListItem><Divider /></div>)}

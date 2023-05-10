@@ -3,16 +3,17 @@ import ImageList from '@mui/material/ImageList';
 import ImageListItem from '@mui/material/ImageListItem';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
 
-function SearchResults({ files, changeImage, result }) {
+function SearchResults({ files, changeImage, result, submitResults }) {
 
   return (
     <Box className="search-results">
       <h3>Search Results</h3>
-      {files ?
-        <div>
+      {files.length > 0 ?
+        <Box sx={{ paddingRight: "30px", height: "90%" }}>
           <Typography sx={{ paddingLeft: "20px" }}>{result}</Typography>
-          <ImageList sx={{ margin: "8px", width: "calc(100% - 16px)", height: "calc(100% - 76px)" }} cols={2} rowHeight={124}>
+          <ImageList sx={{ margin: "8px", width: "100%", height: "calc(100% - 76px)" }} cols={2} rowHeight={124}>
             {files.map(img => {
               return <ImageListItem key={img} onClick={() => changeImage(img)}>
                 <img
@@ -22,7 +23,13 @@ function SearchResults({ files, changeImage, result }) {
               </ImageListItem>
             })}
 
-          </ImageList> </div> : <Typography sx={{ paddingLeft: "20px" }}>Enter text query or show example images to start search.</Typography>}
+          </ImageList>
+          <Button sx={{
+            margin: "20px", color: "#fff", background: "#1976D2", '&:hover': {
+              backgroundColor: '#305fc4'
+            },
+          }} fullWidth onClick={() => submitResults()}>Submit Results</Button>
+        </Box> : <Typography sx={{ paddingLeft: "20px" }}>Enter text query or annotate image to start search.</Typography>}
     </Box>
   );
 }

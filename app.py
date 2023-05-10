@@ -1,11 +1,9 @@
-import subprocess
 from flask import Flask, request, jsonify
 from utils import *
 from synthesizer import *
 import torch
-import clip
 import numpy as np
-from scipy import sparse
+from user_study_tasks import tasks
 from PIL import Image
 
 from flask_cors import CORS, cross_origin
@@ -13,32 +11,30 @@ from flask_cors import CORS, cross_origin
 app = Flask(__name__)
 cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
-
 img_to_environment = {}
+img_to_embedding = {}
+logged_info = {}
+
+
+# Set the device
 device = "cuda" if torch.cuda.is_available() else "cpu"
-model, preprocess_image = clip.load("ViT-B/32", device=device)
-images = []
-obj_strs = []
+# Define the model ID
+model_ID = "openai/clip-vit-base-patch32"
+# Get model, processor & tokenizer
+model, processor, tokenizer = get_model_info(model_ID, device)
 
 
 @app.route("/textQuery", methods=['POST'])
 @cross_origin()
 def text_query():
     global img_to_environment
-    global images
+    global logged_info
 
     text_query = request.get_json()
-    text = clip.tokenize([text_query, "hi", "hello"]).to(device)
-    print(text_query)
-    with torch.no_grad():
-        logits_per_image, _ = model(images, text)
-        probs = logits_per_image.softmax(dim=-1).cpu().numpy()
-    probs = [prob[0] for prob in probs]
-    probs_and_imgs = zip(probs, img_to_environment.keys())
-    probs_and_imgs = sorted(probs_and_imgs, reverse=True)
-    imgs = [img for (prob, img) in probs_and_imgs]
+    logged_info["text queries"].append(text_query)
+    results = get_top_N_images(text_query, tokenizer, model, processor, device)
     return {
-        'files': [filename for filename in imgs],
+        'files': results,
         # 'sidebarFiles': [filename for filename in imgs][:5]
     }
 
@@ -47,21 +43,30 @@ def text_query():
 @cross_origin()
 def load_files():
     global img_to_environment
-    global images
     global obj_strs
-    data = request.get_json()
+    global img_to_embedding
+    global logged_info
+    task_num = request.get_json()
+    task = tasks[task_num]
+    img_to_embedding = {}
     img_to_environment, obj_strs = preprocess(
-        "image-eye-web/public/images/" + data + "/", 100)
+        "image-eye-web/public/images/" + task["dataset"] + "/", 100)
     consolidate_environment(img_to_environment)
     add_descriptions(img_to_environment)
-    images = [preprocess_image(Image.open(image)).unsqueeze(
-        0).to(device) for image in img_to_environment.keys()]
-
-    images = torch.cat(images, dim=0)
-
+    for image_name in img_to_environment:
+        image = Image.open(image_name)
+        img_to_embedding[image_name] = (
+            image, get_image_embedding(image, processor, device, model))
+    logged_info["task"] = task["description"]
+    logged_info["dataset"] = task["dataset"]
+    logged_info["text queries"] = []
+    logged_info["annotated images"] = []
+    logged_info["num"] = task_num
+    logged_info["start time"] = time.perf_counter()
     return {
         'message': img_to_environment,
-        'files': [filename for filename in img_to_environment.keys()]
+        'files': [filename for filename in img_to_environment.keys()],
+        'task_description': task["description"]
     }
 
 
@@ -69,6 +74,7 @@ def load_files():
 @app.route("/synthesize", methods=['POST'])
 def get_synthesis_results():
     global img_to_environment
+    global logged_info
     args = get_args()
     synth = Synthesizer(args, {})
     data = request.get_json()
@@ -77,6 +83,7 @@ def get_synthesis_results():
     imgs = list(img_to_environment.keys())
 
     for (img_dir, indices) in data.items():
+        logged_info["annotated images"].append(img_dir)
         annotated_env = (
             synth.get_environment(
                 indices, img_dir, img_to_environment
@@ -140,71 +147,43 @@ def get_synthesis_results():
     return jsonify(response)
 
 
-def get_nl_explanation(prog, neg=False, use_is=False):
+@app.route("/submitResults", methods=['POST'])
+@cross_origin()
+def log_results():
+    global img_to_environment
+    global obj_strs
+    global img_to_embedding
+    results = request.get_json()
 
-    not_text = "not " if neg and use_is else "do not " if neg else ""
-    if isinstance(prog, Union):
-        sub_expls = [get_nl_explanation(sub_prog, neg=neg, use_is=True)
-                     for sub_prog in prog.extractors]
-        extra = "have an object that " if not use_is else ""
-        if neg:
-            return extra + " and ".join(sub_expls)
-        return extra + " or ".join(sub_expls)
-    if isinstance(prog, Intersection):
-        sub_expls = [get_nl_explanation(sub_prog, neg=neg, use_is=True)
-                     for sub_prog in prog.extractors]
-        if neg:
-            return extra + " or ".join(sub_expls)
-        return extra + " and ".join(sub_expls)
-    first_part = "is {}".format(
-        not_text) if use_is else "{}have".format(not_text)
-    if isinstance(prog, IsFace):
-        return "{} a face".format(first_part)
-    if isinstance(prog, IsText):
-        return "{} text".format(first_part)
-    if isinstance(prog, GetFace):
-        return "{} a face with id ".format(first_part) + str(prog.index)
-    if isinstance(prog, IsObject):
-        return "{} a {}".format(first_part, prog.obj.lower())
-    if isinstance(prog, MatchesWord):
-        return "{} text matching term '{}'".format(first_part, prog.word)
-    if isinstance(prog, IsPhoneNumber):
-        return "{} a phone number".format(first_part)
-    if isinstance(prog, IsPrice):
-        return "{} a price".format(first_part)
-    if isinstance(prog, IsSmiling):
-        return "{} a smiling face".format(first_part)
-    if isinstance(prog, EyesOpen):
-        return "{} a face with eyes open".format(first_part)
-    if isinstance(prog, MouthOpen):
-        return "{} a face with mouth open".format(first_part)
-    if isinstance(prog, AboveAge):
-        return "{} a face that is above age {}".format(first_part, prog.age)
-    if isinstance(prog, BelowAge):
-        return "{} a face that is below age {}".format(first_part, prog.age)
-    if isinstance(prog, Complement):
-        return get_nl_explanation(prog.extractor, neg=not neg, use_is=use_is)
-    if isinstance(prog, Map):
-        position_to_str = {
-            'GetLeft': 'is right of ',
-            'GetRight': 'is left of ',
-            'GetNext': 'is right of ',
-            'GetPrev': 'is left of ',
-            'GetBelow': 'is below ',
-            'GetAbove': 'is above ',
-            'GetContains': 'is contained in ',
-            'GetIsContained': 'contains ',
-        }
-        position_str = position_to_str[str(prog.position)]
-        sub_expl1 = get_nl_explanation(prog.restriction, use_is)
-        sub_expl2 = get_nl_explanation(prog.extractor, use_is=True)
-        expl = sub_expl1 + " that " + position_str + "an object that " + sub_expl2
-        if neg:
-            if use_is:
-                expl = expl[:2] + " not" + expl[2:]
-            else:
-                expl = "do not " + expl
-        return expl
+    logged_info["end time"] = time.perf_counter()
+    total_time = logged_info["end time"] - logged_info["start time"]
+    name = "output_{}.csv".format(logged_info["num"])
+    with open(name, "w") as f:
+        fw = csv.writer(f)
+        fw.writerow(
+            (
+                "Task",
+                "Dataset",
+                "Text Queries",
+                "Annotated Images",
+                "Results",
+                "Images Manually Added to Results",
+                "Images Manually Removed from Results",
+                "Total Time"
+            ),
+        )
+        fw.writerow(
+            (
+                logged_info["task"],
+                logged_info["dataset"],
+                logged_info["text queries"],
+                logged_info["annotated images"],
+                results["results"],
+                results["manually_added"],
+                results["manually_removed"],
+                total_time
+            )
+        )
 
 
 if __name__ == "__main__":

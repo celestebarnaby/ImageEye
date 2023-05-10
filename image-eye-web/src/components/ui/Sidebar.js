@@ -21,7 +21,7 @@ function Sidebar({ allFiles, imgsToAnnotate, changeImage, annotatedImgs, handleT
                 sx={{ background: "white" }}
                 onChange={handleTextChange}
             />
-            <Button sx={{ marginTop: 1, marginBottom: 1 }} fullWidth variant="contained" onClick={handleTextSubmit}>Sort images by description</Button>
+            <Button sx={{ marginTop: 1 }} fullWidth variant="contained" onClick={handleTextSubmit}>Sort images by description</Button>
             <Divider />
             {AllImages(allFiles, annotatedImgs, imgsToAnnotate, changeImage)}
             {/* <Box>
@@ -47,7 +47,7 @@ function AllImages(allFiles, annotatedImgs, imgsToAnnotate, changeImage) {
     let height = imgsToAnnotate.length > 0 ? 200 : 0;
 
     return <div>
-        {imgsToAnnotate.length > 0 ? <h3>Recommended images to annotate</h3> : <></>}
+        {/* {imgsToAnnotate.length > 0 ? <h3>Recommended images to annotate</h3> : <></>}
         <ImageList sx={{ width: "100%", height: height }} cols={3} rowHeight={164}>
             {imgsToAnnotate.length > 0 ?
                 imgsToAnnotate.map(img => {
@@ -61,7 +61,7 @@ function AllImages(allFiles, annotatedImgs, imgsToAnnotate, changeImage) {
                     </ImageListItem>
                 }) : <></>}
         </ImageList>
-        {imgsToAnnotate.length > 0 ? <hr /> : <></>}
+        {imgsToAnnotate.length > 0 ? <hr /> : <></>} */}
         {/* {allFiles ? <h3>All Images</h3> : {}} */}
         <ImageList sx={{ width: "100%", height: "100%" }} cols={3} rowHeight={164}>
             {allFiles.map(img => {

@@ -2,23 +2,17 @@ import React, { useState } from 'react';
 import AppBar from '@mui/material/AppBar';
 import Button from '@mui/material/Button';
 import CameraIcon from '@mui/icons-material/PhotoCamera';
-import Card from '@mui/material/Card';
-import CardActions from '@mui/material/CardActions';
-import CardContent from '@mui/material/CardContent';
-import CardMedia from '@mui/material/CardMedia';
 import CssBaseline from '@mui/material/CssBaseline';
-import Grid from '@mui/material/Grid';
-import Stack from '@mui/material/Stack';
 import Box from '@mui/material/Box';
 import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
-import Container from '@mui/material/Container';
 import Link from '@mui/material/Link';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { ImageEye } from './components/ui/ImageEye';
 import DialogTitle from '@mui/material/DialogTitle';
 import Dialog from '@mui/material/Dialog';
 import DialogContent from '@mui/material/DialogContent';
+import { SubmittedResults } from './components/ui/SubmittedResults';
 
 
 function Copyright() {
@@ -44,7 +38,7 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [inputText, setInputText] = useState("");
-  const [searchResults, setSearchResults] = useState(null);
+  const [searchResults, setSearchResults] = useState([]);
   const [sidebarFiles, setSidebarFiles] = useState([]);
   const [mainImage, setMainImage] = useState(null);
   const [objectList, setObjectList] = useState([]);
@@ -52,7 +46,10 @@ export default function App() {
   const [result, setResult] = useState(null);
   const [message, setMessage] = useState({});
   const [files, setFiles] = useState([]);
-
+  const [tentativeSubmit, setTentativeSubmit] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [manuallyAdded, setManuallyAdded] = useState(new Set());
+  const [manuallyRemoved, setManuallyRemoved] = useState(new Set());
 
   let closeError = () => {
     setErrorMessage('');
@@ -109,6 +106,20 @@ export default function App() {
   let removeImage = (img_dir) => {
     delete annotatedImages[img_dir]
     setAnnotatedImages({ ...annotatedImages });
+  }
+
+  let handleSearchResults = (img_dir) => {
+    if (searchResults.includes(img_dir)) {
+      const index = searchResults.indexOf(img_dir);
+      searchResults.splice(index, 1);
+      manuallyRemoved.add(img_dir)
+    } else {
+      searchResults.push(img_dir);
+      manuallyAdded.add(img_dir)
+    }
+    setSearchResults([...searchResults]);
+    setManuallyAdded(manuallyAdded);
+    setManuallyRemoved(manuallyRemoved);
   }
 
   let handleTextSubmit = () => {
@@ -169,6 +180,8 @@ export default function App() {
             setIsLoading(false);
           } else {
             setResult(data.program);
+            setManuallyAdded(new Set());
+            setManuallyRemoved(new Set());
             setSearchResults(data.search_results);
             setSidebarFiles(data.recs);
             setIsLoading(false);
@@ -183,6 +196,25 @@ export default function App() {
 
   }
 
+  let submitResults = () => {
+    setTentativeSubmit(true);
+  }
+
+  let submitResults2 = (val) => {
+    setSubmitted(val);
+    setTentativeSubmit(false);
+    if (val) {
+      fetch('http://127.0.0.1:5000/submitResults', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        // body: JSON.stringify(searchResults)
+        body: JSON.stringify({ results: searchResults, manually_added: Array.from(manuallyAdded), manually_removed: Array.from(manuallyRemoved) })
+      })
+    }
+  }
+
 
   return (
     <ThemeProvider theme={theme}>
@@ -194,7 +226,7 @@ export default function App() {
             <Typography variant="h6" color="inherit" noWrap>
               Image Eye
             </Typography>
-            <Button variant="outlined" sx={{ color: "white" }}>Upload Images</Button>
+            {/* <Button variant="outlined" sx={{ color: "white" }}>Upload Images</Button> */}
           </Toolbar>
         </AppBar>
         <Box
@@ -203,7 +235,7 @@ export default function App() {
             height: "calc(100vh - 64px)"
           }}
         >
-          {files ? <ImageEye
+          {!submitted ? <ImageEye
             files={files}
             message={message}
             updateResults={updateResults}
@@ -220,20 +252,32 @@ export default function App() {
             objectList={objectList}
             annotatedImages={annotatedImages}
             result={result}
-          /> : <Typography sx={{ margin: "auto" }}>Select a dataset to get started.</Typography>}
+            submitResults={submitResults}
+            handleSearchResults={handleSearchResults}
+          /> : <SubmittedResults searchResults={searchResults} />}
         </Box>
       </Box>
-      <Dialog onClose={closeBox} open={isOpen || isLoading}>
-        <DialogTitle>Select Image Directory</DialogTitle>
+      <Dialog open={isOpen}>
+        <DialogTitle>Select Task</DialogTitle>
         <DialogContent>
-          {isLoading ? <p>Loading...</p> : <div>
-            <div className="side-by-side">
-              <button className="button-12" onClick={() => handleChange('receipts')}>Receipts</button>
-              <button className="button-12" onClick={() => handleChange('objects')}>Objects</button>
-              <button className="button-12" onClick={() => handleChange('wedding2')}>Wedding</button>
-              <button className="button-12" onClick={() => handleChange('concert')}>Concert</button>
-            </div>
-          </div>}
+          <div className="side-by-side">
+            <button className="button-12" onClick={() => handleChange(1)}>1</button>
+            <button className="button-12" onClick={() => handleChange(2)}>2</button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={isLoading}>
+        <DialogContent>
+          <p>Loading...</p>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={tentativeSubmit}>
+        <DialogTitle>Are you sure you want to submit your results?</DialogTitle>
+        <DialogContent>
+          <div className="side-by-side">
+            <button className="button-12" onClick={() => submitResults2(true)}>Yes</button>
+            <button className="button-12" onClick={() => submitResults2(false)}>No</button>
+          </div>
         </DialogContent>
       </Dialog>
     </ThemeProvider>
