@@ -6,10 +6,9 @@ import os
 import json
 import csv
 import time
-import numpy as np
-import torch
 from transformers import CLIPProcessor, CLIPModel, CLIPTokenizer
 from sklearn.metrics.pairwise import cosine_similarity
+from PIL import Image
 
 # from typesystem import *
 
@@ -547,13 +546,33 @@ def preprocess(img_folder, max_faces=10):
 
     print("Num images: ", len(os.listdir(img_folder)))
     print("Total time: ", total_time)
+    add_descriptions(img_to_environment)
     test_images[key] = img_to_environment
     test_images[key + "obj_str"] = obj_strs_sorted
+    # print(img_to_environment)
+
     with open("test_images_ui.json", "w") as fp:
         json.dump(test_images, fp)
-    print(img_to_environment)
 
     return img_to_environment, obj_strs_sorted
+
+
+def get_img_to_embeddings(img_folder, processor, device, model):
+    img_embeddings = {}
+    if os.path.exists("./img_embeddings.json"):
+        with open("./img_embeddings.json", "r") as fp:
+            img_embeddings = json.load(fp)
+            if img_folder in img_embeddings:
+                return img_embeddings[img_folder]
+    img_to_embedding = {}
+    for filename in os.listdir(img_folder):
+        img_dir = img_folder + filename
+        image = Image.open(img_dir)
+        img_to_embedding[img_dir] = (
+            image, get_image_embedding(image, processor, device, model))
+    img_embeddings[img_folder] = img_to_embedding
+    with open("img_embeddings.json", "w") as fp:
+        json.dump(img_embeddings, fp)
 
 
 def get_img_vector(objs, obj_strs):
@@ -816,15 +835,14 @@ def get_model_info(model_ID, device):
     return model, processor, tokenizer
 
 
-def get_top_N_images(query, tokenizer, model, processor, device, top_K=4, search_criterion="text"):
-    global img_to_embedding
+def get_top_N_images(query, tokenizer, model, processor, device, img_to_embedding, top_K=4, search_criterion="text"):
     image_names = img_to_embedding.keys()
     image_embeddings = [img_to_embedding[name][1]
                         for name in image_names]
-    threshold = .2 if search_criterion == "text" else .75
+    threshold = .2 if search_criterion == "text" else .75 if search_criterion == "image" else 0
 
    # Text to image Search
-    if search_criterion.lower() == "text":
+    if search_criterion.lower() in {"text", "imageeye"}:
         query_vect = get_text_embedding(query, tokenizer, model)
     # Image to image Search
     else:
@@ -841,50 +859,51 @@ def get_top_N_images(query, tokenizer, model, processor, device, top_K=4, search
     return top_images
 
 
-def get_nl_explanation(prog, neg=False, use_is=False):
+def get_nl_explanation_helper(prog, neg=False, use_is=False, no_have=False):
 
-    not_text = "not " if neg and use_is else "do not " if neg else ""
+    not_text = " not" if neg and use_is else "do not " if neg else ""
     if isinstance(prog, Union):
-        sub_expls = [get_nl_explanation(sub_prog, neg=neg, use_is=True)
+        sub_expls = [get_nl_explanation_helper(sub_prog, neg=neg,)  # use_is=True)
+                     for sub_prog in prog.extractors]
+        extra = "" if not use_is else ""
+        if neg:
+            return extra + ", and ".join(sub_expls)
+        return extra + ", or ".join(sub_expls)
+    if isinstance(prog, Intersection):
+        sub_expls = [get_nl_explanation_helper(sub_prog, neg=neg, use_is=True)
                      for sub_prog in prog.extractors]
         extra = "have an object that " if not use_is else ""
         if neg:
-            return extra + " and ".join(sub_expls)
-        return extra + " or ".join(sub_expls)
-    if isinstance(prog, Intersection):
-        sub_expls = [get_nl_explanation(sub_prog, neg=neg, use_is=True)
-                     for sub_prog in prog.extractors]
-        if neg:
-            return extra + " or ".join(sub_expls)
-        return extra + " and ".join(sub_expls)
-    first_part = "is {}".format(
-        not_text) if use_is else "{}have".format(not_text)
+            return extra + ", or ".join(sub_expls)
+        return extra + ", and ".join(sub_expls)
+    first_part = "is{} ".format(
+        not_text) if use_is else "" if no_have else "{}have ".format(not_text)
     if isinstance(prog, IsFace):
-        return "{} a face".format(first_part)
+        return "{}a face".format(first_part)
     if isinstance(prog, IsText):
-        return "{} text".format(first_part)
+        return "{}text".format(first_part)
     if isinstance(prog, GetFace):
-        return "{} a face with id ".format(first_part) + str(prog.index)
+        return "{}a face with id ".format(first_part) + str(prog.index)
     if isinstance(prog, IsObject):
-        return "{} a {}".format(first_part, prog.obj.lower())
+        return "{}a {}".format(first_part, prog.obj.lower())
     if isinstance(prog, MatchesWord):
-        return "{} text matching term '{}'".format(first_part, prog.word)
+        return "{}text matching term '{}'".format(first_part, prog.word)
     if isinstance(prog, IsPhoneNumber):
-        return "{} a phone number".format(first_part)
+        return "{}a phone number".format(first_part)
     if isinstance(prog, IsPrice):
-        return "{} a price".format(first_part)
+        return "{}a price".format(first_part)
     if isinstance(prog, IsSmiling):
-        return "{} a smiling face".format(first_part)
+        return "{}a smiling face".format(first_part)
     if isinstance(prog, EyesOpen):
-        return "{} a face with eyes open".format(first_part)
+        return "{}a face with eyes open".format(first_part)
     if isinstance(prog, MouthOpen):
-        return "{} a face with mouth open".format(first_part)
+        return "{}a face with mouth open".format(first_part)
     if isinstance(prog, AboveAge):
-        return "{} a face that is above age {}".format(first_part, prog.age)
+        return "{}a face that is above age {}".format(first_part, prog.age)
     if isinstance(prog, BelowAge):
-        return "{} a face that is below age {}".format(first_part, prog.age)
+        return "{}a face that is below age {}".format(first_part, prog.age)
     if isinstance(prog, Complement):
-        return get_nl_explanation(prog.extractor, neg=not neg, use_is=use_is)
+        return get_nl_explanation_helper(prog.extractor, neg=not neg, use_is=use_is)
     if isinstance(prog, Map):
         position_to_str = {
             'GetLeft': 'is right of ',
@@ -897,12 +916,51 @@ def get_nl_explanation(prog, neg=False, use_is=False):
             'GetIsContained': 'contains ',
         }
         position_str = position_to_str[str(prog.position)]
-        sub_expl1 = get_nl_explanation(prog.restriction, use_is)
-        sub_expl2 = get_nl_explanation(prog.extractor, use_is=True)
-        expl = sub_expl1 + " that " + position_str + "an object that " + sub_expl2
+        sub_expl1 = get_nl_explanation_helper(prog.restriction, use_is=use_is)
+        is_basic_object = isinstance(prog.extractor, IsObject) or isinstance(prog.extractor, IsFace) or isinstance(prog.extractor, IsSmiling) or isinstance(prog.extractor, EyesOpen) or isinstance(
+            prog.extractor, BelowAge) or isinstance(prog.extractor, GetFace) or isinstance(prog.extractor, IsText) or isinstance(prog.extractor, IsPrice) or isinstance(prog.extractor, IsPhoneNumber)
+        sub_expl2 = get_nl_explanation_helper(
+            prog.extractor, use_is=not is_basic_object, no_have=is_basic_object)
+        expl = sub_expl1 + " that " + position_str + \
+            "{}".format(
+                "" if is_basic_object else " an object that ") + sub_expl2
         if neg:
             if use_is:
                 expl = expl[:2] + " not" + expl[2:]
             else:
                 expl = "do not " + expl
         return expl
+
+
+def get_nl_explanation(prog):
+    return "Images that {}.".format(get_nl_explanation_helper(prog))
+
+
+def test_nl_explanations():
+    progs = [
+        IsObject("cat"),
+        IsSmiling(),
+        Complement(IsSmiling()),
+        Complement(IsObject("cat")),
+        Union([IsSmiling(), IsObject("cat")]),
+        Intersection([IsSmiling(), EyesOpen()]),
+        Intersection([IsFace(), Complement(GetFace(6))]),
+        Map(GetFace(8), IsFace(), GetNext()),
+        Map(IsFace(), IsFace(), GetAbove()),
+        Union([Map(GetFace(8), IsFace(), GetNext()),
+              Map(GetFace(8), IsFace(), GetPrev())]),
+        Union([IsObject("Guitar"), Map(IsObject("Guitar"), IsFace(), GetAbove())]),
+        Intersection([IsObject("Cat"), Complement(
+            Map(IsObject("Cat"), IsObject("Cat"), GetBelow()))]),
+        Intersection([IsFace(), Complement(
+            Map(IsObject("Guitar"), IsFace(), GetAbove()))])
+    ]
+
+    for prog in progs:
+        print(str(prog))
+        print(get_nl_explanation(prog))
+        print()
+
+
+if __name__ == "__main__":
+    test_nl_explanations()

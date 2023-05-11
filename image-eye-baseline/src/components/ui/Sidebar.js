@@ -27,9 +27,6 @@ function Sidebar({ allFiles, changeImage, handleTextChange, handleTextSubmit }) 
             }} fullWidth variant="contained" onClick={handleTextSubmit}>Search by Text</Button>
             <Divider />
             {AllImages(allFiles, changeImage)}
-            {/* <Box>
-                <Button variant="contained" fullWidth onClick={() => updateResults()}>Filter images by example</Button>
-            </Box> */}
         </Box>
     );
 }

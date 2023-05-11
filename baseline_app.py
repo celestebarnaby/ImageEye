@@ -33,10 +33,12 @@ model, processor, tokenizer = get_model_info(model_ID, device)
 def text_query():
     global img_to_environment
     global logged_info
+    global img_to_embedding
 
     text_query = request.get_json()
     logged_info["text queries"].append(text_query)
-    results = get_top_N_images(text_query, tokenizer, model, processor, device)
+    results = get_top_N_images(
+        text_query, tokenizer, model, processor, device, img_to_embedding)
     return {
         'search_results': results,
         # 'sidebarFiles': [filename for filename in imgs][:5]
@@ -53,7 +55,7 @@ def image_query():
     logged_info["image queries"].append(image_name)
     image = img_to_embedding[image_name][0]
     results = get_top_N_images(
-        image, tokenizer, model, processor, device, search_criterion="image")
+        image, tokenizer, model, processor, device, img_to_embedding, search_criterion="image")
     return {
         'search_results': results,
         # 'sidebarFiles': [filename for filename in imgs][:5]

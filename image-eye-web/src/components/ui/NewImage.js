@@ -176,7 +176,7 @@ function AnnotatedImage(image, map, addObject, new_width, objs, descs, img_dir, 
                 margin: "auto", color: "#fff", background: "#1976D2", '&:hover': {
                     backgroundColor: '#305fc4'
                 },
-            }} onClick={() => addImage(img_dir)}>Add Example</Button>
+            }} variant="outlined" onClick={() => removeImage(img_dir)}>Remove Example</Button>
             <Button sx={{
                 margin: "auto", color: "#fff", background: "#1976D2", '&:hover': {
                     backgroundColor: '#305fc4'

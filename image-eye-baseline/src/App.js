@@ -165,7 +165,7 @@ export default function App() {
           <Toolbar sx={{ backgroundColor: "#D27519" }}>
             <CameraIcon sx={{ mr: 2 }} />
             <Typography variant="h6" color="inherit" noWrap>
-              Search by Text/Image
+              Tool A
             </Typography>
             {/* <Button variant="outlined" sx={{ color: "white" }}>Upload Images</Button> */}
           </Toolbar>
@@ -197,6 +197,10 @@ export default function App() {
           <div className="side-by-side">
             <button className="button-12" onClick={() => handleChange(1)}>1</button>
             <button className="button-12" onClick={() => handleChange(2)}>2</button>
+            <button className="button-12" onClick={() => handleChange(3)}>3</button>
+            <button className="button-12" onClick={() => handleChange(4)}>4</button>
+            <button className="button-12" onClick={() => handleChange(5)}>5</button>
+            <button className="button-12" onClick={() => handleChange(6)}>6</button>
           </div>
         </DialogContent>
       </Dialog>

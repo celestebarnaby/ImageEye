@@ -224,7 +224,7 @@ export default function App() {
           <Toolbar>
             <CameraIcon sx={{ mr: 2 }} />
             <Typography variant="h6" color="inherit" noWrap>
-              Image Eye
+              Tool B
             </Typography>
             {/* <Button variant="outlined" sx={{ color: "white" }}>Upload Images</Button> */}
           </Toolbar>
@@ -263,6 +263,10 @@ export default function App() {
           <div className="side-by-side">
             <button className="button-12" onClick={() => handleChange(1)}>1</button>
             <button className="button-12" onClick={() => handleChange(2)}>2</button>
+            <button className="button-12" onClick={() => handleChange(1)}>3</button>
+            <button className="button-12" onClick={() => handleChange(2)}>4</button>
+            <button className="button-12" onClick={() => handleChange(1)}>5</button>
+            <button className="button-12" onClick={() => handleChange(2)}>6</button>
           </div>
         </DialogContent>
       </Dialog>

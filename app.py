@@ -29,10 +29,12 @@ model, processor, tokenizer = get_model_info(model_ID, device)
 def text_query():
     global img_to_environment
     global logged_info
+    global img_to_embedding
 
     text_query = request.get_json()
     logged_info["text queries"].append(text_query)
-    results = get_top_N_images(text_query, tokenizer, model, processor, device)
+    results = get_top_N_images(
+        text_query, tokenizer, model, processor, device, img_to_embedding, search_criterion="imageeye")
     return {
         'files': results,
         # 'sidebarFiles': [filename for filename in imgs][:5]
@@ -49,14 +51,16 @@ def load_files():
     task_num = request.get_json()
     task = tasks[task_num]
     img_to_embedding = {}
+    img_folder = "image-eye-web/public/images/" + task["dataset"] + "/"
     img_to_environment, obj_strs = preprocess(
-        "image-eye-web/public/images/" + task["dataset"] + "/", 100)
+        img_folder, 100)
     consolidate_environment(img_to_environment)
-    add_descriptions(img_to_environment)
     for image_name in img_to_environment:
         image = Image.open(image_name)
         img_to_embedding[image_name] = (
             image, get_image_embedding(image, processor, device, model))
+    # img_to_embedding = get_img_to_embeddings(
+        # img_folder, processor, device, model)
     logged_info["task"] = task["description"]
     logged_info["dataset"] = task["dataset"]
     logged_info["text queries"] = []
@@ -117,7 +121,7 @@ def get_synthesis_results():
         # alt_img_dir = '.' + img_dir.split('/ui')[1]
         # results.append(alt_img_dir)
         results.append(img_dir)
-    explanation = "Images that " + get_nl_explanation(prog) + "."
+    explanation = get_nl_explanation(prog)
     # alt_used_imgs = ['.' + img_dir.split('/ui')[1] for img_dir in data.keys()]
     used_imgs = list(data.keys())
     # images that are different from annotated images and in search results
