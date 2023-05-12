@@ -564,7 +564,6 @@ def get_all_versions_of_object(obj, gt_obj):
         all_full_dicts.append(d | obj)
     gt_obj = {key: gt_obj[key] for key in [
         "Smile", "EyesOpen", "MouthOpen", "Eyeglasses"] if key in gt_obj}
-    print("!!@#$!@#$!")
     print(gt_obj)
     print(model_obj)
 
@@ -577,7 +576,6 @@ def get_all_versions_of_object(obj, gt_obj):
 
 
 def get_all_versions_of_image(env):
-    print("hi1")
     keys = list(env.keys())
     vals = list(env.values())
     print(len(vals))
@@ -585,7 +583,6 @@ def get_all_versions_of_image(env):
     all_lists = list(itertools.product(*vals))
     print(len(all_lists))
     all_envs = [{keys[i]: l[i] for i in range(len(l))} for l in all_lists]
-    print("hi2")
     return all_envs
 
 
