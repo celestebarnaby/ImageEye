@@ -424,7 +424,7 @@ class Synthesizer:
         img_options = list(img_to_environment.keys())
         while rounds <= self.max_rounds:
             signal.signal(signal.SIGALRM, handler)
-            signal.alarm(5)
+            signal.alarm(args.time_limit)
             try:
                 start_time = time.perf_counter()
                 if testing:

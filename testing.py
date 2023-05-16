@@ -16,11 +16,11 @@ def get_dataset_info():
         if dataset == "objects":
             img_to_environment = {}
             for name in ["cars", "cats", "guitars"]:
-                img_folder = "test_images/" + name + "/"
+                img_folder = "../test_images/" + name + "/"
                 temp = preprocess(img_folder, args.max_faces)
                 img_to_environment = img_to_environment | temp
         else:
-            img_folder = "test_images/" + dataset + "/"
+            img_folder = "../test_images/" + dataset + "/"
             img_to_environment = preprocess(img_folder, args.max_faces)
         num_objects_per_img = [len(env['environment'])
                                for env in img_to_environment.values()]
@@ -67,8 +67,8 @@ def get_dataset_info():
 
 def test_synthesis(args):
 
-    if args.get_dataset_info:
-        get_dataset_info()
+    # if args.get_dataset_info:
+        # get_dataset_info()
 
     if not os.path.exists("data"):
         os.mkdir("data")
@@ -82,8 +82,8 @@ def test_synthesis(args):
     for i, benchmark in enumerate(benchmarks):
         if args.benchmark_set and args.benchmark_set != benchmark.dataset_name:
             continue
-        img_folder = "test_images/" + benchmark.dataset_name + "/"
-        img_to_environment = preprocess(img_folder, args.max_faces)
+        img_folder = "../test_images/" + benchmark.dataset_name + "/"
+        img_to_environment, _ = preprocess(img_folder, args.max_faces)
         synth.img_to_environment = img_to_environment
         prog = benchmark.gt_prog
         # signal.signal(signal.SIGALRM, handler)

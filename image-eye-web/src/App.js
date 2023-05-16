@@ -263,10 +263,10 @@ export default function App() {
           <div className="side-by-side">
             <button className="button-12" onClick={() => handleChange(1)}>1</button>
             <button className="button-12" onClick={() => handleChange(2)}>2</button>
-            <button className="button-12" onClick={() => handleChange(1)}>3</button>
-            <button className="button-12" onClick={() => handleChange(2)}>4</button>
-            <button className="button-12" onClick={() => handleChange(1)}>5</button>
-            <button className="button-12" onClick={() => handleChange(2)}>6</button>
+            <button className="button-12" onClick={() => handleChange(3)}>3</button>
+            <button className="button-12" onClick={() => handleChange(4)}>4</button>
+            <button className="button-12" onClick={() => handleChange(5)}>5</button>
+            <button className="button-12" onClick={() => handleChange(6)}>6</button>
           </div>
         </DialogContent>
       </Dialog>

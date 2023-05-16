@@ -363,7 +363,7 @@ def get_args():
     parser.add_argument(
         "--time_limit",
         type=int,
-        default=1,
+        default=300,
         help="time out limit for synthesis (seconds)",
     )
     parser.add_argument(
@@ -906,8 +906,8 @@ def get_nl_explanation_helper(prog, neg=False, use_is=False, no_have=False):
         return get_nl_explanation_helper(prog.extractor, neg=not neg, use_is=use_is)
     if isinstance(prog, Map):
         position_to_str = {
-            'GetLeft': 'is right of ',
-            'GetRight': 'is left of ',
+            'GetLeft': 'is left of ',
+            'GetRight': 'is right of ',
             'GetNext': 'is right of ',
             'GetPrev': 'is left of ',
             'GetBelow': 'is below ',
