@@ -367,6 +367,23 @@ def draw_rectangles(img, env):
     return img
 
 
+def draw_rectangles2(img_name, objects):
+    img = cv2.imread(img_name, 1)
+    for obj in objects:
+        if obj["Name"] != "person":
+            continue
+        left, top, right, bottom = obj["bbox"]
+        img_height, img_width = img.shape[0], img.shape[1]
+        if right > img_width or bottom > img_height:
+            continue
+        color = (0, 100, 0)
+        thickness = 2
+        keys = []
+        img = cv2.rectangle(
+            img, (int(left), int(top)), (int(right), int(bottom)), color, thickness)
+    return img
+
+
 def get_details(
     face_responses,
     text_responses,
