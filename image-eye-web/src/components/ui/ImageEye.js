@@ -52,7 +52,7 @@ export function ImageEye({ files, message, updateResults, handleTextChange, hand
           handleSearchResults={handleSearchResults}
         />
       </Box>
-      <SearchResults files={searchResults} changeImage={changeImage} result={result} submitResults={submitResults} />
+      <SearchResults files={searchResults} changeImage={changeImage} result={result} submitResults={submitResults} exampleImages={Object.keys(annotatedImages)} updateResults={updateResults} />
 
 
     </Box>

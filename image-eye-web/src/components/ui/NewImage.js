@@ -12,6 +12,8 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import ImageList from '@mui/material/ImageList';
 import ImageListItem from '@mui/material/ImageListItem';
 import { alignProperty } from '@mui/material/styles/cssUtils';
+import AddIcon from '@mui/icons-material/Add';
+import RemoveIcon from '@mui/icons-material/Remove';
 
 export default function NewImage({ image, imgToEnvironment, annotatedImgs, addObject, addObjectsByName, addImage, getAnnotationDescriptions, removeImage, objectList, changeImage, updateResults, imgInResults, handleSearchResults }) {
     const [hoveredObjectList, setHoveredObjectList] = useState([]);
@@ -96,7 +98,7 @@ export default function NewImage({ image, imgToEnvironment, annotatedImgs, addOb
                 {image && (
                     annotated ? AnnotatedImage(image, map, addObject, new_width, objs, descs, img_dir, removeImage, imgInResults, handleSearchResults) : UnannotatedImage(image, map, addObject, addObjectsByName, new_width, addImage, img_dir, objs, descs, full_object_names, hoverOverObjects, removeHover, imgInResults, handleSearchResults))}
             </Box>
-            {ExampleSet(Object.keys(annotatedImgs), changeImage, updateResults)}
+            {/* {ExampleSet(Object.keys(annotatedImgs), changeImage, updateResults)} */}
         </div>
     );
 }
@@ -121,22 +123,22 @@ function ExampleSet(annotatedImgs, changeImage, updateResults) {
 }
 
 function UnannotatedImage(image, map, addObject, addObjectsByName, new_width, addImage, img_dir, objs, descs, full_object_names, hoverOverObjects, removeHover, imgInResults, handleSearchResults) {
-    const button_text = imgInResults ? "Remove from Search Results" : "Add to Search Results";
+    const example_button_text = descs.length > 0 ? "Add Positive Example" : "Add Negative Example";
+    const icon = imgInResults ? <RemoveIcon /> : <AddIcon />;
 
-    return <Box>
+    return <Box >
         {/* <img src={require(image)} className="center-image"/> */}
+        <div className='side-by-side'>
+            <div sx={{ marginBottom: "auto" }}>Select the objects in the image that pertain to your task.</div>
+            <IconButton sx={{ marginLeft: "auto" }} onClick={() => handleSearchResults(img_dir)}>{icon}</IconButton>
+        </div>
         <ImageMapper src={image.replace("image-eye-web/public/", "./")} map={map} onClick={(area, index) => addObject(objs[index]['ObjPosInImgLeftToRight'], true)} toggleHighlighted={true} stayMultiHighlighted={true} width={new_width} />
         <Box className="buttons-container">
             <Button sx={{
                 margin: "auto", color: "#fff", background: "#1976D2", '&:hover': {
                     backgroundColor: '#305fc4'
                 },
-            }} onClick={() => addImage(img_dir)}>Add Example</Button>
-            <Button sx={{
-                margin: "auto", color: "#fff", background: "#1976D2", '&:hover': {
-                    backgroundColor: '#305fc4'
-                },
-            }} onClick={() => handleSearchResults(img_dir)}>{button_text}</Button>
+            }} onClick={() => addImage(img_dir)}>{example_button_text}</Button>
         </Box>
         <div className="side-by-side">
             <div>
@@ -164,11 +166,14 @@ function UnannotatedImage(image, map, addObject, addObjectsByName, new_width, ad
 
 function AnnotatedImage(image, map, addObject, new_width, objs, descs, img_dir, removeImage, imgInResults, handleSearchResults) {
 
-    const button_text = imgInResults ? "Remove from Search Results" : "Add to Search Results";
+    const icon = imgInResults ? <RemoveIcon /> : <AddIcon />;
 
     return <Box>
         {/* <img src={require(image)} className="center-image"/> */}
-        <Typography>Image has been annotated</Typography>
+        <div className='side-by-side'>
+            <div>Image has been annotated.</div>
+            <IconButton sx={{ marginLeft: "auto" }} onClick={() => handleSearchResults(img_dir)}>{icon}</IconButton>
+        </div>
         <ImageMapper src={image.replace("image-eye-web/public/", "./")} map={map} onClick={(area, index) => addObject(objs[index]['ObjPosInImgLeftToRight'])} width={new_width} />
         <Box className="buttons-container">
             {/* <button className="button-10-2">Annotate</button> */}
@@ -177,13 +182,8 @@ function AnnotatedImage(image, map, addObject, new_width, objs, descs, img_dir, 
                     backgroundColor: '#305fc4'
                 },
             }} variant="outlined" onClick={() => removeImage(img_dir)}>Remove Example</Button>
-            <Button sx={{
-                margin: "auto", color: "#fff", background: "#1976D2", '&:hover': {
-                    backgroundColor: '#305fc4'
-                },
-            }} onClick={() => handleSearchResults(img_dir)}>{button_text}</Button>
         </Box>
-        <List>
+        <List sx={{ width: "500px" }}>
             {descs.map(desc => <div><ListItem><ListItemText primary={desc[0]} /></ListItem><Divider /></div>)}
         </List>
     </Box>

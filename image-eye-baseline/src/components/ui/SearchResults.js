@@ -9,7 +9,7 @@ function SearchResults({ files, changeImage, submitResults }) {
 
   return (
     <Box sx={{ height: "100%" }} className="sidebar">
-      <h3>Search Results</h3>
+      <h3>Saved Images</h3>
       {files.length > 0 ?
         // <div>
         <Box sx={{ height: "92%" }}>
