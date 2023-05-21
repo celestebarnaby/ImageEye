@@ -195,6 +195,7 @@ export default function App() {
         <DialogTitle>Select Task</DialogTitle>
         <DialogContent>
           <div className="side-by-side">
+            <button className="button-12" onClick={() => handleChange(0)}>Practice Task</button>
             <button className="button-12" onClick={() => handleChange(1)}>1</button>
             <button className="button-12" onClick={() => handleChange(2)}>2</button>
             <button className="button-12" onClick={() => handleChange(3)}>3</button>

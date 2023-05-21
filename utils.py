@@ -480,6 +480,23 @@ def get_obj_strs(objs):
     return strs
 
 
+def preprocess_embeddings(img_folder, img_to_environment, processor, device, model):
+    d = {}
+    if os.path.exists("./embeddings.json"):
+        with open("./embeddings.json", "r") as fp:
+            d = json.load(fp)
+            if img_folder in d:
+                return d[img_folder]
+    img_to_embedding = {}
+    for image_name in img_to_environment:
+        image = Image.open(image_name)
+        img_to_embedding[image_name] = get_image_embedding(image, processor, device, model).tolist()
+    d[img_folder] = img_to_embedding
+    with open("embeddings.json", "w") as fp:
+        json.dump(d, fp)
+    return img_to_embedding
+    
+
 def preprocess(img_folder, max_faces=10):
     """
     Given an img_folder, cache all the image's information to a dict, scored by the strategy
@@ -491,7 +508,6 @@ def preprocess(img_folder, max_faces=10):
     key = img_folder + " 2 " + str(max_faces)
     test_images = {}
 
-    print(os.listdir("."))
     print(os.path.exists("./test_images_ui.json"))
 
     if os.path.exists("./test_images_ui.json"):
@@ -837,7 +853,7 @@ def get_model_info(model_ID, device):
 
 def get_top_N_images(query, tokenizer, model, processor, device, img_to_embedding, top_K=4, search_criterion="text"):
     image_names = img_to_embedding.keys()
-    image_embeddings = [img_to_embedding[name][1]
+    image_embeddings = [np.array(img_to_embedding[name])
                         for name in image_names]
     threshold = .2 if search_criterion == "text" else .75 if search_criterion == "image" else 0
 
@@ -848,6 +864,8 @@ def get_top_N_images(query, tokenizer, model, processor, device, img_to_embeddin
     else:
         query_vect = get_image_embedding(query, processor, device, model)
     # Run similarity Search
+    print(type(query_vect))
+    print(type(image_embeddings[0]))
     cos_sim = [cosine_similarity(query_vect, x) for x in image_embeddings]
     cos_sim = [x[0][0] for x in cos_sim]
     cos_sim_per_image = zip(cos_sim, image_names)

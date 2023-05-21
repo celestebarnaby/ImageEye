@@ -13,6 +13,8 @@ import DialogTitle from '@mui/material/DialogTitle';
 import Dialog from '@mui/material/Dialog';
 import DialogContent from '@mui/material/DialogContent';
 import { SubmittedResults } from './components/ui/SubmittedResults';
+import IconButton from '@mui/material/IconButton';
+import CloseIcon from '@mui/icons-material/Close';
 
 
 function Copyright() {
@@ -176,7 +178,7 @@ export default function App() {
         .then(data => {
           console.log('Success:', data);
           if (data.program === null) {
-            setErrorMessage("Synthesizer timed out");
+            setErrorMessage("Search timed out");
             setIsLoading(false);
           } else {
             setResult(data.program);
@@ -261,6 +263,7 @@ export default function App() {
         <DialogTitle>Select Task</DialogTitle>
         <DialogContent>
           <div className="side-by-side">
+            <button className="button-12" onClick={() => handleChange(0)}>Practice Task</button>
             <button className="button-12" onClick={() => handleChange(1)}>1</button>
             <button className="button-12" onClick={() => handleChange(2)}>2</button>
             <button className="button-12" onClick={() => handleChange(3)}>3</button>
@@ -268,6 +271,25 @@ export default function App() {
             <button className="button-12" onClick={() => handleChange(5)}>5</button>
             <button className="button-12" onClick={() => handleChange(6)}>6</button>
           </div>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={errorMessage}>
+        <DialogTitle>
+          <IconButton
+            aria-label="close"
+            onClick={() => setErrorMessage('')}
+            sx={{
+              position: 'absolute',
+              right: 8,
+              top: 8,
+              color: (theme) => theme.palette.grey[500],
+            }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent>
+          {errorMessage}
         </DialogContent>
       </Dialog>
       <Dialog open={isLoading}>

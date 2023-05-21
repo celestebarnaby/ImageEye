@@ -123,7 +123,7 @@ function ExampleSet(annotatedImgs, changeImage, updateResults) {
 }
 
 function UnannotatedImage(image, map, addObject, addObjectsByName, new_width, addImage, img_dir, objs, descs, full_object_names, hoverOverObjects, removeHover, imgInResults, handleSearchResults) {
-    const example_button_text = descs.length > 0 ? "Add Positive Example" : "Add Negative Example";
+    const example_button_text = descs.length > 0 ? "Save Annotation" : "Save Negative Annotation";
     const icon = imgInResults ? <RemoveIcon /> : <AddIcon />;
 
     return <Box >
@@ -181,7 +181,7 @@ function AnnotatedImage(image, map, addObject, new_width, objs, descs, img_dir, 
                 margin: "auto", color: "#fff", background: "#1976D2", '&:hover': {
                     backgroundColor: '#305fc4'
                 },
-            }} variant="outlined" onClick={() => removeImage(img_dir)}>Remove Example</Button>
+            }} variant="outlined" onClick={() => removeImage(img_dir)}>Remove Saved Annotation</Button>
         </Box>
         <List sx={{ width: "500px" }}>
             {descs.map(desc => <div><ListItem><ListItemText primary={desc[0]} /></ListItem><Divider /></div>)}

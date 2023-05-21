@@ -10,7 +10,7 @@ function SearchResults({ files, changeImage, result, submitResults, exampleImage
 
   return (
     <Box className="search-results">
-      <h3>Example Images</h3>
+      <h3>Annotated Images</h3>
       {exampleImages.length > 0 ?
         <Box sx={{ paddingRight: "30px", height: "auto" }}>
           <ImageList sx={{ margin: "8px", width: "100%", height: "calc(100% - 76px)" }} cols={2} rowHeight={124}>
@@ -23,7 +23,7 @@ function SearchResults({ files, changeImage, result, submitResults, exampleImage
               </ImageListItem>
             })}
           </ImageList>
-          <Button fullWidth variant="contained" onClick={() => updateResults()}>Filter images by examples</Button>
+          <Button fullWidth variant="contained" onClick={() => updateResults()}>Filter Images by Annotations</Button>
         </Box> : <div></div>
       }
       <Divider></Divider>

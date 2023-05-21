@@ -259,7 +259,7 @@ class Synthesizer:
 
         while worklist:
             num_progs += 1
-            if num_progs > 200000:
+            if num_progs > 10000:
                 break
             cur_tree = hq.heappop(worklist)
             prog = construct_prog_from_tree(cur_tree)

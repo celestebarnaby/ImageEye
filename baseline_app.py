@@ -53,7 +53,7 @@ def image_query():
 
     image_name = request.get_json()
     logged_info["image queries"].append(image_name)
-    image = img_to_embedding[image_name][0]
+    image = Image.open(image_name)
     results = get_top_N_images(
         image, tokenizer, model, processor, device, img_to_embedding, search_criterion="image")
     return {
@@ -72,14 +72,15 @@ def load_files():
     task_num = request.get_json()
     task = tasks[task_num]
     img_to_embedding = {}
+    img_folder = "image-eye-web/public/images/" + task["dataset"] + "/"
     img_to_environment, obj_strs = preprocess(
         "image-eye-web/public/images/" + task["dataset"] + "/", 100)
     consolidate_environment(img_to_environment)
-    add_descriptions(img_to_environment)
-    for image_name in img_to_environment:
-        image = Image.open(image_name)
-        img_to_embedding[image_name] = (
-            image, get_image_embedding(image, processor, device, model))
+    img_to_embedding = preprocess_embeddings(img_folder, img_to_environment, processor, device, model)
+    # for image_name in img_to_environment:
+    #     image = Image.open(image_name)
+    #     img_to_embedding[image_name] = (
+    #         image, get_image_embedding(image, processor, device, model))
     logged_info["task"] = task["description"]
     logged_info["dataset"] = task["dataset"]
     logged_info["text queries"] = []

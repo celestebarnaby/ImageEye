@@ -55,10 +55,7 @@ def load_files():
     img_to_environment, obj_strs = preprocess(
         img_folder, 100)
     consolidate_environment(img_to_environment)
-    for image_name in img_to_environment:
-        image = Image.open(image_name)
-        img_to_embedding[image_name] = (
-            image, get_image_embedding(image, processor, device, model))
+    img_to_embedding = preprocess_embeddings(img_folder, img_to_environment, processor, device, model)
     # img_to_embedding = get_img_to_embeddings(
         # img_folder, processor, device, model)
     logged_info["task"] = task["description"]
@@ -67,6 +64,7 @@ def load_files():
     logged_info["annotated images"] = []
     logged_info["num"] = task_num
     logged_info["start time"] = time.perf_counter()
+    logged_info["synthesis_results"] = []
     return {
         'message': img_to_environment,
         'files': [filename for filename in img_to_environment.keys()],
@@ -143,6 +141,7 @@ def get_synthesis_results():
         if imgs[i] not in results:
             bottom_5_indices.append(imgs[i])
     recs = top_5_indices + bottom_5_indices
+    logged_info["synthesis_results"].append(results)
     response = {
         'program': explanation,
         'search_results': results,
@@ -170,7 +169,8 @@ def log_results():
                 "Dataset",
                 "Text Queries",
                 "Annotated Images",
-                "Results",
+                "Synthesis Results",
+                "Submitted Images",
                 "Images Manually Added to Results",
                 "Images Manually Removed from Results",
                 "Total Time"
@@ -182,12 +182,17 @@ def log_results():
                 logged_info["dataset"],
                 logged_info["text queries"],
                 logged_info["annotated images"],
+                logged_info["synthesis_results"],
                 results["results"],
                 results["manually_added"],
                 results["manually_removed"],
                 total_time
             )
         )
+    response = {
+        'status': 'ok',
+    }
+    return jsonify(response)
 
 
 if __name__ == "__main__":
