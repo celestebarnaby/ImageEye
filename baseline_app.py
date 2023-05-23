@@ -74,7 +74,7 @@ def load_files():
     img_to_embedding = {}
     img_folder = "image-eye-web/public/images/" + task["dataset"] + "/"
     img_to_environment, obj_strs = preprocess(
-        "image-eye-web/public/images/" + task["dataset"] + "/", 100)
+        img_folder, 100)
     consolidate_environment(img_to_environment)
     img_to_embedding = preprocess_embeddings(img_folder, img_to_environment, processor, device, model)
     # for image_name in img_to_environment:

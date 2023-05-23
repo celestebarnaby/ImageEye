@@ -490,12 +490,13 @@ def preprocess_embeddings(img_folder, img_to_environment, processor, device, mod
     img_to_embedding = {}
     for image_name in img_to_environment:
         image = Image.open(image_name)
-        img_to_embedding[image_name] = get_image_embedding(image, processor, device, model).tolist()
+        img_to_embedding[image_name] = get_image_embedding(
+            image, processor, device, model).tolist()
     d[img_folder] = img_to_embedding
     with open("embeddings.json", "w") as fp:
         json.dump(d, fp)
     return img_to_embedding
-    
+
 
 def preprocess(img_folder, max_faces=10):
     """

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import Sidebar from './Sidebar';
 import NewImage from './NewImage';
 import SearchResults from './SearchResults';
+import SavedImages from './SavedImages';
 
 
 import Box from '@mui/material/Box';
@@ -30,7 +31,7 @@ export function ImageEye({ files, handleTextChange, handleTextSubmit, handleImag
       </Box>
       <SearchResults files={searchResults} changeImage={changeImage} submitResults={submitResults} />
 
-
+      {/* <SavedImages /> */}
     </Box>
   );
 }

@@ -8,7 +8,8 @@ import RemoveIcon from '@mui/icons-material/Remove';
 
 export default function NewImage({ image, handleImageSubmit, handleSearchResults, imgInResults }) {
 
-
+    console.log('hi');
+    console.log(image);
     let img_dir = image ? image : null;
 
     const new_width = 500;
