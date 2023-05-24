@@ -10,7 +10,7 @@ from flask_cors import CORS, cross_origin
 
 app = Flask(__name__)
 cors = CORS(app)
-app.config['CORS_HEADERS'] = 'Content-Type'
+app.config["CORS_HEADERS"] = "Content-Type"
 img_to_environment = {}
 img_to_embedding = {}
 logged_info = {}
@@ -24,7 +24,7 @@ model_ID = "openai/clip-vit-base-patch32"
 model, processor, tokenizer = get_model_info(model_ID, device)
 
 
-@app.route("/textQuery", methods=['POST'])
+@app.route("/textQuery", methods=["POST"])
 @cross_origin()
 def text_query():
     global img_to_environment
@@ -34,14 +34,21 @@ def text_query():
     text_query = request.get_json()
     logged_info["text queries"].append(text_query)
     results = get_top_N_images(
-        text_query, tokenizer, model, processor, device, img_to_embedding, search_criterion="imageeye")
+        text_query,
+        tokenizer,
+        model,
+        processor,
+        device,
+        img_to_embedding,
+        search_criterion="imageeye",
+    )
     return {
-        'files': results,
+        "files": results,
         # 'sidebarFiles': [filename for filename in imgs][:5]
     }
 
 
-@app.route("/loadFiles", methods=['POST'])
+@app.route("/loadFiles", methods=["POST"])
 @cross_origin()
 def load_files():
     global img_to_environment
@@ -52,12 +59,13 @@ def load_files():
     task = tasks[task_num]
     img_to_embedding = {}
     img_folder = "image-eye-web/public/images/" + task["dataset"] + "/"
-    img_to_environment, obj_strs = preprocess(
-        img_folder, 100)
+    img_to_environment, obj_strs = preprocess(img_folder, 100)
     consolidate_environment(img_to_environment)
-    img_to_embedding = preprocess_embeddings(img_folder, img_to_environment, processor, device, model)
+    img_to_embedding = preprocess_embeddings(
+        img_folder, img_to_environment, processor, device, model
+    )
     # img_to_embedding = get_img_to_embeddings(
-        # img_folder, processor, device, model)
+    # img_folder, processor, device, model)
     logged_info["task"] = task["description"]
     logged_info["dataset"] = task["dataset"]
     logged_info["text queries"] = []
@@ -66,14 +74,14 @@ def load_files():
     logged_info["start time"] = time.perf_counter()
     logged_info["synthesis_results"] = []
     return {
-        'message': img_to_environment,
-        'files': [filename for filename in img_to_environment.keys()],
-        'task_description': task["description"]
+        "message": img_to_environment,
+        "files": [filename for filename in img_to_environment.keys()],
+        "task_description": task["description"],
     }
 
 
 @cross_origin()
-@app.route("/synthesize", methods=['POST'])
+@app.route("/synthesize", methods=["POST"])
 def get_synthesis_results():
     global img_to_environment
     global logged_info
@@ -84,35 +92,29 @@ def get_synthesis_results():
 
     imgs = list(img_to_environment.keys())
 
-    for (img_dir, indices) in data.items():
+    for img_dir, indices in data.items():
         logged_info["annotated images"].append(img_dir)
         annotated_env = (
-            synth.get_environment(
-                indices, img_dir, img_to_environment
-            )
-            | annotated_env
+            synth.get_environment(indices, img_dir, img_to_environment) | annotated_env
         )
     vector = np.array(get_img_vector(annotated_env.values(), obj_strs))
     # matrix = np.transpose(np.array([env["vector"]
     #   for env in img_to_environment.values()]))
-    matrix = np.array([env["vector"]
-                       for env in img_to_environment.values()])
+    matrix = np.array([env["vector"] for env in img_to_environment.values()])
 
-    cosine_similarities = np.dot(
-        matrix, vector) / (np.linalg.norm(matrix, axis=1) * np.linalg.norm(vector))
+    cosine_similarities = np.dot(matrix, vector) / (
+        np.linalg.norm(matrix, axis=1) * np.linalg.norm(vector)
+    )
     indices = np.argsort(cosine_similarities)
 
     action = Blur()
-    prog, _ = synth.synthesize_top_down(
-        annotated_env, action, {}, args)
+    prog, _ = synth.synthesize_top_down(annotated_env, action, {}, args)
     if prog is None:
-        response = {
-            'program': None
-        }
+        response = {"program": None}
         return jsonify(response)
     results = []
     for img_dir, env in img_to_environment.items():
-        env = env['environment']
+        env = env["environment"]
         output = eval_extractor(prog, env)
         if not output:
             continue
@@ -142,15 +144,11 @@ def get_synthesis_results():
             bottom_5_indices.append(imgs[i])
     recs = top_5_indices + bottom_5_indices
     logged_info["synthesis_results"].append(results)
-    response = {
-        'program': explanation,
-        'search_results': results,
-        'recs': recs
-    }
+    response = {"program": explanation, "search_results": results, "recs": recs}
     return jsonify(response)
 
 
-@app.route("/submitResults", methods=['POST'])
+@app.route("/submitResults", methods=["POST"])
 @cross_origin()
 def log_results():
     global img_to_environment
@@ -173,7 +171,7 @@ def log_results():
                 "Submitted Images",
                 "Images Manually Added to Results",
                 "Images Manually Removed from Results",
-                "Total Time"
+                "Total Time",
             ),
         )
         fw.writerow(
@@ -186,14 +184,14 @@ def log_results():
                 results["results"],
                 results["manually_added"],
                 results["manually_removed"],
-                total_time
+                total_time,
             )
         )
     response = {
-        'status': 'ok',
+        "status": "ok",
     }
     return jsonify(response)
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="localhost", port=5001, debug=True)

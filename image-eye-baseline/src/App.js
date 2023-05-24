@@ -46,8 +46,7 @@ export default function App() {
   const [files, setFiles] = useState([]);
   const [tentativeSubmit, setTentativeSubmit] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [manuallyAdded, setManuallyAdded] = useState(new Set());
-  const [manuallyRemoved, setManuallyRemoved] = useState(new Set());
+  const [savedImages, setSavedImages] = useState([]);
 
 
   let closeError = () => {
@@ -66,11 +65,11 @@ export default function App() {
     setInputText(event.target.value);
   }
 
-  let submitResults = () => {
+  let submitSavedImages = () => {
     setTentativeSubmit(true);
   }
 
-  let submitResults2 = (val) => {
+  let submitSavedImages2 = (val) => {
     setSubmitted(val);
     setTentativeSubmit(false);
     if (val) {
@@ -80,7 +79,7 @@ export default function App() {
           'Content-Type': 'application/json'
         },
         // body: JSON.stringify(searchResults)
-        body: JSON.stringify({ results: searchResults, manually_added: Array.from(manuallyAdded), manually_removed: Array.from(manuallyRemoved) })
+        body: JSON.stringify({ results: savedImages })
       })
     }
   }
@@ -97,24 +96,30 @@ export default function App() {
       .then(response => response.json())
       .then(data => {
         setSearchResults(data.search_results);
-        setManuallyAdded(new Set());
-        setManuallyRemoved(new Set());
+        // setManuallyAdded(new Set());
+        // setManuallyRemoved(new Set());
         setIsLoading(false);
       })
   }
 
-  let handleSearchResults = (img_dir) => {
-    if (searchResults.includes(img_dir)) {
-      const index = searchResults.indexOf(img_dir);
-      searchResults.splice(index, 1);
-      manuallyRemoved.add(img_dir)
+  let addToSavedImages = (images) => {
+    images.forEach(image => handleSavedImages(image, false));
+  }
+
+  let handleSavedImages = (img_dir, remove_if_present) => {
+    if (savedImages.includes(img_dir)) {
+      if (remove_if_present) {
+        const index = savedImages.indexOf(img_dir);
+        savedImages.splice(index, 1);
+      }
+      // manuallyRemoved.add(img_dir)
     } else {
-      searchResults.push(img_dir);
-      manuallyAdded.add(img_dir)
+      savedImages.push(img_dir);
+      // manuallyAdded.add(img_dir)
     }
-    setSearchResults([...searchResults]);
-    setManuallyAdded(manuallyAdded);
-    setManuallyRemoved(manuallyRemoved);
+    setSavedImages([...savedImages]);
+    // setManuallyAdded(manuallyAdded);
+    // setManuallyRemoved(manuallyRemoved);
   }
 
 
@@ -130,8 +135,8 @@ export default function App() {
       .then(response => response.json())
       .then(data => {
         setSearchResults(data.search_results);
-        setManuallyAdded(new Set());
-        setManuallyRemoved(new Set());
+        // setManuallyAdded(new Set());
+        // setManuallyRemoved(new Set());
         setIsLoading(false);
       })
   }
@@ -182,13 +187,15 @@ export default function App() {
             handleTextChange={handleTextChange}
             handleTextSubmit={handleTextSubmit}
             handleImageSubmit={handleImageSubmit}
-            handleSearchResults={handleSearchResults}
+            handleSavedImages={handleSavedImages}
             searchResults={searchResults}
             sidebarFiles={sidebarFiles}
             mainImage={mainImage}
             changeImage={changeImage}
-            submitResults={submitResults}
-          /> : <SubmittedResults searchResults={searchResults} />}
+            submitSavedImages={submitSavedImages}
+            savedImages={savedImages}
+            addToSavedImages={addToSavedImages}
+          /> : <SubmittedResults searchResults={savedImages} />}
         </Box>
       </Box>
       <Dialog open={isOpen}>
@@ -214,8 +221,8 @@ export default function App() {
         <DialogTitle>Are you sure you want to submit your results?</DialogTitle>
         <DialogContent>
           <div className="side-by-side">
-            <button className="button-12" onClick={() => submitResults2(true)}>Yes</button>
-            <button className="button-12" onClick={() => submitResults2(false)}>No</button>
+            <button className="button-12" onClick={() => submitSavedImages2(true)}>Yes</button>
+            <button className="button-12" onClick={() => submitSavedImages2(false)}>No</button>
           </div>
         </DialogContent>
       </Dialog>

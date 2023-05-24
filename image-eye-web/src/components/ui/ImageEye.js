@@ -2,12 +2,13 @@ import React, { useState } from 'react';
 import Sidebar from './Sidebar';
 import NewImage from './NewImage';
 import SearchResults from './SearchResults';
+import SavedImages from './SavedImages';
 
 
 import Box from '@mui/material/Box';
 
 
-export function ImageEye({ files, message, updateResults, handleTextChange, handleTextSubmit, searchResults, sidebarFiles, mainImage, changeImage, addObject, addObjectsByName, addImage, removeImage, objectList, annotatedImages, result, submitResults, handleSearchResults }) {
+export function ImageEye({ files, message, updateResults, handleTextChange, handleTextSubmit, searchResults, sidebarFiles, mainImage, changeImage, addObject, addObjectsByName, addImage, removeImage, objectList, annotatedImages, result, submitSavedImages, handleSavedImages, addToSavedImages, savedImages }) {
 
   // const [message, setMessage] = useState(message);
   // const [files, setFiles] = useState(files);
@@ -16,7 +17,7 @@ export function ImageEye({ files, message, updateResults, handleTextChange, hand
   //       setSidebarFiles(data.sidebarFiles);
   //       setMessage(data.message);
 
-  const imgInResults = searchResults.includes(mainImage);
+  const imgSaved = savedImages.includes(mainImage);
 
   function getAnnotationDescriptions(objs, annotations, annotated) {
     let l = annotated ? annotations : objectList;
@@ -48,12 +49,12 @@ export function ImageEye({ files, message, updateResults, handleTextChange, hand
           objectList={objectList}
           changeImage={changeImage}
           updateResults={updateResults}
-          imgInResults={imgInResults}
-          handleSearchResults={handleSearchResults}
+          imgSaved={imgSaved}
+          handleSavedImages={handleSavedImages}
         />
       </Box>
-      <SearchResults files={searchResults} changeImage={changeImage} result={result} submitResults={submitResults} exampleImages={Object.keys(annotatedImages)} updateResults={updateResults} />
-
+      <SearchResults files={searchResults} changeImage={changeImage} result={result} exampleImages={Object.keys(annotatedImages)} updateResults={updateResults} addToSavedImages={addToSavedImages} />
+      <SavedImages images={savedImages} changeImage={changeImage} submitSavedImages={submitSavedImages} />
 
     </Box>
   );

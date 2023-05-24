@@ -14,8 +14,9 @@ import ImageListItem from '@mui/material/ImageListItem';
 import { alignProperty } from '@mui/material/styles/cssUtils';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
+import SaveAltIcon from '@mui/icons-material/SaveAlt';
 
-export default function NewImage({ image, imgToEnvironment, annotatedImgs, addObject, addObjectsByName, addImage, getAnnotationDescriptions, removeImage, objectList, changeImage, updateResults, imgInResults, handleSearchResults }) {
+export default function NewImage({ image, imgToEnvironment, annotatedImgs, addObject, addObjectsByName, addImage, getAnnotationDescriptions, removeImage, objectList, imgSaved, handleSavedImages }) {
     const [hoveredObjectList, setHoveredObjectList] = useState([]);
 
     let addHoveredObject = (index) => {
@@ -96,41 +97,23 @@ export default function NewImage({ image, imgToEnvironment, annotatedImgs, addOb
         <div>
             <Box className="image-container">
                 {image && (
-                    annotated ? AnnotatedImage(image, map, addObject, new_width, objs, descs, img_dir, removeImage, imgInResults, handleSearchResults) : UnannotatedImage(image, map, addObject, addObjectsByName, new_width, addImage, img_dir, objs, descs, full_object_names, hoverOverObjects, removeHover, imgInResults, handleSearchResults))}
+                    annotated ? AnnotatedImage(image, map, addObject, new_width, objs, descs, img_dir, removeImage, imgSaved, handleSavedImages) : UnannotatedImage(image, map, addObject, addObjectsByName, new_width, addImage, img_dir, objs, descs, full_object_names, hoverOverObjects, removeHover, imgSaved, handleSavedImages))}
             </Box>
             {/* {ExampleSet(Object.keys(annotatedImgs), changeImage, updateResults)} */}
         </div>
     );
 }
 
-function ExampleSet(annotatedImgs, changeImage, updateResults) {
-    let height = annotatedImgs.length > 0 ? 200 : 0;
-    return <Box sx={{ paddingLeft: "80px", paddingRight: "80px", paddingTop: "20px", display: "auto" }}>
-        {annotatedImgs.length > 0 ? <h3>Examples</h3> : <></>}
-        <ImageList sx={{ width: "100%", height: height, overflowX: "auto" }} cols={3} rowHeight={164}>
-            {annotatedImgs.length > 0 ?
-                annotatedImgs.map(img => {
-                    return <ImageListItem key={img} onClick={() => changeImage(img)}>
-                        <img
-                            src={`${img.replace("image-eye-web/public/", "./")}`}
-                            loading="lazy"
-                        />
-                    </ImageListItem>
-                }) : <></>}
-        </ImageList>
-        {annotatedImgs.length > 0 && <Button fullWidth variant="contained" onClick={() => updateResults()}>Filter images by examples</Button>}
-    </Box>
-}
 
-function UnannotatedImage(image, map, addObject, addObjectsByName, new_width, addImage, img_dir, objs, descs, full_object_names, hoverOverObjects, removeHover, imgInResults, handleSearchResults) {
+function UnannotatedImage(image, map, addObject, addObjectsByName, new_width, addImage, img_dir, objs, descs, full_object_names, hoverOverObjects, removeHover, imgSaved, handleSavedImages) {
     const example_button_text = descs.length > 0 ? "Save Annotation" : "Save Negative Annotation";
-    const icon = imgInResults ? <RemoveIcon /> : <AddIcon />;
+    const icon = imgSaved ? <RemoveIcon /> : <AddIcon />;
 
-    return <Box >
+    return <Box>
         {/* <img src={require(image)} className="center-image"/> */}
         <div className='side-by-side'>
             <div sx={{ marginBottom: "auto" }}>Select the objects in the image that pertain to your task.</div>
-            <IconButton sx={{ marginLeft: "auto" }} onClick={() => handleSearchResults(img_dir)}>{icon}</IconButton>
+            <IconButton onClick={() => handleSavedImages(img_dir, true)}>{icon}</IconButton>
         </div>
         <ImageMapper src={image.replace("image-eye-web/public/", "./")} map={map} onClick={(area, index) => addObject(objs[index]['ObjPosInImgLeftToRight'], true)} toggleHighlighted={true} stayMultiHighlighted={true} width={new_width} />
         <Box className="buttons-container">
@@ -140,7 +123,7 @@ function UnannotatedImage(image, map, addObject, addObjectsByName, new_width, ad
                 },
             }} onClick={() => addImage(img_dir)}>{example_button_text}</Button>
         </Box>
-        <div className="side-by-side">
+        <div style={{ paddingBottom: "25%" }} className="side-by-side">
             <div>
                 <h3>Objects found in image</h3>
                 <div style={{ width: "300px" }}>
@@ -164,15 +147,15 @@ function UnannotatedImage(image, map, addObject, addObjectsByName, new_width, ad
     </Box>
 }
 
-function AnnotatedImage(image, map, addObject, new_width, objs, descs, img_dir, removeImage, imgInResults, handleSearchResults) {
+function AnnotatedImage(image, map, addObject, new_width, objs, descs, img_dir, removeImage, imgSaved, handleSavedImages) {
 
-    const icon = imgInResults ? <RemoveIcon /> : <AddIcon />;
+    const icon = imgSaved ? <RemoveIcon /> : <AddIcon />;
 
     return <Box>
         {/* <img src={require(image)} className="center-image"/> */}
         <div className='side-by-side'>
             <div>Image has been annotated.</div>
-            <IconButton sx={{ marginLeft: "auto" }} onClick={() => handleSearchResults(img_dir)}>{icon}</IconButton>
+            <IconButton sx={{ marginLeft: "auto" }} onClick={() => handleSavedImages(img_dir, true)}>{icon}</IconButton>
         </div>
         <ImageMapper src={image.replace("image-eye-web/public/", "./")} map={map} onClick={(area, index) => addObject(objs[index]['ObjPosInImgLeftToRight'])} width={new_width} />
         <Box className="buttons-container">

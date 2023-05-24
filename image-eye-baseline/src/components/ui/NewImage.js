@@ -6,10 +6,8 @@ import IconButton from '@mui/material/IconButton';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
 
-export default function NewImage({ image, handleImageSubmit, handleSearchResults, imgInResults }) {
+export default function NewImage({ image, handleImageSubmit, handleSavedImages, imgSaved }) {
 
-    console.log('hi');
-    console.log(image);
     let img_dir = image ? image : null;
 
     const new_width = 500;
@@ -17,7 +15,7 @@ export default function NewImage({ image, handleImageSubmit, handleSearchResults
     return (
         <div>
             <Box className="image-container">
-                {image && Image(image, new_width, handleImageSubmit, handleSearchResults, img_dir, imgInResults)}
+                {image && Image(image, new_width, handleImageSubmit, handleSavedImages, img_dir, imgSaved)}
             </Box>
         </div>
     );
@@ -25,13 +23,13 @@ export default function NewImage({ image, handleImageSubmit, handleSearchResults
 
 
 
-function Image(image, new_width, handleImageSubmit, handleSearchResults, img_dir, imgInResults) {
+function Image(image, new_width, handleImageSubmit, handleSavedImages, img_dir, imgSaved) {
 
-    const icon = imgInResults ? <RemoveIcon /> : <AddIcon />;
+    const icon = imgSaved ? <RemoveIcon /> : <AddIcon />;
 
     return <Box>
         {/* <img src={require(image)} className="center-image"/> */}
-        <IconButton sx={{ marginLeft: "auto", display: "flex" }} onClick={() => handleSearchResults(img_dir)}>{icon}</IconButton>
+        <IconButton sx={{ marginLeft: "auto", display: "flex" }} onClick={() => handleSavedImages(img_dir, true)}>{icon}</IconButton>
         <ImageMapper src={image.replace("image-eye-web/public/", "./")} toggleHighlighted={true} stayMultiHighlighted={true} width={new_width} />
         <Box className="buttons-container">
             <Button sx={{

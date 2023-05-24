@@ -50,8 +50,7 @@ export default function App() {
   const [files, setFiles] = useState([]);
   const [tentativeSubmit, setTentativeSubmit] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [manuallyAdded, setManuallyAdded] = useState(new Set());
-  const [manuallyRemoved, setManuallyRemoved] = useState(new Set());
+  const [savedImages, setSavedImages] = useState([]);
 
   let closeError = () => {
     setErrorMessage('');
@@ -110,23 +109,43 @@ export default function App() {
     setAnnotatedImages({ ...annotatedImages });
   }
 
-  let handleSearchResults = (img_dir) => {
-    if (searchResults.includes(img_dir)) {
-      const index = searchResults.indexOf(img_dir);
-      searchResults.splice(index, 1);
-      manuallyRemoved.add(img_dir)
-    } else {
-      searchResults.push(img_dir);
-      manuallyAdded.add(img_dir)
-    }
-    setSearchResults([...searchResults]);
-    setManuallyAdded(manuallyAdded);
-    setManuallyRemoved(manuallyRemoved);
+  let addToSavedImages = (images) => {
+    images.forEach(image => handleSavedImages(image, false));
   }
+
+  let handleSavedImages = (img_dir, remove_if_present) => {
+    if (savedImages.includes(img_dir)) {
+      if (remove_if_present) {
+        const index = savedImages.indexOf(img_dir);
+        savedImages.splice(index, 1);
+      }
+      // manuallyRemoved.add(img_dir)
+    } else {
+      savedImages.push(img_dir);
+      // manuallyAdded.add(img_dir)
+    }
+    setSavedImages([...savedImages]);
+    // setManuallyAdded(manuallyAdded);
+    // setManuallyRemoved(manuallyRemoved); 
+  }
+
+  // let handleSearchResults = (img_dir) => {
+  //   if (searchResults.includes(img_dir)) {
+  //     const index = searchResults.indexOf(img_dir);
+  //     searchResults.splice(index, 1);
+  //     manuallyRemoved.add(img_dir)
+  //   } else {
+  //     searchResults.push(img_dir);
+  //     manuallyAdded.add(img_dir)
+  //   }
+  //   setSearchResults([...searchResults]);
+  //   setManuallyAdded(manuallyAdded);
+  //   setManuallyRemoved(manuallyRemoved);
+  // }
 
   let handleTextSubmit = () => {
     setIsLoading(true);
-    fetch('http://127.0.0.1:5000/textQuery', {
+    fetch('http://127.0.0.1:5001/textQuery', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -146,7 +165,7 @@ export default function App() {
   let handleChange = (img_dir) => {
     setIsOpen(false);
     setIsLoading(true);
-    fetch('http://127.0.0.1:5000/loadFiles', {
+    fetch('http://127.0.0.1:5001/loadFiles', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -167,7 +186,7 @@ export default function App() {
     var hasPosExample = vals.some(val => val.length > 0);
     if (hasPosExample) {
       setIsLoading(true);
-      fetch('http://127.0.0.1:5000/synthesize', {
+      fetch('http://127.0.0.1:5001/synthesize', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -182,8 +201,8 @@ export default function App() {
             setIsLoading(false);
           } else {
             setResult(data.program);
-            setManuallyAdded(new Set());
-            setManuallyRemoved(new Set());
+            // setManuallyAdded(new Set());
+            // setManuallyRemoved(new Set());
             setSearchResults(data.search_results);
             setSidebarFiles(data.recs);
             setIsLoading(false);
@@ -198,21 +217,21 @@ export default function App() {
 
   }
 
-  let submitResults = () => {
+  let submitSavedImages = () => {
     setTentativeSubmit(true);
   }
 
-  let submitResults2 = (val) => {
+  let submitSavedImages2 = (val) => {
     setSubmitted(val);
     setTentativeSubmit(false);
     if (val) {
-      fetch('http://127.0.0.1:5000/submitResults', {
+      fetch('http://127.0.0.1:5001/submitResults', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         // body: JSON.stringify(searchResults)
-        body: JSON.stringify({ results: searchResults, manually_added: Array.from(manuallyAdded), manually_removed: Array.from(manuallyRemoved) })
+        body: JSON.stringify({ results: searchResults })
       })
     }
   }
@@ -254,8 +273,10 @@ export default function App() {
             objectList={objectList}
             annotatedImages={annotatedImages}
             result={result}
-            submitResults={submitResults}
-            handleSearchResults={handleSearchResults}
+            submitSavedImages={submitSavedImages}
+            savedImages={savedImages}
+            handleSavedImages={handleSavedImages}
+            addToSavedImages={addToSavedImages}
           /> : <SubmittedResults searchResults={searchResults} />}
         </Box>
       </Box>
@@ -301,8 +322,8 @@ export default function App() {
         <DialogTitle>Are you sure you want to submit your results?</DialogTitle>
         <DialogContent>
           <div className="side-by-side">
-            <button className="button-12" onClick={() => submitResults2(true)}>Yes</button>
-            <button className="button-12" onClick={() => submitResults2(false)}>No</button>
+            <button className="button-12" onClick={() => submitSavedImages2(true)}>Yes</button>
+            <button className="button-12" onClick={() => submitSavedImages2(false)}>No</button>
           </div>
         </DialogContent>
       </Dialog>

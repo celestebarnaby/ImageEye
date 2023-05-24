@@ -5,8 +5,10 @@ import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import { Divider } from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
+import IconButton from '@mui/material/IconButton';
 
-function SearchResults({ files, changeImage, result, submitResults, exampleImages, updateResults }) {
+function SearchResults({ files, changeImage, result, exampleImages, updateResults, addToSavedImages }) {
 
   return (
     <Box className="search-results">
@@ -27,7 +29,10 @@ function SearchResults({ files, changeImage, result, submitResults, exampleImage
         </Box> : <div></div>
       }
       <Divider></Divider>
-      <h3>Saved Images</h3>
+      <div style={{ display: "flex", flexDirection: "row", alignItems: "center", justifyContent: "center" }}>
+        <h3>Search Results</h3>
+        <IconButton onClick={() => addToSavedImages(files)}><AddIcon /></IconButton>
+      </div>
       {files.length > 0 ?
         <Box sx={{ height: "auto" }}>
           <Typography sx={{ paddingLeft: "20px" }}>{result}</Typography>
@@ -42,11 +47,6 @@ function SearchResults({ files, changeImage, result, submitResults, exampleImage
             })}
 
           </ImageList>
-          <Button sx={{
-            margin: "20px", color: "#fff", background: "#1976D2", '&:hover': {
-              backgroundColor: '#305fc4'
-            },
-          }} fullWidth onClick={() => submitResults()}>Submit Images</Button>
         </Box> : <Typography sx={{ paddingLeft: "20px" }}>Enter text query or annotate image to start search.</Typography>}
     </Box>
   );

@@ -8,9 +8,9 @@ import SavedImages from './SavedImages';
 import Box from '@mui/material/Box';
 
 
-export function ImageEye({ files, handleTextChange, handleTextSubmit, handleImageSubmit, searchResults, sidebarFiles, mainImage, changeImage, handleSearchResults, submitResults }) {
+export function ImageEye({ files, handleTextChange, handleTextSubmit, handleImageSubmit, searchResults, sidebarFiles, mainImage, changeImage, handleSavedImages, submitSavedImages, savedImages, addToSavedImages }) {
 
-  const imgInResults = searchResults.includes(mainImage);
+  const imgSaved = savedImages.includes(mainImage);
 
   return (
     <Box sx={{ display: "flex", flexDirection: "row", height: "100%" }}>
@@ -25,13 +25,12 @@ export function ImageEye({ files, handleTextChange, handleTextSubmit, handleImag
         <NewImage
           image={mainImage}
           handleImageSubmit={handleImageSubmit}
-          handleSearchResults={handleSearchResults}
-          imgInResults={imgInResults}
+          handleSavedImages={handleSavedImages}
+          imgSaved={imgSaved}
         />
       </Box>
-      <SearchResults files={searchResults} changeImage={changeImage} submitResults={submitResults} />
-
-      {/* <SavedImages /> */}
+      <SearchResults files={searchResults} changeImage={changeImage} addToSavedImages={addToSavedImages} />
+      <SavedImages images={savedImages} changeImage={changeImage} submitSavedImages={submitSavedImages} />
     </Box>
   );
 }

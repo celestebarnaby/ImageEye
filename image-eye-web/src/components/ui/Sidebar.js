@@ -11,7 +11,7 @@ import Divider from '@mui/material/Divider';
 function Sidebar({ allFiles, imgsToAnnotate, changeImage, annotatedImgs, handleTextChange, handleTextSubmit, updateResults }) {
 
     return (
-        <Box sx={{ height: "100%" }} className="sidebar">
+        <Box sx={{ height: "100%", paddingBottom: "5%" }} className="sidebar">
             <TextField
                 fullWidth
                 id="outlined-name"

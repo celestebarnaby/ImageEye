@@ -4,12 +4,17 @@ import ImageListItem from '@mui/material/ImageListItem';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import IconButton from '@mui/material/IconButton';
+import AddIcon from '@mui/icons-material/Add';
 
-function SearchResults({ files, changeImage, submitResults }) {
+function SearchResults({ files, changeImage, addToSavedImages }) {
 
   return (
-    <Box sx={{ height: "100%" }} className="sidebar">
-      <h3>Saved Images</h3>
+    <Box sx={{ height: "80%" }} className="sidebar">
+      <div style={{ display: "flex", flexDirection: "row", alignItems: "center", justifyContent: "center" }}>
+        <h3>Search Results</h3>
+        <IconButton onClick={() => addToSavedImages(files)}><AddIcon /></IconButton>
+      </div>
       {files.length > 0 ?
         // <div>
         <Box sx={{ height: "92%" }}>
@@ -24,18 +29,7 @@ function SearchResults({ files, changeImage, submitResults }) {
             })}
 
           </ImageList>
-          <Button sx={{
-            margin: "auto", backgroundColor: "#D27519", color: "#fff", '&:hover': {
-              backgroundColor: '#e8933e'
-            },
-          }} fullWidth onClick={() => submitResults()}>Submit Results</Button>
         </Box> : <Typography sx={{ paddingLeft: "20px" }}>Enter text query or select similar image to start search.</Typography>}
-      {/* <Button sx={{
-            margin: "auto", backgroundColor: "#D27519", color: "#fff", '&:hover': {
-              backgroundColor: '#e8933e', padding: "20px"
-            },
-          }} fullWidth onClick={() => submitResults()}>Submit Results</Button>
-        </div>  */}
 
     </Box>
   );
