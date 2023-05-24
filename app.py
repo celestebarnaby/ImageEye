@@ -73,6 +73,7 @@ def load_files():
     logged_info["num"] = task_num
     logged_info["start time"] = time.perf_counter()
     logged_info["synthesis_results"] = []
+    logged_info["synthesized_progs"] = []
     return {
         "message": img_to_environment,
         "files": [filename for filename in img_to_environment.keys()],
@@ -90,7 +91,7 @@ def get_synthesis_results():
     data = request.get_json()
     annotated_env = {}
 
-    imgs = list(img_to_environment.keys())
+    # imgs = list(img_to_environment.keys())
 
     for img_dir, indices in data.items():
         logged_info["annotated images"].append(img_dir)
@@ -123,28 +124,29 @@ def get_synthesis_results():
         results.append(img_dir)
     explanation = get_nl_explanation(prog)
     # alt_used_imgs = ['.' + img_dir.split('/ui')[1] for img_dir in data.keys()]
-    used_imgs = list(data.keys())
+    # used_imgs = list(data.keys())
     # images that are different from annotated images and in search results
-    top_5_indices = []
-    for i in indices:
-        if len(top_5_indices) >= 5:
-            break
-        if imgs[i] in used_imgs:
-            continue
-        if imgs[i] in results:
-            top_5_indices.append(imgs[i])
-    # images that are similar to annotated images but NOT in search results
-    bottom_5_indices = []
-    for i in reversed(indices):
-        if len(bottom_5_indices) >= 5:
-            break
-        if imgs[i] in used_imgs:
-            continue
-        if imgs[i] not in results:
-            bottom_5_indices.append(imgs[i])
-    recs = top_5_indices + bottom_5_indices
+    # top_5_indices = []
+    # for i in indices:
+    #     if len(top_5_indices) >= 5:
+    #         break
+    #     if imgs[i] in used_imgs:
+    #         continue
+    #     if imgs[i] in results:
+    #         top_5_indices.append(imgs[i])
+    # # images that are similar to annotated images but NOT in search results
+    # bottom_5_indices = []
+    # for i in reversed(indices):
+    #     if len(bottom_5_indices) >= 5:
+    #         break
+    #     if imgs[i] in used_imgs:
+    #         continue
+    #     if imgs[i] not in results:
+    #         bottom_5_indices.append(imgs[i])
+    # recs = top_5_indices + bottom_5_indices
     logged_info["synthesis_results"].append(results)
-    response = {"program": explanation, "search_results": results, "recs": recs}
+    logged_info["synthesized_progs"].append(str(prog))
+    response = {"program": explanation, "search_results": results}
     return jsonify(response)
 
 
@@ -167,10 +169,9 @@ def log_results():
                 "Dataset",
                 "Text Queries",
                 "Annotated Images",
+                "Synthesized Programs",
                 "Synthesis Results",
                 "Submitted Images",
-                "Images Manually Added to Results",
-                "Images Manually Removed from Results",
                 "Total Time",
             ),
         )
@@ -180,10 +181,9 @@ def log_results():
                 logged_info["dataset"],
                 logged_info["text queries"],
                 logged_info["annotated images"],
+                logged_info["synthesized_progs"],
                 logged_info["synthesis_results"],
                 results["results"],
-                results["manually_added"],
-                results["manually_removed"],
                 total_time,
             )
         )

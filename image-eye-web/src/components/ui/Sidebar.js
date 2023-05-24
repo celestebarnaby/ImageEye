@@ -40,7 +40,7 @@ function Sidebar({ allFiles, imgsToAnnotate, changeImage, annotatedImgs, handleT
 // }
 
 function AllImages(allFiles, annotatedImgs, imgsToAnnotate, changeImage) {
-    let height = imgsToAnnotate.length > 0 ? 200 : 0;
+    // let height = imgsToAnnotate.length > 0 ? 200 : 0;
 
     return <ImageList sx={{ width: "100%", height: "87%" }} cols={3} rowHeight={164}>
         {allFiles.map(img => {
