@@ -57,7 +57,7 @@ The same thing, but using the `image-eye-baseline` directory instead.
 1. Install dependencies. Make sure you already have [`nodejs`](https://nodejs.org/en/) & [`npm`](https://www.npmjs.com/) installed in your system, and are using python >= 3.10.
 ```bash
 $ pip install -r requirements.txt
-$ cd image-eye-web
+$ cd image-eye-baseline
 $ npm install # or yarn
 ```
 
