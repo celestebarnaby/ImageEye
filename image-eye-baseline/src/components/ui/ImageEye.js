@@ -20,6 +20,7 @@ export function ImageEye({ files, handleTextChange, handleTextSubmit, handleImag
         changeImage={changeImage}
         handleTextChange={handleTextChange}
         handleTextSubmit={handleTextSubmit}
+        savedImages={savedImages}
       />
       <Box sx={{ flex: 1 }}>
         <NewImage
@@ -29,7 +30,7 @@ export function ImageEye({ files, handleTextChange, handleTextSubmit, handleImag
           imgSaved={imgSaved}
         />
       </Box>
-      <SearchResults files={searchResults} changeImage={changeImage} addToSavedImages={addToSavedImages} />
+      <SearchResults files={searchResults} changeImage={changeImage} addToSavedImages={addToSavedImages} savedImages={savedImages} />
       <SavedImages images={savedImages} changeImage={changeImage} submitSavedImages={submitSavedImages} />
     </Box>
   );
