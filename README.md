@@ -67,6 +67,6 @@ $ npm start # or yarn start
 ```
 from the `image-eye-baseline` directory. And, in a separate terminal,
 ```bash
-$ python app.py
+$ python baseline_app.py
 ```
 from the ImageEye directory.
