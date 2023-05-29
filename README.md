@@ -31,19 +31,41 @@ Our EUSolver implementation is in the `eusolver` directory. You can run it as fo
 2. Run `python3 gen_imgeye_benchmarks.py` from the `eusolver/src/imgeye` directory
 3. Results will be output to `eusolver/src/imgeye/data`
 
-## Image Search GUI
+## Image Search web interface
 
-2. Install dependencies. Make sure you already have [`nodejs`](https://nodejs.org/en/) & [`npm`](https://www.npmjs.com/) installed in your system, and are using python >= 3.10.
+1. Install dependencies. Make sure you already have [`nodejs`](https://nodejs.org/en/) & [`npm`](https://www.npmjs.com/) installed in your system, and are using python >= 3.10.
 ```bash
-$ npm install # or yarn
 $ pip install -r requirements.txt
+$ cd image-eye-web
+$ npm install # or yarn
 ```
 
-3. Run it
+2. Run it
 ```bash
 $ npm start # or yarn start
 ```
-from the image-search-gui directory. And, in a separate terminal,
+from the `image-search-web` directory. And, in a separate terminal,
+```bash
+$ python app.py
+```
+from the ImageEye directory.
+
+## Image Search baseline interface
+
+The same thing, but using the `image-eye-baseline` directory instead.
+
+1. Install dependencies. Make sure you already have [`nodejs`](https://nodejs.org/en/) & [`npm`](https://www.npmjs.com/) installed in your system, and are using python >= 3.10.
+```bash
+$ pip install -r requirements.txt
+$ cd image-eye-web
+$ npm install # or yarn
+```
+
+2. Run it
+```bash
+$ npm start # or yarn start
+```
+from the `image-eye-baseline` directory. And, in a separate terminal,
 ```bash
 $ python app.py
 ```
