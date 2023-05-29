@@ -8,14 +8,14 @@ import { Divider } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import IconButton from '@mui/material/IconButton';
 
-function SearchResults({ files, changeImage, result, exampleImages, updateResults, addToSavedImages }) {
+function SearchResults({ files, changeImage, result, exampleImages, updateResults, addToSavedImages, savedImages }) {
 
   return (
-    <Box className="search-results">
+    <Box sx={{ height: "100%", paddingBottom: "5%" }} className="sidebar">
       <h3>Annotated Images</h3>
       {exampleImages.length > 0 ?
         <Box sx={{ paddingRight: "30px", height: "auto" }}>
-          <ImageList sx={{ margin: "8px", width: "100%", height: "calc(100% - 76px)" }} cols={2} rowHeight={124}>
+          <ImageList sx={{ margin: "8px", width: "100%", height: "calc(100% - 76px)" }} cols={3} rowHeight={164}>
             {exampleImages.map(img => {
               return <ImageListItem key={img} onClick={() => changeImage(img)}>
                 <img
@@ -36,11 +36,13 @@ function SearchResults({ files, changeImage, result, exampleImages, updateResult
       {files.length > 0 ?
         <Box sx={{ height: "auto" }}>
           <Typography sx={{ paddingLeft: "20px" }}>{result}</Typography>
-          <ImageList sx={{ margin: "8px", width: "100%", height: "calc(100% - 76px)" }} cols={2} rowHeight={124}>
+          <ImageList sx={{ margin: "8px", width: "100%", height: "calc(100% - 76px)" }} cols={3} rowHeight={164}>
             {files.map(img => {
+              let class_name = savedImages.includes(img) ? "grayed-out" : "";
               return <ImageListItem key={img} onClick={() => changeImage(img)}>
                 <img
                   src={`${img.replace("image-eye-web/public/", "./")}`}
+                  className={class_name}
                   loading="lazy"
                 />
               </ImageListItem>

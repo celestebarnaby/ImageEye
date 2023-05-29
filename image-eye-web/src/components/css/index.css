@@ -8,8 +8,8 @@ body {
 /* } */
 
 .grayed-out {
-    filter: grayscale(25%);
-    opacity: 0.5;
+    filter: grayscale(40%);
+    opacity: 0.25;
 }
 
 .side-by-side {

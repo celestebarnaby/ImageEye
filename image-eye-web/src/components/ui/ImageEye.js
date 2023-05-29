@@ -35,6 +35,7 @@ export function ImageEye({ files, message, updateResults, handleTextChange, hand
         handleTextSubmit={handleTextSubmit}
         annotatedImgs={Object.keys(annotatedImages)}
         updateResults={updateResults}
+        savedImages={savedImages}
       />
       <Box sx={{ flex: 1 }}>
         <NewImage
@@ -53,7 +54,7 @@ export function ImageEye({ files, message, updateResults, handleTextChange, hand
           handleSavedImages={handleSavedImages}
         />
       </Box>
-      <SearchResults files={searchResults} changeImage={changeImage} result={result} exampleImages={Object.keys(annotatedImages)} updateResults={updateResults} addToSavedImages={addToSavedImages} />
+      <SearchResults files={searchResults} changeImage={changeImage} result={result} exampleImages={Object.keys(annotatedImages)} updateResults={updateResults} addToSavedImages={addToSavedImages} savedImages={savedImages} />
       <SavedImages images={savedImages} changeImage={changeImage} submitSavedImages={submitSavedImages} />
 
     </Box>
