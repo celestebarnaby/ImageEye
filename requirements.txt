@@ -8,3 +8,5 @@ Pillow~=9.5.0
 scikit-learn~=1.2.2
 transformers~=4.29.2
 flask~=2.3.2
+torch~=2.0.1
+flask_cors~=3.0.10
