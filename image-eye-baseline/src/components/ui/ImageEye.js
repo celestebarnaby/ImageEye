@@ -22,7 +22,7 @@ export function ImageEye({ files, handleTextChange, handleTextSubmit, handleImag
         handleTextSubmit={handleTextSubmit}
         savedImages={savedImages}
       />
-      <Box sx={{ flex: 1 }}>
+      <Box sx={{ flex: 1, overflow: "scroll" }}>
         <NewImage
           image={mainImage}
           handleImageSubmit={handleImageSubmit}

@@ -26,7 +26,7 @@ export function ImageEye({ files, message, updateResults, handleTextChange, hand
 
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "row", height: "100%" }}>
+    <Box sx={{ display: "flex", flexDirection: "row", height: "80%" }}>
       <Sidebar
         imgsToAnnotate={sidebarFiles}
         allFiles={files}
@@ -37,7 +37,8 @@ export function ImageEye({ files, message, updateResults, handleTextChange, hand
         updateResults={updateResults}
         savedImages={savedImages}
       />
-      <Box sx={{ flex: 1 }}>
+      {/* <Box sx={{ flex: 1 }}> */}
+      <Box sx={{ flex: 1, overflow: "scroll" }}>
         <NewImage
           image={mainImage}
           annotatedImgs={annotatedImages}

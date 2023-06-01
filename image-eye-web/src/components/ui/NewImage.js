@@ -148,13 +148,13 @@ function UnannotatedImage(image, map, addObject, addObjectsByName, new_width, ad
 }
 
 function AnnotatedImage(image, map, addObject, new_width, objs, descs, img_dir, removeImage, imgSaved, handleSavedImages) {
-
+    const annotation_text = descs.length > 0 ? "Image has been annotated." : "Image has been annotated as a negative example.";
     const icon = imgSaved ? <RemoveIcon /> : <AddIcon />;
 
     return <Box>
         {/* <img src={require(image)} className="center-image"/> */}
         <div className='side-by-side'>
-            <div>Image has been annotated.</div>
+            <div>{annotation_text}</div>
             <IconButton sx={{ marginLeft: "auto" }} onClick={() => handleSavedImages(img_dir, true)}>{icon}</IconButton>
         </div>
         <ImageMapper src={image.replace("image-eye-web/public/", "./")} map={map} onClick={(area, index) => addObject(objs[index]['ObjPosInImgLeftToRight'])} width={new_width} />
