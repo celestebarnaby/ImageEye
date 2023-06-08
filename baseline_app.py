@@ -14,7 +14,7 @@ from PIL import Image
 
 app = Flask(__name__)
 cors = CORS(app)
-app.config['CORS_HEADERS'] = 'Content-Type'
+app.config["CORS_HEADERS"] = "Content-Type"
 img_to_environment = {}
 img_to_embedding = {}
 logged_info = {}
@@ -28,7 +28,7 @@ model_ID = "openai/clip-vit-base-patch32"
 model, processor, tokenizer = get_model_info(model_ID, device)
 
 
-@app.route("/textQuery", methods=['POST'])
+@app.route("/textQuery", methods=["POST"])
 @cross_origin()
 def text_query():
     global img_to_environment
@@ -38,14 +38,16 @@ def text_query():
     text_query = request.get_json()
     logged_info["text queries"].append(text_query)
     results = get_top_N_images(
-        text_query, tokenizer, model, processor, device, img_to_embedding)
+        text_query, tokenizer, model, processor, device, img_to_embedding
+    )
+    logged_info["text query results"].append(results)
     return {
-        'search_results': results,
+        "search_results": results,
         # 'sidebarFiles': [filename for filename in imgs][:5]
     }
 
 
-@app.route("/imageQuery", methods=['POST'])
+@app.route("/imageQuery", methods=["POST"])
 @cross_origin()
 def image_query():
     global img_to_embedding
@@ -55,14 +57,22 @@ def image_query():
     logged_info["image queries"].append(image_name)
     image = Image.open(image_name)
     results = get_top_N_images(
-        image, tokenizer, model, processor, device, img_to_embedding, search_criterion="image")
+        image,
+        tokenizer,
+        model,
+        processor,
+        device,
+        img_to_embedding,
+        search_criterion="image",
+    )
+    logged_info["image query results"].append(results)
     return {
-        'search_results': results,
+        "search_results": results,
         # 'sidebarFiles': [filename for filename in imgs][:5]
     }
 
 
-@app.route("/loadFiles", methods=['POST'])
+@app.route("/loadFiles", methods=["POST"])
 @cross_origin()
 def load_files():
     global img_to_environment
@@ -73,10 +83,11 @@ def load_files():
     task = tasks[task_num]
     img_to_embedding = {}
     img_folder = "image-eye-web/public/images/" + task["dataset"] + "/"
-    img_to_environment, obj_strs = preprocess(
-        img_folder, 100)
+    img_to_environment, obj_strs = preprocess(img_folder, 100)
     consolidate_environment(img_to_environment)
-    img_to_embedding = preprocess_embeddings(img_folder, img_to_environment, processor, device, model)
+    img_to_embedding = preprocess_embeddings(
+        img_folder, img_to_environment, processor, device, model
+    )
     # for image_name in img_to_environment:
     #     image = Image.open(image_name)
     #     img_to_embedding[image_name] = (
@@ -85,16 +96,18 @@ def load_files():
     logged_info["dataset"] = task["dataset"]
     logged_info["text queries"] = []
     logged_info["image queries"] = []
+    logged_info["text query results"] = []
+    logged_info["image query results"] = []
     logged_info["num"] = task_num
     logged_info["start time"] = time.perf_counter()
     return {
-        'message': img_to_environment,
-        'files': [filename for filename in img_to_environment.keys()],
-        'task_description': task["description"]
+        "message": img_to_environment,
+        "files": [filename for filename in img_to_environment.keys()],
+        "task_description": task["description"],
     }
 
 
-@app.route("/submitResults", methods=['POST'])
+@app.route("/submitResults", methods=["POST"])
 @cross_origin()
 def log_results():
     global img_to_environment
@@ -113,10 +126,10 @@ def log_results():
                 "Dataset",
                 "Text Queries",
                 "Image Queries",
-                "Results",
-                "Images Manually Added to Results",
-                "Images Manually Removed from Results",
-                "Total Time"
+                "Text Query Results",
+                "Image Query Results",
+                "Submitted Images",
+                "Total Time",
             ),
         )
         fw.writerow(
@@ -125,12 +138,13 @@ def log_results():
                 logged_info["dataset"],
                 logged_info["text queries"],
                 logged_info["image queries"],
+                logged_info["text query results"],
+                logged_info["image query results"],
                 results["results"],
-                results["manually_added"],
-                results["manually_removed"],
-                total_time
+                total_time,
             )
         )
+    return {"success": True}
 
 
 if __name__ == "__main__":

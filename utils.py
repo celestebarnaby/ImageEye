@@ -97,10 +97,8 @@ def get_productions(env, states, depth, full_env):
             (AboveAge(18), {"Face"}),
         ]
         prods += [(GetFace(i), {"Face"}) for i in get_valid_indices(env)]
-        prods += [(IsObject(obj), {"Object"})
-                  for obj in get_valid_objects(env)]
-        prods += [(MatchesWord(word), {"Text"})
-                  for word in get_valid_words(env)]
+        prods += [(IsObject(obj), {"Object"}) for obj in get_valid_objects(env)]
+        prods += [(MatchesWord(word), {"Text"}) for word in get_valid_words(env)]
     for pos in positions:
         prods.append((Map(None, pos), pos_to_types[str(pos)]))
     prods += [
@@ -388,25 +386,25 @@ def get_args():
         "--equiv_reduction",
         type=bool,
         default=True,
-        help="set to False to turn off equivalence reduction"
+        help="set to False to turn off equivalence reduction",
     )
     parser.add_argument(
         "--partial_eval",
         type=bool,
         default=True,
-        help="set to False to turn off partial evaluation"
+        help="set to False to turn off partial evaluation",
     )
     parser.add_argument(
         "--goal_inference",
         type=bool,
         default=True,
-        help="set to False to turn off partial evaluation"
+        help="set to False to turn off partial evaluation",
     )
     parser.add_argument(
         "--get_dataset_info",
         type=bool,
         default=True,
-        help="if True, outputs info about test dataset"
+        help="if True, outputs info about test dataset",
     )
     args = parser.parse_args()
     return args
@@ -450,8 +448,7 @@ def get_type(prog):
     elif isinstance(prog, IsObject):
         return {"Object"}
     elif isinstance(prog, Map):
-        map_type = get_type(prog.extractor).intersection(
-            get_type(prog.position))
+        map_type = get_type(prog.extractor).intersection(get_type(prog.position))
         if not map_type:
             return map_type
         return get_type(prog.restriction)
@@ -465,8 +462,9 @@ def get_obj_str(obj, use_index=False):
     if obj["Type"] == "Object":
         return "Object" + obj["Name"]
     else:
-        props = ''.join([prop for prop in [
-            "Smile", "EyesOpen", "MouthOpen"] if prop in obj])
+        props = "".join(
+            [prop for prop in ["Smile", "EyesOpen", "MouthOpen"] if prop in obj]
+        )
         if use_index:
             return "Face" + props + str(obj["Index"])
         return "Face" + props
@@ -491,7 +489,8 @@ def preprocess_embeddings(img_folder, img_to_environment, processor, device, mod
     for image_name in img_to_environment:
         image = Image.open(image_name)
         img_to_embedding[image_name] = get_image_embedding(
-            image, processor, device, model).tolist()
+            image, processor, device, model
+        ).tolist()
     d[img_folder] = img_to_embedding
     with open("embeddings.json", "w") as fp:
         json.dump(d, fp)
@@ -557,8 +556,7 @@ def preprocess(img_folder, max_faces=10):
     clean_environment(img_to_environment)
     obj_strs_sorted = sorted(list(obj_strs))
     for env in img_to_environment.values():
-        env["vector"] = get_img_vector(
-            env["environment"].values(), obj_strs_sorted)
+        env["vector"] = get_img_vector(env["environment"].values(), obj_strs_sorted)
     # img_to_environment["obj_strs"] = obj_strs_sorted
 
     print("Num images: ", len(os.listdir(img_folder)))
@@ -586,7 +584,9 @@ def get_img_to_embeddings(img_folder, processor, device, model):
         img_dir = img_folder + filename
         image = Image.open(img_dir)
         img_to_embedding[img_dir] = (
-            image, get_image_embedding(image, processor, device, model))
+            image,
+            get_image_embedding(image, processor, device, model),
+        )
     img_embeddings[img_folder] = img_to_embedding
     with open("img_embeddings.json", "w") as fp:
         json.dump(img_embeddings, fp)
@@ -607,7 +607,18 @@ def consolidate_environment(img_to_environment):
         new_details_list = []
         for obj_id, obj in env.items():
             add_face = True
-            if obj["Type"] == "Object" and obj["Name"] in {'Adult', 'Child', 'Man', 'Male', 'Woman', 'Female', 'Bride', 'Groom', 'Boy', 'Girl'}:
+            if obj["Type"] == "Object" and obj["Name"] in {
+                "Adult",
+                "Child",
+                "Man",
+                "Male",
+                "Woman",
+                "Female",
+                "Bride",
+                "Groom",
+                "Boy",
+                "Girl",
+            }:
                 continue
             # if obj["Type"] != "Face":
             #     new_details_list.append((obj_id, obj))
@@ -651,9 +662,14 @@ def get_description(obj):
     if "Index" in obj:
         addl_features.append("has id {}".format(obj["Index"]))
     if addl_features:
-        return "Face that {}, and is between {} and {} years old".format(", ".join(addl_features), obj["AgeRange"]["Low"], obj["AgeRange"]["High"])
+        return "Face that {}, and is between {} and {} years old".format(
+            ", ".join(addl_features), obj["AgeRange"]["Low"], obj["AgeRange"]["High"]
+        )
     else:
-        return "Face that is between {} and {} years old".format(obj["AgeRange"]["Low"], obj["AgeRange"]["High"])
+        return "Face that is between {} and {} years old".format(
+            obj["AgeRange"]["Low"], obj["AgeRange"]["High"]
+        )
+
 
 # Replace face hashes with readable face ids
 
@@ -720,8 +736,7 @@ def get_positions() -> List[Position]:
 
 def get_valid_indices(env, output_under, output_over):
     req_indices = set(
-        [env[obj_id]["Index"]
-            for obj_id in output_under if "Index" in env[obj_id]]
+        [env[obj_id]["Index"] for obj_id in output_under if "Index" in env[obj_id]]
     )
     if len(req_indices) == 1:
         return req_indices
@@ -767,8 +782,7 @@ def get_valid_words(env, output_under, output_over):
 
 def get_valid_objects(env, output_under, output_over):
     req_objects = set(
-        [env[obj_id]["Name"]
-            for obj_id in output_under if "Name" in env[obj_id]]
+        [env[obj_id]["Name"] for obj_id in output_under if "Name" in env[obj_id]]
     )
     if len(req_objects) == 1:
         return req_objects
@@ -777,8 +791,7 @@ def get_valid_objects(env, output_under, output_over):
     return sorted(
         list(
             set(
-                [env[obj_id]["Name"]
-                    for obj_id in output_over if "Name" in env[obj_id]]
+                [env[obj_id]["Name"] for obj_id in output_over if "Name" in env[obj_id]]
             )
         )
     )
@@ -786,8 +799,7 @@ def get_valid_objects(env, output_under, output_over):
 
 def invalid_output(output_over, output_under, prog_output):
     return not (
-        output_under.issubset(
-            prog_output) and prog_output.issubset(output_over)
+        output_under.issubset(prog_output) and prog_output.issubset(output_over)
     )
 
 
@@ -831,11 +843,9 @@ def get_text_embedding(text, tokenizer, model):
 
 
 def get_image_embedding(image, processor, device, model):
-    image = processor(
-        text=None,
-        images=image,
-        return_tensors="pt"
-    )["pixel_values"].to(device)
+    image = processor(text=None, images=image, return_tensors="pt")["pixel_values"].to(
+        device
+    )
     embedding = model.get_image_features(image)
     embedding_as_np = embedding.cpu().detach().numpy()
     return embedding_as_np
@@ -848,17 +858,31 @@ def get_model_info(model_ID, device):
     processor = CLIPProcessor.from_pretrained(model_ID)
     # Get the tokenizer
     tokenizer = CLIPTokenizer.from_pretrained(model_ID)
-   # Return model, processor & tokenizer
+    # Return model, processor & tokenizer
     return model, processor, tokenizer
 
 
-def get_top_N_images(query, tokenizer, model, processor, device, img_to_embedding, top_K=4, search_criterion="text"):
+def get_top_N_images(
+    query,
+    tokenizer,
+    model,
+    processor,
+    device,
+    img_to_embedding,
+    top_K=4,
+    search_criterion="text",
+):
     image_names = img_to_embedding.keys()
-    image_embeddings = [np.array(img_to_embedding[name])
-                        for name in image_names]
-    threshold = .2 if search_criterion == "text" else .75 if search_criterion == "image" else 0
+    image_embeddings = [np.array(img_to_embedding[name]) for name in image_names]
+    threshold = (
+        0.2
+        if search_criterion == "text"
+        else 0.75
+        if search_criterion == "image"
+        else 0
+    )
 
-   # Text to image Search
+    # Text to image Search
     if search_criterion.lower() in {"text", "imageeye"}:
         query_vect = get_text_embedding(query, tokenizer, model)
     # Image to image Search
@@ -873,30 +897,40 @@ def get_top_N_images(query, tokenizer, model, processor, device, img_to_embeddin
     most_similar = sorted(cos_sim_per_image, reverse=True)
     print(most_similar)
     # [1:top_K+1]  # line 24
-    top_images = [img for (cos_sim, img)
-                  in most_similar if cos_sim > threshold]
+    top_images = [img for (cos_sim, img) in most_similar if cos_sim > threshold]
     return top_images
 
 
 def get_nl_explanation_helper(prog, neg=False, use_is=False, no_have=False):
-
     not_text = " not" if neg and use_is else "do not " if neg else ""
     if isinstance(prog, Union):
-        sub_expls = [get_nl_explanation_helper(sub_prog, neg=neg,)  # use_is=True)
-                     for sub_prog in prog.extractors]
+        sub_expls = [
+            get_nl_explanation_helper(
+                sub_prog,
+                neg=neg,
+            )  # use_is=True)
+            for sub_prog in prog.extractors
+        ]
         extra = "" if not use_is else ""
         if neg:
             return extra + ", and ".join(sub_expls)
         return extra + ", or ".join(sub_expls)
     if isinstance(prog, Intersection):
-        sub_expls = [get_nl_explanation_helper(sub_prog, neg=neg, use_is=True)
-                     for sub_prog in prog.extractors]
+        sub_expls = [
+            get_nl_explanation_helper(sub_prog, neg=neg, use_is=True)
+            for sub_prog in prog.extractors
+        ]
         extra = "have an object that " if not use_is else ""
         if neg:
             return extra + ", or ".join(sub_expls)
         return extra + ", and ".join(sub_expls)
-    first_part = "is{} ".format(
-        not_text) if use_is else "" if no_have else "{}have ".format(not_text)
+    first_part = (
+        "is{} ".format(not_text)
+        if use_is
+        else ""
+        if no_have
+        else "{}have ".format(not_text)
+    )
     if isinstance(prog, IsFace):
         return "{}a face".format(first_part)
     if isinstance(prog, IsText):
@@ -925,24 +959,38 @@ def get_nl_explanation_helper(prog, neg=False, use_is=False, no_have=False):
         return get_nl_explanation_helper(prog.extractor, neg=not neg, use_is=use_is)
     if isinstance(prog, Map):
         position_to_str = {
-            'GetLeft': 'is left of ',
-            'GetRight': 'is right of ',
-            'GetNext': 'is right of ',
-            'GetPrev': 'is left of ',
-            'GetBelow': 'is below ',
-            'GetAbove': 'is above ',
-            'GetContains': 'is contained in ',
-            'GetIsContained': 'contains ',
+            "GetLeft": "is left of ",
+            "GetRight": "is right of ",
+            "GetNext": "is right of ",
+            "GetPrev": "is left of ",
+            "GetBelow": "is below ",
+            "GetAbove": "is above ",
+            "GetContains": "is contained in ",
+            "GetIsContained": "contains ",
         }
         position_str = position_to_str[str(prog.position)]
         sub_expl1 = get_nl_explanation_helper(prog.restriction, use_is=use_is)
-        is_basic_object = isinstance(prog.extractor, IsObject) or isinstance(prog.extractor, IsFace) or isinstance(prog.extractor, IsSmiling) or isinstance(prog.extractor, EyesOpen) or isinstance(
-            prog.extractor, BelowAge) or isinstance(prog.extractor, GetFace) or isinstance(prog.extractor, IsText) or isinstance(prog.extractor, IsPrice) or isinstance(prog.extractor, IsPhoneNumber)
+        is_basic_object = (
+            isinstance(prog.extractor, IsObject)
+            or isinstance(prog.extractor, IsFace)
+            or isinstance(prog.extractor, IsSmiling)
+            or isinstance(prog.extractor, EyesOpen)
+            or isinstance(prog.extractor, BelowAge)
+            or isinstance(prog.extractor, GetFace)
+            or isinstance(prog.extractor, IsText)
+            or isinstance(prog.extractor, IsPrice)
+            or isinstance(prog.extractor, IsPhoneNumber)
+        )
         sub_expl2 = get_nl_explanation_helper(
-            prog.extractor, use_is=not is_basic_object, no_have=is_basic_object)
-        expl = sub_expl1 + " that " + position_str + \
-            "{}".format(
-                "" if is_basic_object else " an object that ") + sub_expl2
+            prog.extractor, use_is=not is_basic_object, no_have=is_basic_object
+        )
+        expl = (
+            sub_expl1
+            + " that "
+            + position_str
+            + "{}".format("" if is_basic_object else " an object that ")
+            + sub_expl2
+        )
         if neg:
             if use_is:
                 expl = expl[:2] + " not" + expl[2:]
@@ -966,13 +1014,19 @@ def test_nl_explanations():
         Intersection([IsFace(), Complement(GetFace(6))]),
         Map(GetFace(8), IsFace(), GetNext()),
         Map(IsFace(), IsFace(), GetAbove()),
-        Union([Map(GetFace(8), IsFace(), GetNext()),
-              Map(GetFace(8), IsFace(), GetPrev())]),
+        Union(
+            [Map(GetFace(8), IsFace(), GetNext()), Map(GetFace(8), IsFace(), GetPrev())]
+        ),
         Union([IsObject("Guitar"), Map(IsObject("Guitar"), IsFace(), GetAbove())]),
-        Intersection([IsObject("Cat"), Complement(
-            Map(IsObject("Cat"), IsObject("Cat"), GetBelow()))]),
-        Intersection([IsFace(), Complement(
-            Map(IsObject("Guitar"), IsFace(), GetAbove()))])
+        Intersection(
+            [
+                IsObject("Cat"),
+                Complement(Map(IsObject("Cat"), IsObject("Cat"), GetBelow())),
+            ]
+        ),
+        Intersection(
+            [IsFace(), Complement(Map(IsObject("Guitar"), IsFace(), GetAbove()))]
+        ),
     ]
 
     for prog in progs:

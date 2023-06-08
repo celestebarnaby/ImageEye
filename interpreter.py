@@ -95,8 +95,8 @@ def partial_eval_map(map_extr, env, output_dict, eval_cache):
                 if obj_id not in rest_val:
                     continue
                 left, top, right, bottom = details["Loc"]
-                if bottom > target_bottom:
-                    continue
+                # if bottom > target_bottom:
+                # continue
                 if right < target_left or left > target_right:
                     continue
                 if cur_bottom is None or bottom > cur_bottom:
@@ -278,8 +278,8 @@ def eval_map(
                 if obj_id not in rest:
                     continue
                 left, top, right, bottom = details_map["Loc"]
-                if bottom > target_bottom:
-                    continue
+                # if bottom > target_bottom:
+                # continue
                 if right < target_left or left > target_right:
                     continue
                 if cur_bottom is None or bottom > cur_bottom:
@@ -377,8 +377,11 @@ def partial_eval(extractor, env, output_dict, eval_cache, top_level=False):
             return True
         return False
 
-    faces = {obj for obj in env.keys(
-    ) if env[obj]["Type"] == "Face" or "AlsoFace" in env[obj]}
+    faces = {
+        obj
+        for obj in env.keys()
+        if env[obj]["Type"] == "Face" or "AlsoFace" in env[obj]
+    }
     text_objects = {obj for obj in env.keys() if env[obj]["Type"] == "Text"}
     objects = {obj for obj in env.keys() if env[obj]["Type"] == "Object"}
 
@@ -393,7 +396,7 @@ def partial_eval(extractor, env, output_dict, eval_cache, top_level=False):
             val = set()
         elif not isinstance(extractor.index, int):
             return False
-        for (obj_id, details) in env.items():
+        for obj_id, details in env.items():
             if details["Type"] != "Face" and not "AlsoFace" in details:
                 continue
             if details["Index"] == extractor.index:
@@ -404,7 +407,7 @@ def partial_eval(extractor, env, output_dict, eval_cache, top_level=False):
             val = set()
         elif not isinstance(extractor.obj, str):
             return False
-        for (obj_id, details) in env.items():
+        for obj_id, details in env.items():
             if details["Type"] != "Object":
                 continue
             if details["Name"] == extractor.obj:
@@ -415,7 +418,7 @@ def partial_eval(extractor, env, output_dict, eval_cache, top_level=False):
             val = set()
         elif not isinstance(extractor.word, str):
             return False
-        for (obj_id, details) in env.items():
+        for obj_id, details in env.items():
             if details["Type"] != "Text":
                 continue
             if details["Text"].lower() == extractor.word.lower():
@@ -426,7 +429,7 @@ def partial_eval(extractor, env, output_dict, eval_cache, top_level=False):
             val = set()
         elif not isinstance(extractor.age, int):
             return False
-        for (obj_id, details) in env.items():
+        for obj_id, details in env.items():
             if details["Type"] != "Face":
                 continue
             if extractor.age > details["AgeRange"]["Low"]:
@@ -437,7 +440,7 @@ def partial_eval(extractor, env, output_dict, eval_cache, top_level=False):
             val = set()
         elif not isinstance(extractor.age, int):
             return False
-        for (obj_id, details) in env.items():
+        for obj_id, details in env.items():
             if details["Type"] != "Face":
                 continue
             if extractor.age < details["AgeRange"]["High"]:
@@ -446,8 +449,7 @@ def partial_eval(extractor, env, output_dict, eval_cache, top_level=False):
         should_prune = False
         for sub_extr in extractor.extractors:
             should_prune = (
-                partial_eval(sub_extr, env, output_dict,
-                             eval_cache) or should_prune
+                partial_eval(sub_extr, env, output_dict, eval_cache) or should_prune
             )
         vals = []
         none_vals = []
@@ -476,8 +478,7 @@ def partial_eval(extractor, env, output_dict, eval_cache, top_level=False):
         should_prune = False
         for sub_extr in extractor.extractors:
             should_prune = (
-                partial_eval(sub_extr, env, output_dict,
-                             eval_cache) or should_prune
+                partial_eval(sub_extr, env, output_dict, eval_cache) or should_prune
             )
         vals = []
         none_vals = []
@@ -545,8 +546,7 @@ def update_output_approx(prog, output_under, output_over, env, output_dict):
     prog.output_over = over_str
     if isinstance(prog, Union):
         for sub_extr in prog.extractors:
-            update_output_approx(
-                sub_extr, set(), output_over, env, output_dict)
+            update_output_approx(sub_extr, set(), output_over, env, output_dict)
     elif isinstance(prog, Intersection):
         for sub_extr in prog.extractors:
             update_output_approx(
@@ -561,20 +561,16 @@ def update_output_approx(prog, output_under, output_over, env, output_dict):
             output_dict,
         )
     elif isinstance(prog, Map):
-        update_output_approx(prog.extractor, set(),
-                             set(env.keys()), env, output_dict)
+        update_output_approx(prog.extractor, set(), set(env.keys()), env, output_dict)
         update_output_approx(
             prog.restriction, output_under, set(env.keys()), env, output_dict
         )
     elif isinstance(prog, MatchesWord):
-        update_output_approx(prog.word, output_under,
-                             output_over, env, output_dict)
+        update_output_approx(prog.word, output_under, output_over, env, output_dict)
     elif isinstance(prog, GetFace):
-        update_output_approx(prog.index, output_under,
-                             output_over, env, output_dict)
+        update_output_approx(prog.index, output_under, output_over, env, output_dict)
     elif isinstance(prog, IsObject):
-        update_output_approx(prog.obj, output_under,
-                             output_over, env, output_dict)
+        update_output_approx(prog.obj, output_under, output_over, env, output_dict)
 
 
 def eval_extractor(
@@ -592,13 +588,16 @@ def eval_extractor(
         res = eval_map(extractor, details, rec, output_dict, eval_cache)
     elif isinstance(extractor, IsFace):
         # list of all face ids in target image
-        res = {obj for obj in details.keys() if details[obj]["Type"] == "Face" or (
-            "AlsoFace" in details[obj])}
+        res = {
+            obj
+            for obj in details.keys()
+            if details[obj]["Type"] == "Face" or ("AlsoFace" in details[obj])
+        }
     elif isinstance(extractor, IsText):
         res = {obj for obj in details.keys() if details[obj]["Type"] == "Text"}
     elif isinstance(extractor, GetFace):
         objs = set()
-        for (obj_id, obj_details) in details.items():
+        for obj_id, obj_details in details.items():
             if obj_details["Type"] != "Face" and not "AlsoFace" in obj_details:
                 continue
             if obj_details["Index"] == extractor.index:
@@ -606,7 +605,7 @@ def eval_extractor(
         res = objs
     elif isinstance(extractor, IsObject):
         objs = set()
-        for (obj_id, obj_details) in details.items():
+        for obj_id, obj_details in details.items():
             if obj_details["Type"] != "Object":
                 continue
             if obj_details["Name"] == extractor.obj:
@@ -614,7 +613,7 @@ def eval_extractor(
         res = objs
     elif isinstance(extractor, MatchesWord):
         objs = set()
-        for (obj_id, obj_details) in details.items():
+        for obj_id, obj_details in details.items():
             if obj_details["Type"] != "Text":
                 continue
             if obj_details["Text"].lower() == extractor.word.lower():
@@ -622,7 +621,7 @@ def eval_extractor(
         res = objs
     elif isinstance(extractor, BelowAge):
         objs = set()
-        for (obj_id, obj_details) in details.items():
+        for obj_id, obj_details in details.items():
             if obj_details["Type"] != "Face":
                 continue
             if extractor.age > obj_details["AgeRange"]["Low"]:
@@ -630,7 +629,7 @@ def eval_extractor(
         res = objs
     elif isinstance(extractor, AboveAge):
         objs = set()
-        for (obj_id, obj_details) in details.items():
+        for obj_id, obj_details in details.items():
             if obj_details["Type"] != "Face":
                 continue
             if extractor.age < obj_details["AgeRange"]["High"]:
@@ -641,8 +640,7 @@ def eval_extractor(
             res = set()
             for sub_extr in extractor.extractors:
                 res = res.union(
-                    eval_extractor(sub_extr, details, rec,
-                                   output_dict, eval_cache)
+                    eval_extractor(sub_extr, details, rec, output_dict, eval_cache)
                 )
             res = res
         else:
@@ -655,8 +653,7 @@ def eval_extractor(
             res = set(details.keys())
             for sub_extr in extractor.extractors:
                 res = res.intersection(
-                    eval_extractor(sub_extr, details, rec,
-                                   output_dict, eval_cache)
+                    eval_extractor(sub_extr, details, rec, output_dict, eval_cache)
                 )
         else:
             res = set()

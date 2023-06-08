@@ -280,7 +280,7 @@ export default function App() {
           /> : <SubmittedResults searchResults={searchResults} />}
         </Box>
       </Box>
-      <Dialog open={isOpen}>
+      {/* <Dialog open={isOpen}>
         <DialogTitle>Select Task</DialogTitle>
         <DialogContent>
           <div className="side-by-side">
@@ -291,6 +291,16 @@ export default function App() {
             <button className="button-12" onClick={() => handleChange(4)}>4</button>
             <button className="button-12" onClick={() => handleChange(5)}>5</button>
             <button className="button-12" onClick={() => handleChange(6)}>6</button>
+          </div>
+        </DialogContent>
+      </Dialog> */}
+      <Dialog open={isOpen}>
+        <DialogTitle>Select Dataset</DialogTitle>
+        <DialogContent>
+          <div className="side-by-side">
+            <button className="button-12" onClick={() => handleChange(0)}>Objects</button>
+            <button className="button-12" onClick={() => handleChange(1)}>Concert</button>
+            <button className="button-12" onClick={() => handleChange(3)}>Wedding</button>
           </div>
         </DialogContent>
       </Dialog>
