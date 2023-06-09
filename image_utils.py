@@ -26,7 +26,7 @@ def is_contained(bbox1, bbox2, include_edges=False):
     left2, top2, right2, bottom2 = bbox2
     if include_edges:
         return left1 >= left2 and top1 >= top2 and bottom1 <= bottom2 and right1 <= right2
-    else: 
+    else:
         return left1 > left2 and top1 > top2 and bottom1 < bottom2 and right1 < right2
 
 
@@ -95,7 +95,7 @@ def get_source_bytes(img: str):
 
 
 def get_client():
-    with open("credentials.csv", "r") as _input:
+    with open("../credentials.csv", "r") as _input:
         next(_input)
         reader = csv.reader(_input)
         for line in reader:
@@ -125,7 +125,8 @@ def get_environment(
             MaxFaces=max_faces,
             DetectionAttributes=["ALL"],
         )
-        text_response = client.detect_text(Image={"Bytes": get_source_bytes(img_dir)})
+        text_response = client.detect_text(
+            Image={"Bytes": get_source_bytes(img_dir)})
         object_response = client.detect_labels(
             Image={"Bytes": get_source_bytes(img_dir)}, MaxLabels=100, MinConfidence=90
         )
@@ -170,21 +171,21 @@ def apply_action_to_object(action, img, details_map):
         # Insert ROI back into image
         img[top:bottom, left:right] = brightened
     elif isinstance(action, Blackout):
-        ROI = np.array([[left, top], [right, top], [right, bottom], [left, bottom]])
+        ROI = np.array([[left, top], [right, top], [
+                       right, bottom], [left, bottom]])
         cv2.fillPoly(img, pts=[ROI], color=(0, 0, 0))
     return img
 
 
-
 def make_sidebar(img):
     img_height, img_width = img.shape[0], img.shape[1]
-    sidebar = np.zeros((img_height,150,3), np.uint8)   
+    sidebar = np.zeros((img_height, 150, 3), np.uint8)
     sidebar.fill(255)
     left = 1
-    right = 150  - 1
+    right = 150 - 1
     top = 1
     box_length = int(img_height/5) - 1
-    color=(0, 0, 0)
+    color = (0, 0, 0)
     thickness = 2
     actions = ["Blur", "Blackout", "Crop", "Undo", "Done"]
     action_to_bb = {}
@@ -192,13 +193,14 @@ def make_sidebar(img):
         top = (box_length * i) + 1
         bottom = (box_length * (i + 1)) - 1
         cv2.rectangle(sidebar, (left, top), (right, bottom), color, thickness)
-        action_to_bb[actions[i]] = (left + img_width, top, right + img_width, bottom)
+        action_to_bb[actions[i]] = (
+            left + img_width, top, right + img_width, bottom)
         text_horiz = int(img_width/2)
         # text_vert = int((bottom - box_length)/2)
         text_vert = 100
-        cv2.putText(sidebar, actions[i], (10, bottom - int(box_length/2)), cv2.FONT_HERSHEY_SIMPLEX, 1, color, thickness)
+        cv2.putText(sidebar, actions[i], (10, bottom - int(box_length/2)),
+                    cv2.FONT_HERSHEY_SIMPLEX, 1, color, thickness)
     return (sidebar, action_to_bb)
-
 
 
 def annotate_image(img_dir, env):
@@ -216,7 +218,8 @@ def annotate_image(img_dir, env):
         cur_img, cur_env = imgs[-1]
         cur_img_with_rectangles = draw_rectangles(cur_img.copy(), cur_env)
         # if num_rounds == 0:
-        cur_img_with_rectangles = np.concatenate((cur_img_with_rectangles, sidebar), axis=1)
+        cur_img_with_rectangles = np.concatenate(
+            (cur_img_with_rectangles, sidebar), axis=1)
         # Display image
         while True:
             cv2.imshow("image", cur_img_with_rectangles)
@@ -266,7 +269,6 @@ def annotate_image(img_dir, env):
     return action_to_objects_dict
 
 
-
 def apply_crop(img, details_map, inds):
     cur_coords = None
     for obj_id, details in details_map.items():
@@ -288,12 +290,14 @@ def apply_crop(img, details_map, inds):
         obj_left, obj_top, obj_right, obj_bottom = details["Loc"]
         if is_contained(details["Loc"], cur_coords, include_edges=True):
             new_details_map[obj_id] = copy.deepcopy(details)
-            new_details_map[obj_id]["Loc"] = (obj_left - left, obj_top - top, obj_right - left, obj_bottom - top)
+            new_details_map[obj_id]["Loc"] = (
+                obj_left - left, obj_top - top, obj_right - left, obj_bottom - top)
     return img, new_details_map
 
 
 inds = set()
 action_num = None
+
 
 def on_click(event, x, y, flags, params):
     (env, action_to_bb) = params
@@ -319,25 +323,29 @@ def on_click(event, x, y, flags, params):
         for i, (action, loc) in enumerate(list(action_to_bb.items())):
             left, top, right, bottom = loc
             if x > left and x < right and y > top and y < bottom:
-                cv2.rectangle(cur_img_with_rectangles, (left, top), (right, bottom), red_color, 2)
+                cv2.rectangle(cur_img_with_rectangles, (left, top),
+                              (right, bottom), red_color, 2)
                 action_num = i + 1
                 for other_action, other_loc in action_to_bb.items():
                     if action == other_action:
                         continue
                     left, top, right, bottom = other_loc
-                    cv2.rectangle(cur_img_with_rectangles, (left, top), (right, bottom), black_color, 2)
+                    cv2.rectangle(cur_img_with_rectangles,
+                                  (left, top), (right, bottom), black_color, 2)
                 return
         if cur_loc is None:
             return
-        left, top, right, bottom = cur_loc 
+        left, top, right, bottom = cur_loc
         if cur_ind not in inds:
             inds.add(cur_ind)
             print("Added " + cur_name)
-            cv2.rectangle(cur_img_with_rectangles, (left, top), (right, bottom), green_color, thickness) 
+            cv2.rectangle(cur_img_with_rectangles, (left, top),
+                          (right, bottom), green_color, thickness)
         else:
             inds.remove(cur_ind)
             print("Removed " + cur_name)
-            cv2.rectangle(cur_img_with_rectangles, (left, top), (right, bottom), red_color, thickness) 
+            cv2.rectangle(cur_img_with_rectangles, (left, top),
+                          (right, bottom), red_color, thickness)
 
 
 def get_size(loc):
@@ -354,7 +362,8 @@ def draw_rectangles(img, env):
         color = (0, 100, 0)
         thickness = 2
         keys = []
-        img = cv2.rectangle(img, (left, top), (right, bottom), color, thickness)
+        img = cv2.rectangle(
+            img, (left, top), (right, bottom), color, thickness)
     return img
 
 
@@ -377,7 +386,8 @@ def get_details(
         img_count = 0
     else:
         obj_count = len(prev_environment)
-        img_count = max(item["ImgIndex"] for item in prev_environment.values()) + 1
+        img_count = max(item["ImgIndex"]
+                        for item in prev_environment.values()) + 1
     for img_index, (face_response, text_response, img) in enumerate(zip(face_responses, text_responses, imgs)):
         faces = face_response["FaceRecords"]
         text_objects = text_response["TextDetections"]
@@ -416,7 +426,8 @@ def get_details(
                         for details in prev_environment.values()
                         if details["Type"] == "Face"
                     }
-                    matched_face_hashes = [item["Face"]["FaceId"] for item in search_response["FaceMatches"]]
+                    matched_face_hashes = [item["Face"]["FaceId"]
+                                           for item in search_response["FaceMatches"]]
                     face_index = obj_count
                     for matched_face_hash in matched_face_hashes:
                         if matched_face_hash == face_hash:
@@ -470,45 +481,5 @@ def get_details(
         for i, details_map in enumerate(details_list):
             details_map["ObjPosInImgLeftToRight"] = i
             details_maps[i + len(prev_environment)] = details_map
-
-        for target_obj_id, target_details in details_maps.items():
-            prev_obj = False
-            next_obj = False
-            left_obj = False
-            right_obj = False
-            front_obj = False
-            back_obj = False
-            target_pos = target_details["ObjPosInImgLeftToRight"]
-            target_left, target_top, target_right, target_bottom = target_details["Loc"]
-            for obj_id, details in details_maps.items():
-                if obj_id == target_obj_id:
-                    continue
-                pos = details["ObjPosInImgLeftToRight"]
-                left, top, right, bottom = details["Loc"]
-                if pos < target_pos:
-                    prev_obj = True
-                else:
-                    next_obj = True
-                if bottom >= target_top and top <= target_bottom:
-                    if left < target_left:
-                        left_obj = True
-                    else:
-                        right_obj = True
-                if top < target_top:
-                    back_obj = True
-                else:
-                    front_obj = True
-            if not prev_obj:
-                target_details["Prevmost"] = True
-            if not next_obj:
-                target_details["Nextmost"] = True
-            if not left_obj:
-                target_details["Leftmost"] = True
-            if not right_obj:
-                target_details["Rightmost"] = True
-            if not front_obj:
-                target_details["Bottommost"] = True
-            if not back_obj:
-                target_details["Topmost"] = True
 
     return details_maps

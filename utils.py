@@ -6,7 +6,9 @@ import os
 import json
 import csv
 import time
-import numpy as np
+from transformers import CLIPProcessor, CLIPModel, CLIPTokenizer
+from sklearn.metrics.pairwise import cosine_similarity
+from PIL import Image
 
 # from typesystem import *
 
@@ -457,6 +459,47 @@ def get_type(prog):
         return pos_to_types[str(prog)]
 
 
+def get_obj_str(obj, use_index=False):
+    if obj["Type"] == "Text":
+        return "Text" + obj["Text"]
+    if obj["Type"] == "Object":
+        return "Object" + obj["Name"]
+    else:
+        props = "".join(
+            [prop for prop in ["Smile", "EyesOpen", "MouthOpen"] if prop in obj]
+        )
+        if use_index:
+            return "Face" + props + str(obj["Index"])
+        return "Face" + props
+
+
+def get_obj_strs(objs):
+    strs = []
+    for obj in objs:
+        strs.append(get_obj_str(obj))
+        strs.append(get_obj_str(obj, True))
+    return strs
+
+
+def preprocess_embeddings(img_folder, img_to_environment, processor, device, model):
+    d = {}
+    if os.path.exists("./embeddings.json"):
+        with open("./embeddings.json", "r") as fp:
+            d = json.load(fp)
+            if img_folder in d:
+                return d[img_folder]
+    img_to_embedding = {}
+    for image_name in img_to_environment:
+        image = Image.open(image_name)
+        img_to_embedding[image_name] = get_image_embedding(
+            image, processor, device, model
+        ).tolist()
+    d[img_folder] = img_to_embedding
+    with open("embeddings.json", "w") as fp:
+        json.dump(d, fp)
+    return img_to_embedding
+
+
 def preprocess(img_folder, max_faces=10):
     """
     Given an img_folder, cache all the image's information to a dict, scored by the strategy
@@ -467,21 +510,34 @@ def preprocess(img_folder, max_faces=10):
     # read the cache if it exists
     key = img_folder + " 2 " + str(max_faces)
     test_images = {}
-    if os.path.exists("test_images.json"):
-        with open("test_images.json", "r") as fp:
+
+    print(os.path.exists("./test_images_ui.json"))
+
+    if os.path.exists("./test_images_ui.json"):
+        with open("./test_images_ui.json", "r") as fp:
             test_images = json.load(fp)
             if key in test_images:
-                return test_images[key]
+                return test_images[key], test_images[key + "obj_str"]
+    client = get_client()
+    client.delete_collection(CollectionId="library2")
+    client.create_collection(CollectionId="library2")
     img_to_environment = {}
     prev_env = {}
     img_index = 0
 
     start_time = time.perf_counter()
+    obj_strs = set()
     # loop through all image files to cache information
     for filename in os.listdir(img_folder):
         # print("filename:", filename)
         img_dir = img_folder + filename
-        env = get_environment([img_dir], img_index, DETAIL_KEYS, prev_env, max_faces)
+        env = get_environment(
+            [img_dir], client, img_index, DETAIL_KEYS, prev_env, max_faces
+        )
+        obj_strs.update(get_obj_strs(env.values()))
+        img = cv2.imread(img_dir, 1)
+        height, width, _ = img.shape
+        print((width, height))
         # print("environment:", env)
         score = len(env)
         # print("score:", score)
@@ -489,6 +545,7 @@ def preprocess(img_folder, max_faces=10):
             "environment": env,
             "img_index": img_index,
             "score": score,
+            "dimensions": [width, height],
         }
         if not env:
             continue
@@ -500,17 +557,126 @@ def preprocess(img_folder, max_faces=10):
     print("preprocessing finished...")
 
     clean_environment(img_to_environment)
+    obj_strs_sorted = sorted(list(obj_strs))
+    for env in img_to_environment.values():
+        env["vector"] = get_img_vector(env["environment"].values(), obj_strs_sorted)
+    # img_to_environment["obj_strs"] = obj_strs_sorted
+
     print("Num images: ", len(os.listdir(img_folder)))
     print("Total time: ", total_time)
+    add_descriptions(img_to_environment)
     test_images[key] = img_to_environment
-    with open("test_images.json", "w") as fp:
-        json.dump(test_images, fp)
-    print(img_to_environment)
+    test_images[key + "obj_str"] = obj_strs_sorted
+    # print(img_to_environment)
 
-    return img_to_environment
+    with open("test_images_ui.json", "w") as fp:
+        json.dump(test_images, fp)
+
+    return img_to_environment, obj_strs_sorted
+
+
+def get_img_to_embeddings(img_folder, processor, device, model):
+    img_embeddings = {}
+    if os.path.exists("./img_embeddings.json"):
+        with open("./img_embeddings.json", "r") as fp:
+            img_embeddings = json.load(fp)
+            if img_folder in img_embeddings:
+                return img_embeddings[img_folder]
+    img_to_embedding = {}
+    for filename in os.listdir(img_folder):
+        img_dir = img_folder + filename
+        image = Image.open(img_dir)
+        img_to_embedding[img_dir] = (
+            image,
+            get_image_embedding(image, processor, device, model),
+        )
+    img_embeddings[img_folder] = img_to_embedding
+    with open("img_embeddings.json", "w") as fp:
+        json.dump(img_embeddings, fp)
+
+
+def get_img_vector(objs, obj_strs):
+    d = {obj_str: 0 for obj_str in obj_strs}
+    for obj in objs:
+        d[get_obj_str(obj)] += 1
+        if obj["Type"] == "Face":
+            d[get_obj_str(obj, True)] += 1
+    return list(d.values())
+
+
+def consolidate_environment(img_to_environment):
+    for img, lib in img_to_environment.items():
+        env = lib["environment"]
+        new_details_list = []
+        for obj_id, obj in env.items():
+            add_face = True
+            if obj["Type"] == "Object" and obj["Name"] in {
+                "Adult",
+                "Child",
+                "Man",
+                "Male",
+                "Woman",
+                "Female",
+                "Bride",
+                "Groom",
+                "Boy",
+                "Girl",
+            }:
+                continue
+            # if obj["Type"] != "Face":
+            #     new_details_list.append((obj_id, obj))
+            #     continue
+            # for _, other_obj in env.items():
+            #     if other_obj["Type"] != "Object" or other_obj["Name"] != "Person":
+            #         continue
+            #     if is_contained(obj['Loc'], other_obj['Loc']):
+            #         add_face = False
+            #         for attr in {"Smile", "MouthOpen", "EyesOpen", "Eyeglasses", "AgeRange", "Index"}:
+            #             if attr in obj:
+            #                 other_obj[attr] = obj[attr]
+            #             other_obj["AlsoFace"] = True
+            if add_face:
+                new_details_list.append((obj_id, obj))
+        new_details_list.sort(key=lambda d: d[1]["Loc"][0])
+        new_env = {}
+        for i, (obj_id, obj) in enumerate(new_details_list):
+            obj["ObjPosInImgLeftToRight"] = i
+            new_env[obj_id] = obj
+        lib["environment"] = new_env
+
+
+def add_descriptions(img_to_environment):
+    for img, lib in img_to_environment.items():
+        env = lib["environment"]
+        for obj in env.values():
+            obj["Description"] = get_description(obj)
+
+
+def get_description(obj):
+    if obj["Type"] == "Object":
+        return obj["Name"]
+    if obj["Type"] == "Text":
+        return "Text that reads '{}'".format(obj["Text"])
+    addl_features = []
+    if "Smile" in obj:
+        addl_features.append("is smiling")
+    if "EyesOpen" in obj:
+        addl_features.append("has eyes open")
+    if "Index" in obj:
+        addl_features.append("has id {}".format(obj["Index"]))
+    if addl_features:
+        return "Face that {}, and is between {} and {} years old".format(
+            ", ".join(addl_features), obj["AgeRange"]["Low"], obj["AgeRange"]["High"]
+        )
+    else:
+        return "Face that is between {} and {} years old".format(
+            obj["AgeRange"]["Low"], obj["AgeRange"]["High"]
+        )
 
 
 # Replace face hashes with readable face ids
+
+
 def clean_environment(img_to_environment):
     new_id = "0"
     for lib in img_to_environment.values():
@@ -669,3 +835,208 @@ def get_num_attributes(env):
                 preds.add(key)
         all_preds.update(preds)
     return len(all_preds)
+
+
+def get_text_embedding(text, tokenizer, model):
+    inputs = tokenizer(text, return_tensors="pt")
+    text_embeddings = model.get_text_features(**inputs)
+    # convert the embeddings to numpy array
+    embedding_as_np = text_embeddings.cpu().detach().numpy()
+    return embedding_as_np
+
+
+def get_image_embedding(image, processor, device, model):
+    image = processor(text=None, images=image, return_tensors="pt")["pixel_values"].to(
+        device
+    )
+    embedding = model.get_image_features(image)
+    embedding_as_np = embedding.cpu().detach().numpy()
+    return embedding_as_np
+
+
+def get_model_info(model_ID, device):
+    # Save the model to device
+    model = CLIPModel.from_pretrained(model_ID).to(device)
+    # Get the processor
+    processor = CLIPProcessor.from_pretrained(model_ID)
+    # Get the tokenizer
+    tokenizer = CLIPTokenizer.from_pretrained(model_ID)
+    # Return model, processor & tokenizer
+    return model, processor, tokenizer
+
+
+def get_top_N_images(
+    query,
+    tokenizer,
+    model,
+    processor,
+    device,
+    img_to_embedding,
+    top_K=4,
+    search_criterion="text",
+):
+    image_names = img_to_embedding.keys()
+    image_embeddings = [np.array(img_to_embedding[name]) for name in image_names]
+    threshold = (
+        0.2
+        if search_criterion == "text"
+        else 0.75
+        if search_criterion == "image"
+        else 0
+    )
+
+    # Text to image Search
+    if search_criterion.lower() in {"text", "imageeye"}:
+        query_vect = get_text_embedding(query, tokenizer, model)
+    # Image to image Search
+    else:
+        query_vect = get_image_embedding(query, processor, device, model)
+    # Run similarity Search
+    print(type(query_vect))
+    print(type(image_embeddings[0]))
+    cos_sim = [cosine_similarity(query_vect, x) for x in image_embeddings]
+    cos_sim = [x[0][0] for x in cos_sim]
+    cos_sim_per_image = zip(cos_sim, image_names)
+    most_similar = sorted(cos_sim_per_image, reverse=True)
+    print(most_similar)
+    # [1:top_K+1]  # line 24
+    top_images = [img for (cos_sim, img) in most_similar if cos_sim > threshold]
+    return top_images
+
+
+def get_nl_explanation_helper(prog, neg=False, use_is=False, no_have=False):
+    not_text = " not" if neg and use_is else "do not " if neg else ""
+    if isinstance(prog, Union):
+        sub_expls = [
+            get_nl_explanation_helper(
+                sub_prog,
+                neg=neg,
+            )  # use_is=True)
+            for sub_prog in prog.extractors
+        ]
+        extra = "" if not use_is else ""
+        if neg:
+            return extra + ", and ".join(sub_expls)
+        return extra + ", or ".join(sub_expls)
+    if isinstance(prog, Intersection):
+        sub_expls = [
+            get_nl_explanation_helper(sub_prog, neg=neg, use_is=True)
+            for sub_prog in prog.extractors
+        ]
+        extra = "have an object that " if not use_is else ""
+        if neg:
+            return extra + ", or ".join(sub_expls)
+        return extra + ", and ".join(sub_expls)
+    first_part = (
+        "is{} ".format(not_text)
+        if use_is
+        else ""
+        if no_have
+        else "{}have ".format(not_text)
+    )
+    if isinstance(prog, IsFace):
+        return "{}a face".format(first_part)
+    if isinstance(prog, IsText):
+        return "{}text".format(first_part)
+    if isinstance(prog, GetFace):
+        return "{}a face with id ".format(first_part) + str(prog.index)
+    if isinstance(prog, IsObject):
+        return "{}a {}".format(first_part, prog.obj.lower())
+    if isinstance(prog, MatchesWord):
+        return "{}text matching term '{}'".format(first_part, prog.word)
+    if isinstance(prog, IsPhoneNumber):
+        return "{}a phone number".format(first_part)
+    if isinstance(prog, IsPrice):
+        return "{}a price".format(first_part)
+    if isinstance(prog, IsSmiling):
+        return "{}a smiling face".format(first_part)
+    if isinstance(prog, EyesOpen):
+        return "{}a face with eyes open".format(first_part)
+    if isinstance(prog, MouthOpen):
+        return "{}a face with mouth open".format(first_part)
+    if isinstance(prog, AboveAge):
+        return "{}a face that is above age {}".format(first_part, prog.age)
+    if isinstance(prog, BelowAge):
+        return "{}a face that is below age {}".format(first_part, prog.age)
+    if isinstance(prog, Complement):
+        return get_nl_explanation_helper(prog.extractor, neg=not neg, use_is=use_is)
+    if isinstance(prog, Map):
+        position_to_str = {
+            "GetLeft": "is left of ",
+            "GetRight": "is right of ",
+            "GetNext": "is right of ",
+            "GetPrev": "is left of ",
+            "GetBelow": "is below ",
+            "GetAbove": "is above ",
+            "GetContains": "is contained in ",
+            "GetIsContained": "contains ",
+        }
+        position_str = position_to_str[str(prog.position)]
+        sub_expl1 = get_nl_explanation_helper(prog.restriction, use_is=use_is)
+        is_basic_object = (
+            isinstance(prog.extractor, IsObject)
+            or isinstance(prog.extractor, IsFace)
+            or isinstance(prog.extractor, IsSmiling)
+            or isinstance(prog.extractor, EyesOpen)
+            or isinstance(prog.extractor, BelowAge)
+            or isinstance(prog.extractor, GetFace)
+            or isinstance(prog.extractor, IsText)
+            or isinstance(prog.extractor, IsPrice)
+            or isinstance(prog.extractor, IsPhoneNumber)
+        )
+        sub_expl2 = get_nl_explanation_helper(
+            prog.extractor, use_is=not is_basic_object, no_have=is_basic_object
+        )
+        expl = (
+            sub_expl1
+            + " that "
+            + position_str
+            + "{}".format("" if is_basic_object else " an object that ")
+            + sub_expl2
+        )
+        if neg:
+            if use_is:
+                expl = expl[:2] + " not" + expl[2:]
+            else:
+                expl = "do not " + expl
+        return expl
+
+
+def get_nl_explanation(prog):
+    return "Images that {}.".format(get_nl_explanation_helper(prog))
+
+
+def test_nl_explanations():
+    progs = [
+        IsObject("cat"),
+        IsSmiling(),
+        Complement(IsSmiling()),
+        Complement(IsObject("cat")),
+        Union([IsSmiling(), IsObject("cat")]),
+        Intersection([IsSmiling(), EyesOpen()]),
+        Intersection([IsFace(), Complement(GetFace(6))]),
+        Map(GetFace(8), IsFace(), GetNext()),
+        Map(IsFace(), IsFace(), GetAbove()),
+        Union(
+            [Map(GetFace(8), IsFace(), GetNext()), Map(GetFace(8), IsFace(), GetPrev())]
+        ),
+        Union([IsObject("Guitar"), Map(IsObject("Guitar"), IsFace(), GetAbove())]),
+        Intersection(
+            [
+                IsObject("Cat"),
+                Complement(Map(IsObject("Cat"), IsObject("Cat"), GetBelow())),
+            ]
+        ),
+        Intersection(
+            [IsFace(), Complement(Map(IsObject("Guitar"), IsFace(), GetAbove()))]
+        ),
+    ]
+
+    for prog in progs:
+        print(str(prog))
+        print(get_nl_explanation(prog))
+        print()
+
+
+if __name__ == "__main__":
+    test_nl_explanations()

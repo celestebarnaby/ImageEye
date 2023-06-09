@@ -1,0 +1,4 @@
+Dataset Name,# Images,Median # Objects Per Image,Average # Objects Per Image,# Synthesis Tasks,Average size of ground truth program,Average depth of ground truth program
+wedding,121,9,9.578512396694215,16,9.4375,4.4375
+receipts2,38,58.5,58.578947368421055,13,7.846153846153846,4.461538461538462
+objects,608,1.0,2.986842105263158,21,8.333333333333334,4.666666666666667

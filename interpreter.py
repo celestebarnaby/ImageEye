@@ -135,8 +135,8 @@ def partial_eval_map(map_extr, env, output_dict, eval_cache):
                 if obj_id not in rest_val:
                     continue
                 left, top, right, bottom = details["Loc"]
-                if bottom > target_bottom:
-                    continue
+                # if bottom > target_bottom:
+                # continue
                 if right < target_left or left > target_right:
                     continue
                 if cur_bottom is None or bottom > cur_bottom:
@@ -318,8 +318,8 @@ def eval_map(
                 if obj_id not in rest:
                     continue
                 left, top, right, bottom = details_map["Loc"]
-                if bottom > target_bottom:
-                    continue
+                # if bottom > target_bottom:
+                # continue
                 if right < target_left or left > target_right:
                     continue
                 if cur_bottom is None or bottom > cur_bottom:
@@ -417,7 +417,11 @@ def partial_eval(extractor, env, output_dict, eval_cache, top_level=False):
             return True
         return False
 
-    faces = {obj for obj in env.keys() if env[obj]["Type"] == "Face"}
+    faces = {
+        obj
+        for obj in env.keys()
+        if env[obj]["Type"] == "Face" or "AlsoFace" in env[obj]
+    }
     text_objects = {obj for obj in env.keys() if env[obj]["Type"] == "Text"}
     objects = {obj for obj in env.keys() if env[obj]["Type"] == "Object"}
 
@@ -432,8 +436,8 @@ def partial_eval(extractor, env, output_dict, eval_cache, top_level=False):
             val = set()
         elif not isinstance(extractor.index, int):
             return False
-        for (obj_id, details) in env.items():
-            if details["Type"] != "Face":
+        for obj_id, details in env.items():
+            if details["Type"] != "Face" and not "AlsoFace" in details:
                 continue
             if details["Index"] == extractor.index:
                 val.add(obj_id)
@@ -443,7 +447,7 @@ def partial_eval(extractor, env, output_dict, eval_cache, top_level=False):
             val = set()
         elif not isinstance(extractor.obj, str):
             return False
-        for (obj_id, details) in env.items():
+        for obj_id, details in env.items():
             if details["Type"] != "Object":
                 continue
             if details["Name"] == extractor.obj:
@@ -454,7 +458,7 @@ def partial_eval(extractor, env, output_dict, eval_cache, top_level=False):
             val = set()
         elif not isinstance(extractor.word, str):
             return False
-        for (obj_id, details) in env.items():
+        for obj_id, details in env.items():
             if details["Type"] != "Text":
                 continue
             if details["Text"].lower() == extractor.word.lower():
@@ -465,7 +469,7 @@ def partial_eval(extractor, env, output_dict, eval_cache, top_level=False):
             val = set()
         elif not isinstance(extractor.age, int):
             return False
-        for (obj_id, details) in env.items():
+        for obj_id, details in env.items():
             if details["Type"] != "Face":
                 continue
             if extractor.age > details["AgeRange"]["Low"]:
@@ -476,7 +480,7 @@ def partial_eval(extractor, env, output_dict, eval_cache, top_level=False):
             val = set()
         elif not isinstance(extractor.age, int):
             return False
-        for (obj_id, details) in env.items():
+        for obj_id, details in env.items():
             if details["Type"] != "Face":
                 continue
             if extractor.age < details["AgeRange"]["High"]:
@@ -624,23 +628,24 @@ def eval_extractor(
         res = eval_map(extractor, details, rec, output_dict, eval_cache)
     elif isinstance(extractor, IsFace):
         # list of all face ids in target image
-        res = {obj for obj in details.keys() if details[obj]["Type"] == "Face"}
+        res = {
+            obj
+            for obj in details.keys()
+            if details[obj]["Type"] == "Face" or ("AlsoFace" in details[obj])
+        }
     elif isinstance(extractor, IsText):
         res = {obj for obj in details.keys() if details[obj]["Type"] == "Text"}
     elif isinstance(extractor, GetFace):
         objs = set()
-        for (obj_id, obj_details) in details.items():
-            if "Type" not in obj_details:
-                print("hi")
-                print(details)
-            if obj_details["Type"] != "Face":
+        for obj_id, obj_details in details.items():
+            if obj_details["Type"] != "Face" and not "AlsoFace" in obj_details:
                 continue
             if obj_details["Index"] == extractor.index:
                 objs.add(obj_id)
         res = objs
     elif isinstance(extractor, IsObject):
         objs = set()
-        for (obj_id, obj_details) in details.items():
+        for obj_id, obj_details in details.items():
             if obj_details["Type"] != "Object":
                 continue
             if obj_details["Name"] == extractor.obj:
@@ -648,7 +653,7 @@ def eval_extractor(
         res = objs
     elif isinstance(extractor, MatchesWord):
         objs = set()
-        for (obj_id, obj_details) in details.items():
+        for obj_id, obj_details in details.items():
             if obj_details["Type"] != "Text":
                 continue
             if obj_details["Text"].lower() == extractor.word.lower():
@@ -656,7 +661,7 @@ def eval_extractor(
         res = objs
     elif isinstance(extractor, BelowAge):
         objs = set()
-        for (obj_id, obj_details) in details.items():
+        for obj_id, obj_details in details.items():
             if obj_details["Type"] != "Face":
                 continue
             if extractor.age > obj_details["AgeRange"]["Low"]:
@@ -664,7 +669,7 @@ def eval_extractor(
         res = objs
     elif isinstance(extractor, AboveAge):
         objs = set()
-        for (obj_id, obj_details) in details.items():
+        for obj_id, obj_details in details.items():
             if obj_details["Type"] != "Face":
                 continue
             if extractor.age < obj_details["AgeRange"]["High"]:
@@ -737,7 +742,6 @@ def eval_crop(extracted_objs, details_map, imgs):
     left, top, right, bottom = cur_coords
     img = img[top:bottom, left:right]
     return [img]
-
 
 
 def eval_apply_action(

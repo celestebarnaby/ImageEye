@@ -1,1 +1,9 @@
-{"0": ["test_images/wedding/Ana Maria Photography-178.jpg"]}
+{
+    "0": [
+        "../test_images/cars/bicycle.jpg",
+        "../test_images/cars/n02834778_4305.JPEG",
+        "../test_images/cars/41533679341_c43489dfd1_c.jpg",
+        "../test_images/cars/3000363792_ded885dd2f_c.jpg",
+        "../test_images/cars/9127573526_1e2be02f74_c.jpg"
+    ]
+}

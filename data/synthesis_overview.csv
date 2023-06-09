@@ -1,0 +1,6 @@
+Ground Truth Program,Extracted Program,Round,# Objects,FTA Construction Time,# Enumerated Programs
+"Intersection[IsObject(Bicycle), Complement(Map(IsObject(Person), IsObject(Bicycle), GetBelow))]",IsObject(Bicycle),1,2,0.005212819902226329,9
+"Intersection[IsObject(Bicycle), Complement(Map(IsObject(Person), IsObject(Bicycle), GetBelow))]","Map(IsText, IsObject(Bicycle), GetLeft)",2,5,0.10746992588974535,298
+"Intersection[IsObject(Bicycle), Complement(Map(IsObject(Person), IsObject(Bicycle), GetBelow))]","Map(Union[IsText, IsObject(Car)], IsObject(Bicycle), GetLeft)",3,15,9.201251977821812,3808
+"Intersection[IsObject(Bicycle), Complement(Map(IsObject(Person), IsObject(Bicycle), GetBelow))]","Map(Union[IsText, IsObject(Bicycle), IsObject(Wheel)], IsObject(Bicycle), GetPrev)",4,28,13.543331098975614,20983
+"Intersection[IsObject(Bicycle), Complement(Map(IsObject(Person), IsObject(Bicycle), GetBelow))]","Intersection[IsObject(Bicycle), Complement(Map(IsObject(Person), IsObject(Bicycle), GetBelow))]",5,32,44.11505569098517,25297

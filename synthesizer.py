@@ -42,7 +42,7 @@ def get_attributes(output_over, output_under, dataset=None):
         (IsPhoneNumber(), [], [], [], 0),
         (IsSmiling(), [], [], [], 0),
         (EyesOpen(), [], [], [], 0),
-        (MouthOpen(), [], [], [], 0),
+        # (MouthOpen(), [], [], [], 0),
         (MatchesWord(None), ["word"], [output_over], [output_under], 1),
         (IsObject(None), ["obj"], [output_over], [output_under], 0),
         (GetFace(None), ["index"], [output_over], [output_under], 1),
@@ -115,9 +115,7 @@ class IOExample:
                 env = {**env, **img_to_environment[img_dir]["environment"]}
             self.env = env
         else:
-            self.env = get_environment(
-                img_dirs, client, DETAIL_KEYS, prev_env, max_faces
-            )
+            self.env = get_environment(img_dirs, DETAIL_KEYS, prev_env, max_faces)
         for details_map in self.env.values():
             if "ActionApplied" in details_map:
                 del details_map["ActionApplied"]
@@ -254,6 +252,8 @@ class Synthesizer:
 
         while worklist:
             num_progs += 1
+            if num_progs > 10000:
+                break
             cur_tree = hq.heappop(worklist)
             prog = construct_prog_from_tree(cur_tree)
             if not get_type(prog):
@@ -377,7 +377,7 @@ class Synthesizer:
                     else:
                         new_tree.to_children[hole_num] = [new_node_num]
                 hq.heappush(worklist, new_tree)
-        return None
+        return None, 0
 
     def get_environment(self, indices, img_dir, img_to_environment, action=Blur()):
         img_index = img_to_environment[img_dir]["img_index"]
