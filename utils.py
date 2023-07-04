@@ -511,16 +511,16 @@ def preprocess(img_folder, max_faces=10):
     key = img_folder + " 2 " + str(max_faces)
     test_images = {}
 
-    print(os.path.exists("./test_images.json"))
+    print(os.path.exists("./test_images_ui.json"))
 
-    if os.path.exists("./test_images.json"):
-        with open("./test_images.json", "r") as fp:
+    if os.path.exists("./test_images_ui.json"):
+        with open("./test_images_ui.json", "r") as fp:
             test_images = json.load(fp)
             # print(key)
             # print(test_images.keys())
             # raise TypeError
             if key in test_images:
-                return test_images[key]  # , test_images[key + "obj_str"]
+                return test_images[key], test_images[key + "obj_str"]
     client = get_client()
     client.delete_collection(CollectionId="library2")
     client.create_collection(CollectionId="library2")
@@ -572,7 +572,7 @@ def preprocess(img_folder, max_faces=10):
     test_images[key + "obj_str"] = obj_strs_sorted
     # print(img_to_environment)
 
-    with open("test_images.json", "w") as fp:
+    with open("test_images_ui.json", "w") as fp:
         json.dump(test_images, fp)
 
     return img_to_environment, obj_strs_sorted

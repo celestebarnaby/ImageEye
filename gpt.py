@@ -4,7 +4,8 @@ import copy
 import time
 from interpreter import *
 from utils import *
-from dsl import *
+from new_dsl import *
+import re
 
 with open("../gpt-key.txt") as f:
     sk = f.read().strip()
@@ -501,62 +502,65 @@ def gtp_experiment1():
 
 
 def gpt_experiment2():
-    intro_text = """
-Given an image search task, translate the task into a program in the following programming language:
-
-P := Exists(E) | All(E_1, E_2) | And(P_1, ..., P_n)
-E := Is(\phi) | Complement(E) | Intersect(E_1, ..., E_n) | HasRelation(E_1, E_2, R)
-R := IsAbove, IsLeft, IsNextTo, Contains
-
-phi is a predicate that can be equal to any term in the search query. An All program means for every object matching E_1, E_2 is true. \n
-    """
+    #     intro_text = """
+    # Given an image search task, translate the task into a formula in first order logic. A formula is defined inductively as follows:
+    # - Given terms t1, t2, Is(t1, t2) is a formula.
+    # - Given terms t1, t2, IsAbove(t1, t2), IsLeft(t1, t2), IsInside(t1, t2), and IsNextTo(t1, t2) are formulas.
+    # - For each formula F, Not F is a formula.
+    # - For each pair of formulas F, G, (F And G) and (F -> G) are formulas.
+    # - If F is a formula and x is a variable, then Exists x.F and ForAll x.F are formulas.\n
+    #     """
+    intro_text = ""
     progs = [
         (
-            "Every person is riding a bicycle",
-            "All(IsObject(person), HasRelation(IsObject(person), IsObject(bicycle), IsAbove))",
+            "Every person in the image is riding a bicycle",
+            "ForAll x.((Is(x, person)) -> (IsAbove(x, bicycle)))",
         ),
         (
-            "Every bicycle is being ridden by a person",
-            "All(IsObject(bicycle), HasRelation(IsObject(person), IsObject(bicycle), IsAbove))",
+            "The image contains a face that is smiling, and has their eyes open",
+            "Exists x.((Is(x, smilingFace)) And (Is(x, eyesOpenFace)))",
         ),
         (
-            "a car with a person inside",
-            "Exists(HasRelation(IsObject(car), IsObject(person), Contains))",
+            "Alice is in the image and everyone is smiling",
+            "Exists x.(ForAll y.((Is(x, Alice)) And ((Is(y, face)) -> (Is(y, smilingFace)))))",
         ),
         (
-            "a face that is not smiling",
-            "Exists(Intersection(IsObject(Face), Complement(IsObject(SmilingFace))",
+            "The image contains a face that is not smiling",
+            "Exists x.((Is(x, face)) And (Not (Is(x, smilingFace))))",
         ),
         (
-            "Alice is to the right of Bob",
-            "Exists(HasRelation(IsObject(Alice), IsObject(Bob), IsLeft))",
+            "Every bicycle in the image is being ridden by a person",
+            "ForAll x.((Is(x, bicycle)) -> (IsAbove(person, x)))",
         ),
-        ("Alice is there", "Exists(IsObject(Alice))"),
         (
-            "A face that is smiling, and has their eyes open",
-            "Exists(Intersection(IsObject(SmilingFace), IsObject(EyesOpenFace)))",
+            "The image contains a car with a person inside",
+            "Exists x.((Is(x, car)) And (IsInside(x, person)))",
         ),
-        ("Alice and Bob", "And(Exists(IsObject(Alice)), Exists(IsObject(Bob)))"),
+        (
+            "In the image, Alice is to the right of Bob",
+            "Exists x.((Is(x, Alice)) And (IsRight(x, Bob)))",
+        ),
+        ("Alice is in the image", "Exists x.(Is(x, Alice))"),
+        (
+            "The image contains Alice and Bob",
+            "Exists x.(Exists y.((Is(x, Alice)) And (Is(y, Bob))))",
+        ),
         (
             "Alice and Bob are next to each other",
-            "Exists(HasRelation(IsObject(Alice), IsObject(Bob), NextTo))",
-        ),
-        (
-            "Alice is there and everyone is smiling",
-            "And(Exists(IsObject(Alice)), All(IsObject(Face), IsObject(SmilingFace)))",
+            "Exists x.((Is(x, Alice)) And (IsNextTo(x, Bob)))",
         ),
         (
             "All faces are not smiling",
-            "All(IsObject(face), Intersection(IsObject(Face), Complement(IsObject(SmilingFace)))",
+            "ForAll x.((Is(x, face)) -> (Not (Is(x, smilingFace))))",
         ),
     ]
     message_text = intro_text
-    random.shuffle(progs)
+    # random.shuffle(progs)
     rows = [("Task", "GT Program", "Output Program")]
-    for prog in progs[:3]:
+    for prog in progs[:4]:
         print(prog)
         message_text += "task: {}\nprogram:{}\n\n".format(prog[0], prog[1])
-    for prog in progs[3:]:
+    for prog in progs[4:]:
         query_content = "task: {}\nprogram: ".format(prog[0])
         message = {"role": "system", "content": message_text + query_content}
         print(message)
@@ -578,5 +582,120 @@ phi is a predicate that can be equal to any term in the search query. An All pro
             fw.writerow(row)
 
 
+def parse_formula(formula):
+    formulas = [
+        ("^ForAll (\w*).\((.*)\)$", ForAll),
+        ("^Exists (\w*).\((.*)\)$", Exists),
+    ]
+    one_param_subformulas = [
+        ("^Not \((.*)\)$", Not),
+    ]
+    two_param_subformulas = [
+        ("^\((.*)\) -> \((.*)\)$", IfThen),
+        ("^\((.*)\) And \((.*)\)$", And),
+    ]
+    predicates = [
+        ("^Is\((\w*), (\w*)\)$", Is),
+        ("^IsAbove\((\w*), (\w*)\)$", IsAbove),
+        ("^IsLeft\((\w*), (\w*)\)$", IsLeft),
+        ("^IsNextTo\((\w*), (\w*)\)$", IsNextTo),
+        ("^IsInside\((\w*), (\w*)\)$", IsInside),
+    ]
+    for regex, f in formulas:
+        m = re.search(regex, formula)
+        if m is not None:
+            var = m.group(1)
+            subformula = m.group(2)
+            parsed_subformula = parse_formula(subformula)
+            if parsed_subformula is not None:
+                return f(var, parsed_subformula)
+    for regex, f in one_param_subformulas:
+        m = re.search(regex, formula)
+        if m is not None:
+            subformula = m.group(1)
+            parsed_subformula = parse_formula(subformula)
+            if parsed_subformula is not None:
+                return f(parsed_subformula)
+    for regex, f in two_param_subformulas:
+        m = re.search(regex, formula)
+        if m is not None:
+            subformula1, subformula2 = m.group(1), m.group(2)
+            parsed_subformula1, parsed_subformula2 = parse_formula(
+                subformula1
+            ), parse_formula(subformula2)
+            if parsed_subformula1 is not None and parsed_subformula2 is not None:
+                return f(parsed_subformula1, parsed_subformula2)
+    for regex, f in predicates:
+        m = re.search(regex, formula)
+        if m is not None:
+            var1, var2 = m.group(1), m.group(2)
+            return f(var1, var2)
+    return None
+
+
+def test_parser():
+    tests = [
+        (
+            "ForAll x.((Is(x, person)) -> (IsAbove(x, bicycle)))",
+            ForAll("x", IfThen(Is("x", "person"), IsAbove("x", "bicycle"))),
+        ),
+        (
+            "Exists x.((Is(x, smilingFace)) And (Is(x, eyesOpenFace)))",
+            Exists("x", And(Is("x", "smilingFace"), Is("x", "eyesOpenFace"))),
+        ),
+        (
+            "Exists x.(ForAll y.((Is(x, Alice)) And ((Is(y, face)) -> (Is(y, smilingFace)))))",
+            Exists(
+                "x",
+                ForAll(
+                    "y",
+                    And(
+                        Is("x", "Alice"),
+                        IfThen(Is("y", "face"), Is("y", "smilingFace")),
+                    ),
+                ),
+            ),
+        ),
+        (
+            "Exists x.((Is(x, face)) And (Not (Is(x, smilingFace))))",
+            Exists("x", And(Is("x", "face"), Not(Is("x", "smilingFace")))),
+        ),
+        (
+            "ForAll x.((Is(x, bicycle)) -> (IsAbove(person, x)))",
+            ForAll("x", IfThen(Is("x", "bicycle"), IsAbove("person", "x"))),
+        ),
+        (
+            "Exists x.((Is(x, car)) And (IsInside(x, person)))",
+            Exists("x", And(Is("x", "car"), IsInside("x", "person"))),
+        ),
+        (
+            "Exists x.((Is(x, Alice)) And (IsLeft(Bob, x)))",
+            Exists("x", And(Is("x", "Alice"), IsLeft("Bob", "x"))),
+        ),
+        ("Exists x.(Is(x, Alice))", Exists("x", Is("x", "Alice"))),
+        (
+            "Exists x.(Exists y.((Is(x, Alice)) And (Is(y, Bob))))",
+            Exists("x", Exists("y", And(Is("x", "Alice"), Is("y", "Bob")))),
+        ),
+        (
+            "Exists x.((Is(x, Alice)) And (IsNextTo(x, Bob)))",
+            Exists("x", And(Is("x", "Alice"), IsNextTo("x", "Bob"))),
+        ),
+        (
+            "ForAll x.((Is(x, face)) -> (Not (Is(x, smilingFace))))",
+            ForAll("x", IfThen(Is("x", "face"), Not(Is("x", "smilingFace")))),
+        ),
+    ]
+    for test in tests:
+        parsed = parse_formula(test[0])
+        if str(parsed) != str(test[1]):
+            print("FAIL")
+            print(test[0])
+            print(str(parsed))
+            print(str(test[1]))
+            print()
+
+
 if __name__ == "__main__":
-    gpt_experiment2()
+    # gpt_experiment2()
+    test_parser()
