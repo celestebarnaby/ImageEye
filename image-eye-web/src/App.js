@@ -44,7 +44,7 @@ export default function App() {
   const [sidebarFiles, setSidebarFiles] = useState([]);
   const [mainImage, setMainImage] = useState(null);
   const [objectList, setObjectList] = useState([]);
-  const [annotatedImages, setAnnotatedImages] = useState({});
+  const [exampleImages, setExampleImages] = useState({});
   const [result, setResult] = useState(null);
   const [message, setMessage] = useState({});
   const [files, setFiles] = useState([]);
@@ -98,15 +98,14 @@ export default function App() {
     setObjectList([...objectList]);
   }
 
-  let addImage = (image) => {
-    annotatedImages[image] = objectList;
-    setAnnotatedImages({ ...annotatedImages });
-    setObjectList([]);
+  let addImage = (image, val) => {
+    exampleImages[image] = val;
+    setExampleImages({ ...exampleImages });
   }
 
   let removeImage = (img_dir) => {
-    delete annotatedImages[img_dir]
-    setAnnotatedImages({ ...annotatedImages });
+    delete exampleImages[img_dir]
+    setExampleImages({ ...exampleImages });
   }
 
   let addToSavedImages = (images) => {
@@ -145,18 +144,22 @@ export default function App() {
 
   let handleTextSubmit = () => {
     setIsLoading(true);
+    var body = { text_query: inputText, examples: exampleImages }
     fetch('http://127.0.0.1:5001/textQuery', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(inputText)
+      // body: JSON.stringify(inputText)
+      body: JSON.stringify(body)
     })
       .then(response => response.json())
       .then(data => {
-        setFiles(data.files);
+        // setFiles(data.files);
         // setDataset([]);
         // setSidebarFiles(data.sidebarFiles);
+        setResult(data.program);
+        setSearchResults(data.search_results);
         setIsLoading(false);
         setMainImage(data.sidebarFiles[0]);
       })
@@ -174,7 +177,6 @@ export default function App() {
     })
       .then(response => response.json())
       .then(data => {
-
         setFiles(data.files);
         setMessage(data.message);
         setIsLoading(false);
@@ -182,7 +184,7 @@ export default function App() {
   };
 
   let updateResults = () => {
-    const vals = Object.values(annotatedImages);
+    const vals = Object.values(exampleImages);
     var hasPosExample = vals.some(val => val.length > 0);
     if (hasPosExample) {
       setIsLoading(true);
@@ -191,7 +193,7 @@ export default function App() {
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(annotatedImages)
+        body: JSON.stringify(exampleImages)
       })
         .then(response => response.json())
         .then(data => {
@@ -271,7 +273,7 @@ export default function App() {
             addImage={addImage}
             removeImage={removeImage}
             objectList={objectList}
-            annotatedImages={annotatedImages}
+            exampleImages={exampleImages}
             result={result}
             submitSavedImages={submitSavedImages}
             savedImages={savedImages}

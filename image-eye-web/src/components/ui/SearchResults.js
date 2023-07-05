@@ -12,7 +12,7 @@ function SearchResults({ files, changeImage, result, exampleImages, updateResult
 
   return (
     <Box sx={{ height: "100%", paddingBottom: "5%" }} className="sidebar">
-      <h3>Annotated Images</h3>
+      {/* <h3>Annotated Images</h3>
       {exampleImages.length > 0 ?
         <Box sx={{ paddingRight: "30px", height: "auto" }}>
           <ImageList sx={{ margin: "8px", width: "100%", height: "calc(100% - 76px)" }} cols={3} rowHeight={164}>
@@ -28,7 +28,7 @@ function SearchResults({ files, changeImage, result, exampleImages, updateResult
           <Button fullWidth variant="contained" onClick={() => updateResults()}>Filter Images by Annotations</Button>
         </Box> : <div></div>
       }
-      <Divider></Divider>
+      <Divider></Divider> */}
       <div style={{ display: "flex", flexDirection: "row", alignItems: "center", justifyContent: "center" }}>
         <h3>Search Results</h3>
         <IconButton onClick={() => addToSavedImages(files)}><AddIcon /></IconButton>

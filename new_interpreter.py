@@ -3,7 +3,7 @@ from utils import *
 from image_utils import *
 
 
-def eval_prog(prog, env, vars_to_vals):
+def eval_prog(prog, env, vars_to_vals={}):
     if isinstance(prog, Exists):
         for obj in env.values():
             vars_to_vals[prog.var] = obj

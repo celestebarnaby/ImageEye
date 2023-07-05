@@ -5,6 +5,7 @@ import torch
 import numpy as np
 from user_study_tasks import tasks
 from PIL import Image
+from gpt import *
 
 from flask_cors import CORS, cross_origin
 
@@ -31,19 +32,23 @@ def text_query():
     global logged_info
     global img_to_embedding
 
-    text_query = request.get_json()
+    body = request.get_json()
+    text_query = body["text_query"]
+    examples = body["examples"]
     logged_info["text queries"].append(text_query)
-    results = get_top_N_images(
-        text_query,
-        tokenizer,
-        model,
-        processor,
-        device,
-        img_to_embedding,
-        search_criterion="imageeye",
-    )
+    # results = get_top_N_images(
+    #     text_query,
+    #     tokenizer,
+    #     model,
+    #     processor,
+    #     device,
+    #     img_to_embedding,
+    #     search_criterion="imageeye",
+    # )
+    results = make_text_query(text_query, img_to_environment, examples)
     return {
-        "files": results,
+        "program": "hi",
+        "search_results": results,
         # 'sidebarFiles': [filename for filename in imgs][:5]
     }
 

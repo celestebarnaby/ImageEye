@@ -8,10 +8,11 @@ import TextField from '@mui/material/TextField';
 import Divider from '@mui/material/Divider';
 
 
-function Sidebar({ allFiles, imgsToAnnotate, changeImage, savedImages, handleTextChange, handleTextSubmit, updateResults }) {
+function Sidebar({ allFiles, changeImage, savedImages, handleTextChange, handleTextSubmit, exampleImages }) {
 
     return (
         <Box sx={{ height: "100%" }} className="sidebar">
+            <Button sx={{ marginTop: 1, marginBottom: 1 }} fullWidth variant="contained" onClick={handleTextSubmit}>Search </Button>
             <TextField
                 fullWidth
                 id="outlined-name"
@@ -20,8 +21,23 @@ function Sidebar({ allFiles, imgsToAnnotate, changeImage, savedImages, handleTex
                 sx={{ background: "white" }}
                 onChange={handleTextChange}
             />
-            <Button sx={{ marginTop: 1 }} fullWidth variant="contained" onClick={handleTextSubmit}>Sort images by description</Button>
-            <Divider />
+            <h3>Example Images</h3>
+            {exampleImages.length > 0 ?
+                <Box sx={{ paddingRight: "30px", height: "auto" }}>
+                    <ImageList sx={{ margin: "8px", width: "100%", height: "calc(100% - 76px)" }} cols={3} rowHeight={164}>
+                        {exampleImages.map(img => {
+                            return <ImageListItem key={img} onClick={() => changeImage(img)}>
+                                <img
+                                    src={`${img.replace("image-eye-web/public/", "./")}`}
+                                    loading="lazy"
+                                />
+                            </ImageListItem>
+                        })}
+                    </ImageList>
+                </Box> : <div>Add example images to refine search.</div>
+            }
+            <Divider></Divider>
+            {/* <Divider /> */}
             {AllImages(allFiles, savedImages, changeImage)}
         </Box>
     );

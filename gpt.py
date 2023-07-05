@@ -2,7 +2,7 @@ import openai
 import random
 import copy
 import time
-from interpreter import *
+from new_interpreter import *
 from utils import *
 from new_dsl import *
 import re
@@ -499,6 +499,82 @@ def gtp_experiment1():
         fw = csv.writer(f)
         for row in rows:
             fw.writerow(row)
+
+
+def make_text_query(query, env, examples):
+    example_progs = [
+        (
+            "Every person is riding a bicycle",
+            "ForAll x.((Is(x, person)) -> (IsAbove(x, bicycle)))",
+        ),
+        (
+            "The image contains a face that is smiling, and has their eyes open",
+            "Exists x.((Is(x, smilingFace)) And (Is(x, eyesOpenFace)))",
+        ),
+        (
+            "Alice is in the image and everyone is smiling",
+            "Exists x.(ForAll y.((Is(x, Alice)) And ((Is(y, face)) -> (Is(y, smilingFace)))))",
+        ),
+        (
+            "The image contains a face that is not smiling",
+            "Exists x.((Is(x, face)) And (Not (Is(x, smilingFace))))",
+        ),
+        (
+            "Every bicycle in the image is being ridden by a person",
+            "ForAll x.((Is(x, bicycle)) -> (IsAbove(person, x)))",
+        ),
+        (
+            "The image contains a car with a person inside",
+            "Exists x.((Is(x, car)) And (IsInside(x, person)))",
+        ),
+        (
+            "Alice is to the right of Bob",
+            "Exists x.((Is(x, Alice)) And (IsRight(x, Bob)))",
+        ),
+        ("Alice is in the image", "Exists x.(Is(x, Alice))"),
+        (
+            "The image contains Alice and Bob",
+            "Exists x.(Exists y.((Is(x, Alice)) And (Is(y, Bob))))",
+        ),
+        (
+            "Alice and Bob are next to each other",
+            "Exists x.((Is(x, Alice)) And (IsNextTo(x, Bob)))",
+        ),
+        (
+            "All faces are not smiling",
+            "ForAll x.((Is(x, face)) -> (Not (Is(x, smilingFace))))",
+        ),
+    ]
+    message_text = ""
+    for prog in example_progs:
+        message_text += "task: {}\nprogram:{}\n\n".format(prog[0], prog[1])
+    query_content = "task: {}\nprogram: ".format(query)
+    message = {"role": "system", "content": message_text + query_content}
+    output = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo", temperature=0.8, messages=[message], n=5
+    )
+    output_progs = [
+        parse_formula(choice["message"]["content"].strip())
+        for choice in output["choices"]
+    ]
+    output_progs = list(filter(lambda x: x is not None, output_progs))
+    progs_matching_examples = []
+    for prog in output_progs:
+        matching = True
+        for img, output in examples.items():
+            if eval_prog(prog, env[img]["environment"]) != output:
+                matching = False
+                break
+        if matching:
+            progs_matching_examples.append(prog)
+    top_prog = progs_matching_examples[0]
+    matching_imgs = []
+    print(top_prog)
+    for img, img_env in env.items():
+        if eval_prog(top_prog, img_env["environment"]):
+            matching_imgs.append(img)
+    print(len(matching_imgs))
+    return matching_imgs
 
 
 def gpt_experiment2():
