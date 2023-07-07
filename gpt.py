@@ -13,6 +13,87 @@ with open("../gpt-key.txt") as f:
 openai.api_key = sk
 
 
+def construct_prog_from_tree(tree, node_num=0, should_copy=False):
+    if should_copy:
+        prog = copy.copy(tree.nodes[node_num])
+    else:
+        prog = tree.nodes[node_num]
+    # if not isinstance(prog, Node):
+    # return prog
+    prog_dict = vars(prog)
+    if node_num in tree.to_children:
+        child_nums = tree.to_children[node_num]
+    else:
+        child_nums = []
+    child_types = [item for item in list(prog_dict) if item != "var"]
+    # if child_types and child_types[0] == "extractors":
+    #     for child_num in child_nums:
+    #         prog_dict["extractors"].pop(0)
+    #         child_prog = construct_prog_from_tree(tree, child_num)
+    #         prog_dict["extractors"].append(child_prog)
+    #     return prog
+    # assert len(child_nums) == len(child_types)
+    for child_type, child_num in zip(child_types, child_nums):
+        child_prog = construct_prog_from_tree(tree, child_num)
+        prog_dict[child_type] = child_prog
+    return prog
+
+
+class Hole:
+    def __init__(self, node_type, val=None):
+        self.node_type = node_type
+        self.val = None
+
+    def __str__(self):
+        return type(self).__name__
+
+    def duplicate(self):
+        return Hole(
+            self.depth, self.node_type, self.output_over, self.output_under, self.val
+        )
+
+    def __lt__(self, other):
+        if not isinstance(other, Hole):
+            return False
+        return str(self) < str(other)
+
+
+class Tree:
+    def __init__(self):
+        # self.id: int = _id
+        self.nodes: Dict[int, Extractor] = {}
+        self.to_children: Dict[int, List[int]] = {}
+        self.to_parent: Dict[int, int] = {}
+        # self.node_id_counter = itertools.count(0)
+        # self.depth = 1
+        # self.size = 1
+        self.var_nodes = []
+
+    def duplicate(self) -> "Tree":
+        ret = Tree()
+        # ret.nodes = copy.copy(self.nodes)
+        ret.nodes = {}
+        for key, val in self.nodes.items():
+            if isinstance(val, Hole) or isinstance(val, Node):
+                ret.nodes[key] = val.duplicate()
+            else:
+                ret.nodes[key] = val
+        ret.to_children = self.to_children.copy()
+        ret.to_parent = self.to_parent.copy()
+        # ret.node_id_counter = itertools.tee(self.node_id_counter)[1]
+        ret.var_nodes = self.var_nodes.copy()
+        # ret.depth = self.depth
+        # ret.size = self.size
+        return ret
+
+    def __lt__(self, other):
+        if self.size == other.size and self.depth == other.depth:
+            return self.id < other.id
+        if self.size == other.size:
+            return self.depth < other.depth
+        return self.size < other.size
+
+
 class Benchmark:
     def __init__(self, gt_prog, desc, dataset_name, example_imgs=[]):
         self.gt_prog = gt_prog
@@ -716,6 +797,81 @@ def parse_formula(formula):
     return None
 
 
+def parse_formula2(formula, tree, parent_node_num):
+    formulas = [
+        ("^ForAll (\w*).\((.*)\)$", ForAll),
+        ("^Exists (\w*).\((.*)\)$", Exists),
+    ]
+    one_param_subformulas = [
+        ("^Not \((.*)\)$", Not),
+    ]
+    two_param_subformulas = [
+        ("(?<=^\((.*)\)) -> (?=\((.*)\)$)", IfThen),
+        ("(?<=^\((.*)\)) And (?=\((.*)\)$)", And),
+    ]
+    predicates = [
+        ("^Is\((\w*), (\w*)\)$", Is),
+        ("^IsAbove\((\w*), (\w*)\)$", IsAbove),
+        ("^IsLeft\((\w*), (\w*)\)$", IsLeft),
+        ("^IsNextTo\((\w*), (\w*)\)$", IsNextTo),
+        ("^IsInside\((\w*), (\w*)\)$", IsInside),
+    ]
+    new_node_num = len(tree.nodes)
+    for regex, f in formulas:
+        m = re.search(regex, formula)
+        if m is not None:
+            var = m.group(1)
+            subformula = m.group(2)
+            new_node = f(var, None)
+            tree.nodes[new_node_num] = new_node
+            tree.to_children[new_node_num] = []
+            successful_parse = parse_formula2(subformula, tree, new_node_num)
+            if successful_parse:
+                if parent_node_num is not None:
+                    tree.to_parent[new_node_num] = parent_node_num
+                    tree.to_children[parent_node_num].append(new_node_num)
+                return True
+    for regex, f in one_param_subformulas:
+        m = re.search(regex, formula)
+        if m is not None:
+            subformula = m.group(1)
+            new_node = f(None)
+            tree.nodes[new_node_num] = new_node
+            tree.to_children[new_node_num] = []
+            successful_parse = parse_formula2(subformula, tree, new_node_num)
+            if successful_parse:
+                if parent_node_num is not None:
+                    tree.to_parent[new_node_num] = parent_node_num
+                    tree.to_children[parent_node_num].append(new_node_num)
+                return True
+    for regex, f in two_param_subformulas:
+        m = re.findall(regex, formula)
+        for subformula1, subformula2 in m:
+            new_node = f(None, None)
+            tree.nodes[new_node_num] = new_node
+            tree.to_children[new_node_num] = []
+            successful_parse1, successful_parse2 = parse_formula2(
+                subformula1, tree, new_node_num
+            ), parse_formula2(subformula2, tree, new_node_num)
+            if successful_parse1 and successful_parse2:
+                if parent_node_num is not None:
+                    tree.to_parent[new_node_num] = parent_node_num
+                    tree.to_children[parent_node_num].append(new_node_num)
+                return True
+    for regex, f in predicates:
+        m = re.search(regex, formula)
+        if m is not None:
+            var1, var2 = m.group(1), m.group(2)
+            new_node = f(var1, var2)
+            tree.nodes[new_node_num] = new_node
+            tree.to_children[new_node_num] = []
+            if parent_node_num is not None:
+                tree.to_parent[new_node_num] = parent_node_num
+                tree.to_children[parent_node_num].append(new_node_num)
+            return True
+    return False
+
+
 def test_parser():
     tests = [
         (
@@ -779,11 +935,13 @@ def test_parser():
         ),
     ]
     for test in tests:
-        parsed = parse_formula(test[0])
-        if str(parsed) != str(test[1]):
+        tree = Tree()
+        parse_formula2(test[0], tree, None)
+        prog = construct_prog_from_tree(tree)
+        if str(prog) != str(test[1]):
             print("FAIL")
             print(test[0])
-            print(str(parsed))
+            print(str(prog))
             print(str(test[1]))
             print()
 
