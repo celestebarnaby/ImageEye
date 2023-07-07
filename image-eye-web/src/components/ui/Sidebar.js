@@ -20,14 +20,16 @@ function Sidebar({ allFiles, changeImage, savedImages, handleTextChange, handleT
                 variant="outlined"
                 sx={{ background: "white" }}
                 onChange={handleTextChange}
+                autoComplete='off'
             />
             <h3>Example Images</h3>
-            {exampleImages.length > 0 ?
+            {Object.keys(exampleImages).length > 0 ?
                 <Box sx={{ paddingRight: "30px", height: "auto" }}>
                     <ImageList sx={{ margin: "8px", width: "100%", height: "calc(100% - 76px)" }} cols={3} rowHeight={164}>
-                        {exampleImages.map(img => {
+                        {Object.keys(exampleImages).map(img => {
+                            let class_name = exampleImages[img] ? "example-img-pos" : "example-img-neg";
                             return <ImageListItem key={img} onClick={() => changeImage(img)}>
-                                <img
+                                <img className={class_name}
                                     src={`${img.replace("image-eye-web/public/", "./")}`}
                                     loading="lazy"
                                 />

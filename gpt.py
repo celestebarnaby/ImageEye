@@ -5,7 +5,7 @@ import time
 from new_interpreter import *
 from utils import *
 from new_dsl import *
-import re
+import regex as re
 
 with open("../gpt-key.txt") as f:
     sk = f.read().strip()
@@ -504,8 +504,8 @@ def gtp_experiment1():
 def make_text_query(query, env, examples):
     example_progs = [
         (
-            "Every person is riding a bicycle",
-            "ForAll x.((Is(x, person)) -> (IsAbove(x, bicycle)))",
+            "Every person is next to a cat",
+            "ForAll x.(Exists y.((Is(y, cat)) And ((Is(x, person)) -> (IsNextTo(x, y)))))",
         ),
         (
             "The image contains a face that is smiling, and has their eyes open",
@@ -515,31 +515,31 @@ def make_text_query(query, env, examples):
             "Alice is in the image and everyone is smiling",
             "Exists x.(ForAll y.((Is(x, Alice)) And ((Is(y, face)) -> (Is(y, smilingFace)))))",
         ),
+        # (
+        #     "The image contains a face that is not smiling",
+        #     "Exists x.((Is(x, face)) And (Not (Is(x, smilingFace))))",
+        # ),
+        # (
+        #     "Every bicycle in the image is being ridden by a person",
+        #     "ForAll x.(Exists y.((Is(y, person)) And (Is(x, bicycle)) -> (IsAbove(y, x))))",
+        # ),
         (
-            "The image contains a face that is not smiling",
-            "Exists x.((Is(x, face)) And (Not (Is(x, smilingFace))))",
+            "The image contains a cat inside a box.",
+            "Exists x.(Exists y.((Is(y, cat) And ((Is(x, box)) And (IsInside(y, x))))))",
         ),
+        # (
+        #     "Alice is to the right of Bob",
+        #     "Exists x.((Is(x, Alice)) And (IsRight(x, Bob)))",
+        # ),
+        ("There is a tree in the image.", "Exists x.(Is(x, Tree))"),
         (
-            "Every bicycle in the image is being ridden by a person",
-            "ForAll x.((Is(x, bicycle)) -> (IsAbove(person, x)))",
+            "The image contains a chair and a table",
+            "Exists x.(Exists y.((Is(x, chair)) And (Is(y, table))))",
         ),
-        (
-            "The image contains a car with a person inside",
-            "Exists x.((Is(x, car)) And (IsInside(x, person)))",
-        ),
-        (
-            "Alice is to the right of Bob",
-            "Exists x.((Is(x, Alice)) And (IsRight(x, Bob)))",
-        ),
-        ("Alice is in the image", "Exists x.(Is(x, Alice))"),
-        (
-            "The image contains Alice and Bob",
-            "Exists x.(Exists y.((Is(x, Alice)) And (Is(y, Bob))))",
-        ),
-        (
-            "Alice and Bob are next to each other",
-            "Exists x.((Is(x, Alice)) And (IsNextTo(x, Bob)))",
-        ),
+        # (
+        #     "Alice and Bob are next to each other",
+        #     "Exists x.((Is(x, Alice)) And (IsNextTo(x, Bob)))",
+        # ),
         (
             "All faces are not smiling",
             "ForAll x.((Is(x, face)) -> (Not (Is(x, smilingFace))))",
@@ -557,16 +557,24 @@ def make_text_query(query, env, examples):
         parse_formula(choice["message"]["content"].strip())
         for choice in output["choices"]
     ]
+    print([choice["message"]["content"] for choice in output["choices"]])
     output_progs = list(filter(lambda x: x is not None, output_progs))
-    progs_matching_examples = []
-    for prog in output_progs:
-        matching = True
-        for img, output in examples.items():
-            if eval_prog(prog, env[img]["environment"]) != output:
-                matching = False
-                break
-        if matching:
-            progs_matching_examples.append(prog)
+    print(output_progs)
+    print(examples)
+    if examples:
+        progs_matching_examples = []
+        for prog in output_progs:
+            matching = True
+            for img, output in examples.items():
+                if eval_prog(prog, env[img]["environment"]) != output:
+                    matching = False
+                    break
+            if matching:
+                progs_matching_examples.append(prog)
+    else:
+        progs_matching_examples = output_progs
+    if not progs_matching_examples:
+        return [], str([choice["message"]["content"] for choice in output["choices"]])
     top_prog = progs_matching_examples[0]
     matching_imgs = []
     print(top_prog)
@@ -574,7 +582,7 @@ def make_text_query(query, env, examples):
         if eval_prog(top_prog, img_env["environment"]):
             matching_imgs.append(img)
     print(len(matching_imgs))
-    return matching_imgs
+    return matching_imgs, str(top_prog)
 
 
 def gpt_experiment2():
@@ -667,8 +675,8 @@ def parse_formula(formula):
         ("^Not \((.*)\)$", Not),
     ]
     two_param_subformulas = [
-        ("^\((.*)\) -> \((.*)\)$", IfThen),
-        ("^\((.*)\) And \((.*)\)$", And),
+        ("(?<=^\((.*)\)) -> (?=\((.*)\)$)", IfThen),
+        ("(?<=^\((.*)\)) And (?=\((.*)\)$)", And),
     ]
     predicates = [
         ("^Is\((\w*), (\w*)\)$", Is),
@@ -693,9 +701,8 @@ def parse_formula(formula):
             if parsed_subformula is not None:
                 return f(parsed_subformula)
     for regex, f in two_param_subformulas:
-        m = re.search(regex, formula)
-        if m is not None:
-            subformula1, subformula2 = m.group(1), m.group(2)
+        m = re.findall(regex, formula)
+        for subformula1, subformula2 in m:
             parsed_subformula1, parsed_subformula2 = parse_formula(
                 subformula1
             ), parse_formula(subformula2)
@@ -711,6 +718,15 @@ def parse_formula(formula):
 
 def test_parser():
     tests = [
+        (
+            "Exists x.(Exists y.((Is(y, cat)) And ((Is(x, box)) And (IsInside(y, x)))))",
+            Exists(
+                "x",
+                Exists(
+                    "y", And(Is("y", "cat"), And(Is("x", "box"), IsInside("y", "x")))
+                ),
+            ),
+        ),
         (
             "ForAll x.((Is(x, person)) -> (IsAbove(x, bicycle)))",
             ForAll("x", IfThen(Is("x", "person"), IsAbove("x", "bicycle"))),

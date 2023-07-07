@@ -96,7 +96,7 @@ export default function NewImage({ image, imgToEnvironment, exampleImages, addOb
         <div>
             <Box className="image-container">
                 {image && (
-                    annotated ? AnnotatedImage(image, map, addObject, new_width, objs, img_dir, removeImage, imgSaved, handleSavedImages) : UnannotatedImage(image, map, addObject, addObjectsByName, new_width, addImage, img_dir, objs, full_object_names, hoverOverObjects, removeHover, imgSaved, handleSavedImages))}
+                    annotated ? AnnotatedImage(image, map, addObject, new_width, objs, img_dir, removeImage, imgSaved, handleSavedImages, exampleImages) : UnannotatedImage(image, map, addObject, addObjectsByName, new_width, addImage, img_dir, objs, full_object_names, hoverOverObjects, removeHover, imgSaved, handleSavedImages))}
             </Box>
             {/* {ExampleSet(Object.keys(exampleImages), changeImage, updateResults)} */}
         </div>
@@ -149,13 +149,14 @@ function UnannotatedImage(image, map, addObject, addObjectsByName, new_width, ad
     </Box>
 }
 
-function AnnotatedImage(image, map, addObject, new_width, objs, img_dir, removeImage, imgSaved, handleSavedImages) {
+function AnnotatedImage(image, map, addObject, new_width, objs, img_dir, removeImage, imgSaved, handleSavedImages, exampleImages) {
     const icon = imgSaved ? <RemoveIcon /> : <AddIcon />;
+    const text = exampleImages[image] ? "Image has been added as a positive example." : "Image has been added as a negative example.";
 
     return <Box>
         {/* <img src={require(image)} className="center-image"/> */}
         <div className='side-by-side'>
-            <div>Image has been added as an example</div>
+            <div>{text}</div>
             <IconButton sx={{ marginLeft: "auto" }} onClick={() => handleSavedImages(img_dir, true)}>{icon}</IconButton>
         </div>
         <ImageMapper src={image.replace("image-eye-web/public/", "./")} map={map} onClick={(area, index) => addObject(objs[index]['ObjPosInImgLeftToRight'])} width={new_width} />

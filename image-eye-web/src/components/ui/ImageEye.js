@@ -32,7 +32,7 @@ export function ImageEye({ files, message, updateResults, handleTextChange, hand
         changeImage={changeImage}
         handleTextChange={handleTextChange}
         handleTextSubmit={handleTextSubmit}
-        exampleImages={Object.keys(exampleImages)}
+        exampleImages={exampleImages}
         updateResults={updateResults}
         savedImages={savedImages}
       />

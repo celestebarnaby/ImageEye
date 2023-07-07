@@ -3,6 +3,14 @@ body {
     color: #555;
 }
 
+.example-img-pos {
+    border: 5px solid #308339;
+}
+
+.example-img-neg {
+    border: 5px solid #860e0e;
+}
+
 /* .small-img { */
 /*  */
 /* } */
