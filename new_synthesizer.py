@@ -4,7 +4,13 @@ from new_interpreter import *
 
 
 def get_relations():
-    return [IsAbove, IsLeft, IsNextTo, IsInside]
+    return [
+        Is(None, None),
+        IsAbove(None, None),
+        IsLeft(None, None),
+        IsNextTo(None, None),
+        IsInside(None, None),
+    ]
 
 
 def get_objects(img_to_env):
@@ -13,7 +19,7 @@ def get_objects(img_to_env):
         env = env["environment"]
         for obj in env.values():
             if obj["Type"] == "Object":
-                vals.add(obj["Name"])
+                vals.add(obj["Name"].lower())
             elif obj["Type"] == "Face":
                 vals.add("face")
                 vals.add("id" + str(obj["Index"]))
@@ -59,6 +65,8 @@ def fill_in_holes(tree, example_images, img_to_env, objects):
         if not cur_tree.var_nodes:
             prog = construct_prog_from_tree(cur_tree)
             matching = True
+            if not example_images:
+                return prog
             for img, result in example_images:
                 env = img_to_env[img]["environment"]
                 if eval_prog(prog, env) != result:

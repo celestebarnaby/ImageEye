@@ -621,20 +621,31 @@ def make_text_query(query, env, examples):
     # print(output_trees)
     # print('hihi')
     # output_trees = list(filter(lambda x: x is not None, output_trees))
+
     output_progs = [
         fill_in_holes(tree, examples, env, objects)
-        if tree.var_nodes
+        if len(tree.var_nodes) > 0
         else construct_prog_from_tree(tree)
         for tree in output_trees
     ]
-    output_progs = [construct_prog_from_tree(tree) for tree in output_trees]
-    print(output_progs)
-    print(examples)
+
+    # output_progs = [construct_prog_from_tree(tree) for tree in output_trees]
+    # print([str(prog) for prog in output_progs])
+    # print()
+
+    # output_progs = [
+    #     fill_in_holes(tree, examples, env, objects)
+    #     if len(tree.var_nodes) > 0
+    #     else construct_prog_from_tree(tree)
+    #     for tree in output_trees
+    # ]
+    # print([str(prog) for prog in output_progs])
+    # raise TypeError
     if examples:
         progs_matching_examples = []
         for prog in output_progs:
             matching = True
-            for img, output in examples.items():
+            for img, output in examples:
                 if eval_prog(prog, env[img]["environment"]) != output:
                     matching = False
                     break
@@ -806,13 +817,6 @@ def parse_formula2(formula, tree, objects, parent_node_num=None, used_vars=[]):
         ("(?<=^\((.*)\)) -> (?=\((.*)\)$)", IfThen),
         ("(?<=^\((.*)\)) And (?=\((.*)\)$)", And),
     ]
-    # predicates = [
-    # ("^Is\((\w*), (\w*)\)$", Is),
-    # ("^IsAbove\((\w*), (\w*)\)$", IsAbove),
-    # ("^IsLeft\((\w*), (\w*)\)$", IsLeft),
-    # ("^IsNextTo\((\w*), (\w*)\)$", IsNextTo),
-    # ("^IsInside\((\w*), (\w*)\)$", IsInside),
-    # ]
     predicate = "^(Is\w*)\((\w*), (\w*)\)$"
     new_node_num = len(tree.nodes)
     for regex, f in formulas:
@@ -988,20 +992,20 @@ def test_parser():
 
 def test_synthesizer():
     tests = [
-        # (
-        #     "Exists x.(Exists y.((Is(x, car)) And ((Is(y, person)) And (IsInside(y, x)))))",
-        #     "objects",
-        #     [
-        #         (
-        #             "image-eye-web/public/images/objects/5421932595_68f7ab545d_c.jpg",
-        #             True,
-        #         ),
-        #         (
-        #             "image-eye-web/public/images/objects/3000363792_ded885dd2f_c.jpg",
-        #             False,
-        #         ),
-        #     ],
-        # ),
+        (
+            "Exists x.(Exists y.((Is(x, car)) And ((Is(y, person)) And (IsInside(y, x)))))",
+            "objects",
+            [
+                (
+                    "image-eye-web/public/images/objects/5421932595_68f7ab545d_c.jpg",
+                    True,
+                ),
+                (
+                    "image-eye-web/public/images/objects/3000363792_ded885dd2f_c.jpg",
+                    False,
+                ),
+            ],
+        ),
         (
             "Exists x.(Exists y.((Is(x, person)) And ((Is(y, bicycle)) And (IsRiding(x, y)))))",
             "objects",
@@ -1016,7 +1020,7 @@ def test_synthesizer():
     ]
     for test in tests:
         tree = Tree()
-        res = parse_formula2(test[0], tree, [])
+        res = parse_formula2(test[0], tree, ["person", "bicycle"])
         if not res:
             print("PARSING FAILED")
             raise TypeError

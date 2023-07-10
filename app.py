@@ -45,7 +45,9 @@ def text_query():
     #     img_to_embedding,
     #     search_criterion="imageeye",
     # )
-    results, prog = make_text_query(text_query, img_to_environment, examples)
+    results, prog = make_text_query(
+        text_query, img_to_environment, list(examples.items())
+    )
     return {
         "program": prog,
         "search_results": results,
