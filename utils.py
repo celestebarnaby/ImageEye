@@ -301,34 +301,34 @@ def compare_objs_with_output(env, objs, action):
     return match
 
 
-def construct_prog_from_tree(tree, node_num=0, should_copy=False):
-    if should_copy:
-        prog = copy.copy(tree.nodes[node_num])
-    else:
-        prog = tree.nodes[node_num]
-    if not isinstance(prog, Node):
-        return prog
-    prog_dict = vars(prog)
-    if node_num in tree.to_children:
-        child_nums = tree.to_children[node_num]
-    else:
-        child_nums = []
-    child_types = [
-        item
-        for item in list(prog_dict)
-        if item not in {"position", "val", "age", "output_over", "output_under"}
-    ]
-    if child_types and child_types[0] == "extractors":
-        for child_num in child_nums:
-            prog_dict["extractors"].pop(0)
-            child_prog = construct_prog_from_tree(tree, child_num)
-            prog_dict["extractors"].append(child_prog)
-        return prog
-    assert len(child_nums) == len(child_types)
-    for child_type, child_num in zip(child_types, child_nums):
-        child_prog = construct_prog_from_tree(tree, child_num)
-        prog_dict[child_type] = child_prog
-    return prog
+# def construct_prog_from_tree(tree, node_num=0, should_copy=False):
+#     if should_copy:
+#         prog = copy.copy(tree.nodes[node_num])
+#     else:
+#         prog = tree.nodes[node_num]
+#     if not isinstance(prog, Node):
+#         return prog
+#     prog_dict = vars(prog)
+#     if node_num in tree.to_children:
+#         child_nums = tree.to_children[node_num]
+#     else:
+#         child_nums = []
+#     child_types = [
+#         item
+#         for item in list(prog_dict)
+#         if item not in {"position", "val", "age", "output_over", "output_under"}
+#     ]
+#     if child_types and child_types[0] == "extractors":
+#         for child_num in child_nums:
+#             prog_dict["extractors"].pop(0)
+#             child_prog = construct_prog_from_tree(tree, child_num)
+#             prog_dict["extractors"].append(child_prog)
+#         return prog
+#     assert len(child_nums) == len(child_types)
+#     for child_type, child_num in zip(child_types, child_nums):
+#         child_prog = construct_prog_from_tree(tree, child_num)
+#         prog_dict[child_type] = child_prog
+#     return prog
 
 
 def get_max_scoring_image(img_to_environment):
@@ -500,7 +500,7 @@ def preprocess_embeddings(img_folder, img_to_environment, processor, device, mod
     return img_to_embedding
 
 
-def preprocess(img_folder, max_faces=10):
+def preprocess(img_folder, max_faces=100):
     """
     Given an img_folder, cache all the image's information to a dict, scored by the strategy
     """

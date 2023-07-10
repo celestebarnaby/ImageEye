@@ -5,38 +5,13 @@ import time
 from new_interpreter import *
 from utils import *
 from new_dsl import *
+from new_synthesizer import *
 import regex as re
 
 with open("../gpt-key.txt") as f:
     sk = f.read().strip()
 
 openai.api_key = sk
-
-
-def construct_prog_from_tree(tree, node_num=0, should_copy=False):
-    if should_copy:
-        prog = copy.copy(tree.nodes[node_num])
-    else:
-        prog = tree.nodes[node_num]
-    # if not isinstance(prog, Node):
-    # return prog
-    prog_dict = vars(prog)
-    if node_num in tree.to_children:
-        child_nums = tree.to_children[node_num]
-    else:
-        child_nums = []
-    child_types = [item for item in list(prog_dict) if item != "var"]
-    # if child_types and child_types[0] == "extractors":
-    #     for child_num in child_nums:
-    #         prog_dict["extractors"].pop(0)
-    #         child_prog = construct_prog_from_tree(tree, child_num)
-    #         prog_dict["extractors"].append(child_prog)
-    #     return prog
-    # assert len(child_nums) == len(child_types)
-    for child_type, child_num in zip(child_types, child_nums):
-        child_prog = construct_prog_from_tree(tree, child_num)
-        prog_dict[child_type] = child_prog
-    return prog
 
 
 class Hole:
@@ -48,9 +23,7 @@ class Hole:
         return type(self).__name__
 
     def duplicate(self):
-        return Hole(
-            self.depth, self.node_type, self.output_over, self.output_under, self.val
-        )
+        return Hole(self.node_type)
 
     def __lt__(self, other):
         if not isinstance(other, Hole):
@@ -634,12 +607,27 @@ def make_text_query(query, env, examples):
     output = openai.ChatCompletion.create(
         model="gpt-3.5-turbo", temperature=0.8, messages=[message], n=5
     )
-    output_progs = [
-        parse_formula(choice["message"]["content"].strip())
-        for choice in output["choices"]
-    ]
+    objects = get_objects(env)
+    # output_trees = [
+    #     parse_formula2(choice["message"]["content"].strip(), Tree(), objects)
+    #     for choice in output["choices"]
+    # ]
+    output_trees = []
+    for choice in output["choices"]:
+        tree = Tree()
+        if parse_formula2(choice["message"]["content"].strip(), tree, objects):
+            output_trees.append(tree)
     print([choice["message"]["content"] for choice in output["choices"]])
-    output_progs = list(filter(lambda x: x is not None, output_progs))
+    # print(output_trees)
+    # print('hihi')
+    # output_trees = list(filter(lambda x: x is not None, output_trees))
+    output_progs = [
+        fill_in_holes(tree, examples, env, objects)
+        if tree.var_nodes
+        else construct_prog_from_tree(tree)
+        for tree in output_trees
+    ]
+    output_progs = [construct_prog_from_tree(tree) for tree in output_trees]
     print(output_progs)
     print(examples)
     if examples:
@@ -797,7 +785,16 @@ def parse_formula(formula):
     return None
 
 
-def parse_formula2(formula, tree, parent_node_num):
+str_to_pred = {
+    "Is": Is,
+    "IsAbove": IsAbove,
+    "IsLeft": IsLeft,
+    "IsNextTo": IsNextTo,
+    "IsInside": IsInside,
+}
+
+
+def parse_formula2(formula, tree, objects, parent_node_num=None, used_vars=[]):
     formulas = [
         ("^ForAll (\w*).\((.*)\)$", ForAll),
         ("^Exists (\w*).\((.*)\)$", Exists),
@@ -809,23 +806,27 @@ def parse_formula2(formula, tree, parent_node_num):
         ("(?<=^\((.*)\)) -> (?=\((.*)\)$)", IfThen),
         ("(?<=^\((.*)\)) And (?=\((.*)\)$)", And),
     ]
-    predicates = [
-        ("^Is\((\w*), (\w*)\)$", Is),
-        ("^IsAbove\((\w*), (\w*)\)$", IsAbove),
-        ("^IsLeft\((\w*), (\w*)\)$", IsLeft),
-        ("^IsNextTo\((\w*), (\w*)\)$", IsNextTo),
-        ("^IsInside\((\w*), (\w*)\)$", IsInside),
-    ]
+    # predicates = [
+    # ("^Is\((\w*), (\w*)\)$", Is),
+    # ("^IsAbove\((\w*), (\w*)\)$", IsAbove),
+    # ("^IsLeft\((\w*), (\w*)\)$", IsLeft),
+    # ("^IsNextTo\((\w*), (\w*)\)$", IsNextTo),
+    # ("^IsInside\((\w*), (\w*)\)$", IsInside),
+    # ]
+    predicate = "^(Is\w*)\((\w*), (\w*)\)$"
     new_node_num = len(tree.nodes)
     for regex, f in formulas:
         m = re.search(regex, formula)
         if m is not None:
             var = m.group(1)
+            used_vars.append(var)
             subformula = m.group(2)
             new_node = f(var, None)
             tree.nodes[new_node_num] = new_node
             tree.to_children[new_node_num] = []
-            successful_parse = parse_formula2(subformula, tree, new_node_num)
+            successful_parse = parse_formula2(
+                subformula, tree, objects, new_node_num, used_vars
+            )
             if successful_parse:
                 if parent_node_num is not None:
                     tree.to_parent[new_node_num] = parent_node_num
@@ -838,7 +839,9 @@ def parse_formula2(formula, tree, parent_node_num):
             new_node = f(None)
             tree.nodes[new_node_num] = new_node
             tree.to_children[new_node_num] = []
-            successful_parse = parse_formula2(subformula, tree, new_node_num)
+            successful_parse = parse_formula2(
+                subformula, tree, objects, new_node_num, used_vars
+            )
             if successful_parse:
                 if parent_node_num is not None:
                     tree.to_parent[new_node_num] = parent_node_num
@@ -851,24 +854,40 @@ def parse_formula2(formula, tree, parent_node_num):
             tree.nodes[new_node_num] = new_node
             tree.to_children[new_node_num] = []
             successful_parse1, successful_parse2 = parse_formula2(
-                subformula1, tree, new_node_num
-            ), parse_formula2(subformula2, tree, new_node_num)
+                subformula1, tree, objects, new_node_num, used_vars
+            ), parse_formula2(subformula2, tree, objects, new_node_num, used_vars)
             if successful_parse1 and successful_parse2:
                 if parent_node_num is not None:
                     tree.to_parent[new_node_num] = parent_node_num
                     tree.to_children[parent_node_num].append(new_node_num)
                 return True
-    for regex, f in predicates:
-        m = re.search(regex, formula)
-        if m is not None:
-            var1, var2 = m.group(1), m.group(2)
+    m = re.search(predicate, formula)
+    if m is not None:
+        pred_str = m.group(1)
+        var1, var2 = m.group(2), m.group(3)
+        if pred_str in str_to_pred:
+            f = str_to_pred[pred_str]
             new_node = f(var1, var2)
-            tree.nodes[new_node_num] = new_node
-            tree.to_children[new_node_num] = []
-            if parent_node_num is not None:
-                tree.to_parent[new_node_num] = parent_node_num
-                tree.to_children[parent_node_num].append(new_node_num)
-            return True
+        else:
+            new_node = Hole("relation")
+            tree.var_nodes.append(new_node_num)
+        # new_node = f(var1, var2)
+        tree.nodes[new_node_num] = new_node
+        tree.to_children[new_node_num] = []
+        for var in [var1, var2]:
+            new_child_node_num = len(tree.nodes)
+            if var in used_vars or var in objects:
+                new_child_node = var
+            else:
+                new_child_node = Hole("var")
+                tree.var_nodes.append(new_child_node_num)
+            tree.nodes[new_child_node_num] = new_child_node
+            tree.to_children[new_node_num].append(new_child_node_num)
+            tree.to_parent[new_child_node_num] = new_node_num
+        if parent_node_num is not None:
+            tree.to_parent[new_node_num] = parent_node_num
+            tree.to_children[parent_node_num].append(new_node_num)
+        return True
     return False
 
 
@@ -882,14 +901,22 @@ def test_parser():
                     "y", And(Is("y", "cat"), And(Is("x", "box"), IsInside("y", "x")))
                 ),
             ),
+            ["cat", "box"],
         ),
         (
             "ForAll x.((Is(x, person)) -> (IsAbove(x, bicycle)))",
             ForAll("x", IfThen(Is("x", "person"), IsAbove("x", "bicycle"))),
+            ["person", "bicycle"],
+        ),
+        (
+            "ForAll x.((Is(x, person)) -> (IsAbove(x, bike)))",
+            ForAll("x", IfThen(Is("x", "person"), IsAbove("x", Hole("var")))),
+            ["person", "bicycle"],
         ),
         (
             "Exists x.((Is(x, smilingFace)) And (Is(x, eyesOpenFace)))",
             Exists("x", And(Is("x", "smilingFace"), Is("x", "eyesOpenFace"))),
+            ["smilingFace", "eyesOpenFace"],
         ),
         (
             "Exists x.(ForAll y.((Is(x, Alice)) And ((Is(y, face)) -> (Is(y, smilingFace)))))",
@@ -903,40 +930,53 @@ def test_parser():
                     ),
                 ),
             ),
+            ["Alice", "face", "smilingFace"],
         ),
         (
             "Exists x.((Is(x, face)) And (Not (Is(x, smilingFace))))",
             Exists("x", And(Is("x", "face"), Not(Is("x", "smilingFace")))),
+            ["face", "smilingFace"],
         ),
         (
             "ForAll x.((Is(x, bicycle)) -> (IsAbove(person, x)))",
             ForAll("x", IfThen(Is("x", "bicycle"), IsAbove("person", "x"))),
+            ["bicycle", "person"],
+        ),
+        (
+            "ForAll x.((Is(x, bicycle)) -> (IsRiding(person, x)))",
+            ForAll("x", IfThen(Is("x", "bicycle"), Hole("relation"))),
+            ["bicycle", "person"],
         ),
         (
             "Exists x.((Is(x, car)) And (IsInside(x, person)))",
             Exists("x", And(Is("x", "car"), IsInside("x", "person"))),
+            ["car", "person"],
         ),
         (
             "Exists x.((Is(x, Alice)) And (IsLeft(Bob, x)))",
-            Exists("x", And(Is("x", "Alice"), IsLeft("Bob", "x"))),
+            Exists("x", And(Is("x", Hole("var")), IsLeft(Hole("var"), "x"))),
+            [],
         ),
-        ("Exists x.(Is(x, Alice))", Exists("x", Is("x", "Alice"))),
+        ("Exists x.(Is(x, Alice))", Exists("x", Is("x", "Alice")), ["Alice"]),
         (
             "Exists x.(Exists y.((Is(x, Alice)) And (Is(y, Bob))))",
             Exists("x", Exists("y", And(Is("x", "Alice"), Is("y", "Bob")))),
+            ["Alice", "Bob"],
         ),
         (
             "Exists x.((Is(x, Alice)) And (IsNextTo(x, Bob)))",
             Exists("x", And(Is("x", "Alice"), IsNextTo("x", "Bob"))),
+            ["Alice", "Bob"],
         ),
         (
             "ForAll x.((Is(x, face)) -> (Not (Is(x, smilingFace))))",
             ForAll("x", IfThen(Is("x", "face"), Not(Is("x", "smilingFace")))),
+            ["face", "smilingFace"],
         ),
     ]
     for test in tests:
         tree = Tree()
-        parse_formula2(test[0], tree, None)
+        parse_formula2(test[0], tree, test[2], None)
         prog = construct_prog_from_tree(tree)
         if str(prog) != str(test[1]):
             print("FAIL")
@@ -946,6 +986,48 @@ def test_parser():
             print()
 
 
+def test_synthesizer():
+    tests = [
+        # (
+        #     "Exists x.(Exists y.((Is(x, car)) And ((Is(y, person)) And (IsInside(y, x)))))",
+        #     "objects",
+        #     [
+        #         (
+        #             "image-eye-web/public/images/objects/5421932595_68f7ab545d_c.jpg",
+        #             True,
+        #         ),
+        #         (
+        #             "image-eye-web/public/images/objects/3000363792_ded885dd2f_c.jpg",
+        #             False,
+        #         ),
+        #     ],
+        # ),
+        (
+            "Exists x.(Exists y.((Is(x, person)) And ((Is(y, bicycle)) And (IsRiding(x, y)))))",
+            "objects",
+            [
+                ("image-eye-web/public/images/objects/9107010_479657625c_o.jpg", True),
+                (
+                    "image-eye-web/public/images/objects/3000363792_ded885dd2f_c.jpg",
+                    False,
+                ),
+            ],
+        ),
+    ]
+    for test in tests:
+        tree = Tree()
+        res = parse_formula2(test[0], tree, [])
+        if not res:
+            print("PARSING FAILED")
+            raise TypeError
+        img_folder = "image-eye-web/public/images/" + test[1] + "/"
+        img_to_env, _ = preprocess(img_folder)
+        examples = test[2]
+        prog = fill_in_holes(tree, examples, img_to_env, get_objects(img_to_env))
+        print(prog)
+
+
 if __name__ == "__main__":
     # gpt_experiment2()
-    test_parser()
+    # test_parser()
+    test_synthesizer()

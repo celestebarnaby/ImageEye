@@ -7,9 +7,10 @@ def get_relations():
     return [IsAbove, IsLeft, IsNextTo, IsInside]
 
 
-def get_vals(img_to_env):
+def get_objects(img_to_env):
     vals = set()
-    for env in img_to_env.values:
+    for env in img_to_env.values():
+        env = env["environment"]
         for obj in env.values():
             if obj["Type"] == "Object":
                 vals.add(obj["Name"])
@@ -23,7 +24,33 @@ def get_vals(img_to_env):
     return vals
 
 
-def fill_in_holes(tree, example_images, img_to_env):
+def construct_prog_from_tree(tree, node_num=0, should_copy=False):
+    if should_copy:
+        prog = copy.copy(tree.nodes[node_num])
+    else:
+        prog = tree.nodes[node_num]
+    if not isinstance(prog, Formula):
+        return prog
+    prog_dict = vars(prog)
+    if node_num in tree.to_children:
+        child_nums = tree.to_children[node_num]
+    else:
+        child_nums = []
+    child_types = [item for item in list(prog_dict) if item != "var"]
+    # if child_types and child_types[0] == "extractors":
+    #     for child_num in child_nums:
+    #         prog_dict["extractors"].pop(0)
+    #         child_prog = construct_prog_from_tree(tree, child_num)
+    #         prog_dict["extractors"].append(child_prog)
+    #     return prog
+    # assert len(child_nums) == len(child_types)
+    for child_type, child_num in zip(child_types, child_nums):
+        child_prog = construct_prog_from_tree(tree, child_num)
+        prog_dict[child_type] = child_prog
+    return prog
+
+
+def fill_in_holes(tree, example_images, img_to_env, objects):
     worklist = [tree]
     num_iters = 0
     while worklist:
@@ -33,21 +60,22 @@ def fill_in_holes(tree, example_images, img_to_env):
             prog = construct_prog_from_tree(cur_tree)
             matching = True
             for img, result in example_images:
-                env = img_to_env[img]
+                env = img_to_env[img]["environment"]
                 if eval_prog(prog, env) != result:
                     matching = False
                     break
             if matching:
                 return prog
+            continue
         hole_num = cur_tree.var_nodes.pop(0)
         hole = cur_tree.nodes[hole_num]
         node_type = hole.node_type
         if node_type == "relation":
             new_sub_progs = get_relations()
         elif node_type == "var":
-            new_sub_progs = get_vals(img_to_env)
+            new_sub_progs = objects
         for sub_prog in new_sub_progs:
-            new_tree = cur_tree.duplicate(num_iters)
+            new_tree = cur_tree.duplicate()
             new_tree.nodes[hole_num] = sub_prog
             worklist.append(new_tree)
     return None

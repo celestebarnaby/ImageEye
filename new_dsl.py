@@ -77,7 +77,7 @@ class Is(Predicate):
         self.var2 = var2
 
     def __str__(self):
-        return type(self).__name__ + "(" + self.var1 + "," + self.var2 + ")"
+        return type(self).__name__ + "(" + str(self.var1) + "," + str(self.var2) + ")"
 
 
 class IsAbove(Predicate):
@@ -87,7 +87,7 @@ class IsAbove(Predicate):
         self.var2 = var2
 
     def __str__(self):
-        return type(self).__name__ + "(" + self.var1 + "," + self.var2 + ")"
+        return type(self).__name__ + "(" + str(self.var1) + "," + str(self.var2) + ")"
 
 
 class IsLeft(Predicate):
@@ -97,7 +97,7 @@ class IsLeft(Predicate):
         self.var2 = var2
 
     def __str__(self):
-        return type(self).__name__ + "(" + self.var1 + "," + self.var2 + ")"
+        return type(self).__name__ + "(" + str(self.var1) + "," + str(self.var2) + ")"
 
 
 class IsNextTo(Predicate):
@@ -107,7 +107,7 @@ class IsNextTo(Predicate):
         self.var2 = var2
 
     def __str__(self):
-        return type(self).__name__ + "(" + self.var1 + "," + self.var2 + ")"
+        return type(self).__name__ + "(" + str(self.var1) + "," + str(self.var2) + ")"
 
 
 class IsInside(Predicate):
@@ -117,4 +117,4 @@ class IsInside(Predicate):
         self.var2 = var2
 
     def __str__(self):
-        return type(self).__name__ + "(" + self.var1 + "," + self.var2 + ")"
+        return type(self).__name__ + "(" + str(self.var1) + "," + str(self.var2) + ")"

@@ -28,12 +28,13 @@ def eval_prog(prog, env, vars_to_vals={}):
         val = vars_to_vals[prog.var1]
         if prog.var2 == "face":
             return val["Type"] == "Face"
-        elif prog.var2 == "smilingFace":
+        if prog.var2 == "smilingFace":
             return "Smile" in val
-        elif prog.var2 == "eyesOpenFace":
+        if prog.var2 == "eyesOpenFace":
             return "EyesOpen" in val
-        else:
-            return val["Type"] == "Object" and val["Name"].lower() == prog.var2.lower()
+        if prog.var2.startswith("id") and prog.var2[2:].isdigit():
+            return "Index" in val and val["Index"] == int(prog.var2[2:])
+        return val["Type"] == "Object" and val["Name"].lower() == prog.var2.lower()
     if isinstance(prog, IfThen):
         if_eval = eval_prog(prog.subformula1, env, vars_to_vals)
         if if_eval:
