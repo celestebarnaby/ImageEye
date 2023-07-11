@@ -51,6 +51,7 @@ export default function App() {
   const [tentativeSubmit, setTentativeSubmit] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [savedImages, setSavedImages] = useState([]);
+  const [selectedObject, setSelectedObject] = useState(null);
 
   let closeError = () => {
     setErrorMessage('');
@@ -62,41 +63,50 @@ export default function App() {
 
   let changeImage = (image) => {
     setMainImage(image);
-    setObjectList([]);
+    setSelectedObject(null);
+    // setObjectList([]);
   };
 
   let handleTextChange = (event) => {
     setInputText(event.target.value);
   }
 
-  let addObject = (index, remove_if_already_present) => {
-    if (objectList.includes(index)) {
-      if (remove_if_already_present) {
-        const other_index = objectList.indexOf(index);
-        objectList.splice(other_index, 1); // 2nd parameter means remove one item only
-      }
-    }
-    else {
-      objectList.push(index);
-    }
-    setObjectList([...objectList]);
+  let selectObject = (index) => {
+    // if (objectList.includes(index)) {
+    //   if (remove_if_already_present) {
+    //     const other_index = objectList.indexOf(index);
+    //     objectList.splice(other_index, 1); // 2nd parameter means remove one item only
+    //   }
+    // }
+    // else {
+    //   objectList.push(index);
+    // }
+    // setObjectList([...objectList]);
+
+    setSelectedObject(index);
   }
 
-  let addObjectsByName = (name, objs) => {
-    if (name != "Face" && name != "Text") {
-      let new_indices = objs.filter(obj => obj['Name'] == name).map(obj => obj['ObjPosInImgLeftToRight']);
-      let already_added = objs.filter(obj => obj['Name'] == name && objectList.includes(obj['ObjPosInImgLeftToRight']));
-      let remove_if_already_present = (new_indices.length == already_added.length)
-      new_indices.forEach(index => addObject(index, remove_if_already_present));
-    }
-    else {
-      let new_indices = objs.filter(obj => obj['Type'] == name).map(obj => obj['ObjPosInImgLeftToRight']);
-      let already_added = objs.filter(obj => obj['Type'] == name && objectList.includes(obj['ObjPosInImgLeftToRight']));
-      let remove_if_already_present = (new_indices.length == already_added.length)
-      new_indices.forEach(index => addObject(index, remove_if_already_present));
-    }
-    setObjectList([...objectList]);
+  let deselectObject = () => {
+    setSelectedObject(null);
   }
+
+
+
+  // let addObjectsByName = (name, objs) => {
+  //   if (name != "Face" && name != "Text") {
+  //     let new_indices = objs.filter(obj => obj['Name'] == name).map(obj => obj['ObjPosInImgLeftToRight']);
+  //     let already_added = objs.filter(obj => obj['Name'] == name && objectList.includes(obj['ObjPosInImgLeftToRight']));
+  //     let remove_if_already_present = (new_indices.length == already_added.length)
+  //     new_indices.forEach(index => addObject(index, remove_if_already_present));
+  //   }
+  //   else {
+  //     let new_indices = objs.filter(obj => obj['Type'] == name).map(obj => obj['ObjPosInImgLeftToRight']);
+  //     let already_added = objs.filter(obj => obj['Type'] == name && objectList.includes(obj['ObjPosInImgLeftToRight']));
+  //     let remove_if_already_present = (new_indices.length == already_added.length)
+  //     new_indices.forEach(index => addObject(index, remove_if_already_present));
+  //   }
+  //   setObjectList([...objectList]);
+  // }
 
   let addImage = (image, val) => {
     exampleImages[image] = val;
@@ -268,11 +278,11 @@ export default function App() {
             sidebarFiles={sidebarFiles}
             mainImage={mainImage}
             changeImage={changeImage}
-            addObject={addObject}
-            addObjectsByName={addObjectsByName}
+            selectObject={selectObject}
+            // addObjectsByName={addObjectsByName}
             addImage={addImage}
             removeImage={removeImage}
-            objectList={objectList}
+            selectedObject={selectedObject}
             exampleImages={exampleImages}
             result={result}
             submitSavedImages={submitSavedImages}

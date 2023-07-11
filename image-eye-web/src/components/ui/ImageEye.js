@@ -8,7 +8,7 @@ import SavedImages from './SavedImages';
 import Box from '@mui/material/Box';
 
 
-export function ImageEye({ files, message, updateResults, handleTextChange, handleTextSubmit, searchResults, sidebarFiles, mainImage, changeImage, addObject, addObjectsByName, addImage, removeImage, objectList, exampleImages, result, submitSavedImages, handleSavedImages, addToSavedImages, savedImages }) {
+export function ImageEye({ files, message, updateResults, handleTextChange, handleTextSubmit, searchResults, sidebarFiles, mainImage, changeImage, selectObject, addImage, removeImage, selectedObject, exampleImages, result, submitSavedImages, handleSavedImages, addToSavedImages, savedImages }) {
 
   // const [message, setMessage] = useState(message);
   // const [files, setFiles] = useState(files);
@@ -19,9 +19,10 @@ export function ImageEye({ files, message, updateResults, handleTextChange, hand
 
   const imgSaved = savedImages.includes(mainImage);
 
-  function getAnnotationDescriptions(objs, annotations, annotated) {
-    let l = annotated ? annotations : objectList;
-    return l.map(i => [objs[i]["Description"], objs[i]["ObjPosInImgLeftToRight"]]);
+  function getAnnotationDescription(objs, i) {
+    return objs[i]["Description"]
+    // let l = annotated ? annotations : objectList;
+    // return l.map(i => [objs[i]["Description"], objs[i]["ObjPosInImgLeftToRight"]]);
   }
 
 
@@ -42,12 +43,11 @@ export function ImageEye({ files, message, updateResults, handleTextChange, hand
           image={mainImage}
           exampleImages={exampleImages}
           imgToEnvironment={message}
-          addObject={addObject}
-          addObjectsByName={addObjectsByName}
+          selectObject={selectObject}
           addImage={addImage}
           removeImage={removeImage}
-          getAnnotationDescriptions={getAnnotationDescriptions}
-          objectList={objectList}
+          getAnnotationDescription={getAnnotationDescription}
+          selectedObject={selectedObject}
           changeImage={changeImage}
           updateResults={updateResults}
           imgSaved={imgSaved}
