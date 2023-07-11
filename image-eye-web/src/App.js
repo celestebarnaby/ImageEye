@@ -52,6 +52,7 @@ export default function App() {
   const [submitted, setSubmitted] = useState(false);
   const [savedImages, setSavedImages] = useState([]);
   const [selectedObject, setSelectedObject] = useState(null);
+  const [robotText, setRobotText] = useState("Enter text query and add example images to begin search.")
 
   let closeError = () => {
     setErrorMessage('');
@@ -72,41 +73,12 @@ export default function App() {
   }
 
   let selectObject = (index) => {
-    // if (objectList.includes(index)) {
-    //   if (remove_if_already_present) {
-    //     const other_index = objectList.indexOf(index);
-    //     objectList.splice(other_index, 1); // 2nd parameter means remove one item only
-    //   }
-    // }
-    // else {
-    //   objectList.push(index);
-    // }
-    // setObjectList([...objectList]);
-
     setSelectedObject(index);
   }
 
   let deselectObject = () => {
     setSelectedObject(null);
   }
-
-
-
-  // let addObjectsByName = (name, objs) => {
-  //   if (name != "Face" && name != "Text") {
-  //     let new_indices = objs.filter(obj => obj['Name'] == name).map(obj => obj['ObjPosInImgLeftToRight']);
-  //     let already_added = objs.filter(obj => obj['Name'] == name && objectList.includes(obj['ObjPosInImgLeftToRight']));
-  //     let remove_if_already_present = (new_indices.length == already_added.length)
-  //     new_indices.forEach(index => addObject(index, remove_if_already_present));
-  //   }
-  //   else {
-  //     let new_indices = objs.filter(obj => obj['Type'] == name).map(obj => obj['ObjPosInImgLeftToRight']);
-  //     let already_added = objs.filter(obj => obj['Type'] == name && objectList.includes(obj['ObjPosInImgLeftToRight']));
-  //     let remove_if_already_present = (new_indices.length == already_added.length)
-  //     new_indices.forEach(index => addObject(index, remove_if_already_present));
-  //   }
-  //   setObjectList([...objectList]);
-  // }
 
   let addImage = (image, val) => {
     exampleImages[image] = val;
@@ -128,29 +100,12 @@ export default function App() {
         const index = savedImages.indexOf(img_dir);
         savedImages.splice(index, 1);
       }
-      // manuallyRemoved.add(img_dir)
     } else {
       savedImages.push(img_dir);
-      // manuallyAdded.add(img_dir)
     }
     setSavedImages([...savedImages]);
-    // setManuallyAdded(manuallyAdded);
-    // setManuallyRemoved(manuallyRemoved); 
   }
 
-  // let handleSearchResults = (img_dir) => {
-  //   if (searchResults.includes(img_dir)) {
-  //     const index = searchResults.indexOf(img_dir);
-  //     searchResults.splice(index, 1);
-  //     manuallyRemoved.add(img_dir)
-  //   } else {
-  //     searchResults.push(img_dir);
-  //     manuallyAdded.add(img_dir)
-  //   }
-  //   setSearchResults([...searchResults]);
-  //   setManuallyAdded(manuallyAdded);
-  //   setManuallyRemoved(manuallyRemoved);
-  // }
 
   let handleTextSubmit = () => {
     setIsLoading(true);
@@ -168,10 +123,15 @@ export default function App() {
         // setFiles(data.files);
         // setDataset([]);
         // setSidebarFiles(data.sidebarFiles);
+        console.log('hi');
+        console.log(data);
         setResult(data.program);
         setSearchResults(data.search_results);
         setIsLoading(false);
-        setMainImage(data.sidebarFiles[0]);
+        // setMainImage(data.sidebarFiles[0]);
+        setRobotText(data.robot_text);
+        console.log(robotText);
+        console.log("!!");
       })
   }
 
@@ -289,6 +249,7 @@ export default function App() {
             savedImages={savedImages}
             handleSavedImages={handleSavedImages}
             addToSavedImages={addToSavedImages}
+            robotText={robotText}
           /> : <SubmittedResults searchResults={searchResults} />}
         </Box>
       </Box>

@@ -244,3 +244,24 @@ li.completed label {
     text-align: center;
     margin-top: auto;
 }
+
+.speech-bubble {
+    position: relative;
+    display: inline-block;
+    padding: 10px;
+    background-color: #367af6;
+    border-radius: 4px;
+    font-size: 16px;
+    color: #ffffff;
+}
+
+.speech-bubble::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: 100%;
+    transform: translateY(-50%);
+    border-width: 8px;
+    border-style: solid;
+    border-color: transparent #367af6 transparent transparent;
+}

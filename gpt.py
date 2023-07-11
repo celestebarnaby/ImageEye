@@ -604,7 +604,7 @@ def make_text_query(query, env, examples):
         message_text += "task: {}\nprogram:{}\n\n".format(prog[0], prog[1])
     query_content = "task: {}\nprogram: ".format(query)
     message = {"role": "system", "content": message_text + query_content}
-    output = openai.ChatCompletion.create(
+    gpt_output = openai.ChatCompletion.create(
         model="gpt-3.5-turbo", temperature=0.8, messages=[message], n=5
     )
     objects = get_objects(env)
@@ -613,37 +613,32 @@ def make_text_query(query, env, examples):
     #     for choice in output["choices"]
     # ]
     output_trees = []
-    for choice in output["choices"]:
+    for choice in gpt_output["choices"]:
         tree = Tree()
-        if parse_formula2(choice["message"]["content"].strip(), tree, objects):
-            output_trees.append(tree)
-    print([choice["message"]["content"] for choice in output["choices"]])
-    # print(output_trees)
-    # print('hihi')
-    # output_trees = list(filter(lambda x: x is not None, output_trees))
+        gpt_text = choice["message"]["content"].strip()
+        # We only take the progs that parse
+        if parse_formula2(gpt_text, tree, objects):
+            output_trees.append((tree, gpt_text))
+
+    print("GPT output:")
+    print([choice["message"]["content"] for choice in gpt_output["choices"]])
+    print()
 
     output_progs = [
-        fill_in_holes(tree, examples, env, objects)
+        (fill_in_holes(tree, examples, env, objects), gpt_text)
         if len(tree.var_nodes) > 0
-        else construct_prog_from_tree(tree)
-        for tree in output_trees
+        else (construct_prog_from_tree(tree), gpt_text)
+        for tree, gpt_text in output_trees
     ]
 
-    # output_progs = [construct_prog_from_tree(tree) for tree in output_trees]
-    # print([str(prog) for prog in output_progs])
-    # print()
+    output_progs = list(filter(lambda x: x is not None, output_progs))
+    print("Progs:")
+    print([str(prog) for (prog, _) in output_progs])
+    print()
 
-    # output_progs = [
-    #     fill_in_holes(tree, examples, env, objects)
-    #     if len(tree.var_nodes) > 0
-    #     else construct_prog_from_tree(tree)
-    #     for tree in output_trees
-    # ]
-    # print([str(prog) for prog in output_progs])
-    # raise TypeError
     if examples:
         progs_matching_examples = []
-        for prog in output_progs:
+        for prog, _ in output_progs:
             matching = True
             for img, output in examples:
                 if eval_prog(prog, env[img]["environment"]) != output:
@@ -654,15 +649,50 @@ def make_text_query(query, env, examples):
     else:
         progs_matching_examples = output_progs
     if not progs_matching_examples:
-        return [], str([choice["message"]["content"] for choice in output["choices"]])
-    top_prog = progs_matching_examples[0]
+        return (
+            [],
+            str([choice["message"]["content"] for choice in gpt_output["choices"]]),
+            "Your text query doesn't match your example images.",
+        )
+    top_prog, top_gpt_text = progs_matching_examples[0]
     matching_imgs = []
+    print("Top prog:")
     print(top_prog)
+    print()
     for img, img_env in env.items():
         if eval_prog(top_prog, img_env["environment"]):
             matching_imgs.append(img)
     print(len(matching_imgs))
-    return matching_imgs, str(top_prog)
+    # expl_query = "Write this formula in plain english: {}".format(str(top_gpt_text))
+    expl_query = """
+    input: ForAll x.(Exists y.((Is(y, cat)) And ((Is(x, person)) -> (IsNextTo(x, y)))))
+    output: I found all images where every person is next to a cat.
+
+    input: Exists x.((Is(x, smilingFace)) And (Is(x, eyesOpenFace)))
+    output: I found all images that contain a face that is smiling, and has their eyes open.
+    
+    input: Exists x.(ForAll y.((Is(x, Alice)) And ((Is(y, face)) -> (Is(y, smilingFace)))))
+    output: I found all images where Alice is in the image and everyone is smiling.
+
+    input: Exists x.(Exists y.((Is(y, cat) And ((Is(x, box)) And (IsInside(y, x))))))
+    output: I found all images where there is a cat inside a box.
+
+    input: Exists x.(Exists y.((Is(x, chair)) And (Is(y, table))))
+    output: I found all images where there is a chair and a table",
+
+    input: ForAll x.((Is(x, face)) -> (Not (Is(x, smilingFace))))
+    output: I found all images where no faces are smiling.
+
+    input: {}
+    output:
+    """.format(
+        top_gpt_text
+    )
+    expl_message = {"role": "system", "content": expl_query}
+    expl_output = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo", messages=[expl_message]
+    )
+    return matching_imgs, str(top_prog), expl_output["choices"][0]["message"]["content"]
 
 
 def gpt_experiment2():

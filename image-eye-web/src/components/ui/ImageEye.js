@@ -8,7 +8,7 @@ import SavedImages from './SavedImages';
 import Box from '@mui/material/Box';
 
 
-export function ImageEye({ files, message, updateResults, handleTextChange, handleTextSubmit, searchResults, sidebarFiles, mainImage, changeImage, selectObject, addImage, removeImage, selectedObject, exampleImages, result, submitSavedImages, handleSavedImages, addToSavedImages, savedImages }) {
+export function ImageEye({ files, message, updateResults, handleTextChange, handleTextSubmit, searchResults, sidebarFiles, mainImage, changeImage, selectObject, addImage, removeImage, selectedObject, exampleImages, result, submitSavedImages, handleSavedImages, addToSavedImages, savedImages, robotText }) {
 
   // const [message, setMessage] = useState(message);
   // const [files, setFiles] = useState(files);
@@ -54,7 +54,7 @@ export function ImageEye({ files, message, updateResults, handleTextChange, hand
           handleSavedImages={handleSavedImages}
         />
       </Box>
-      <SearchResults files={searchResults} changeImage={changeImage} result={result} exampleImages={Object.keys(exampleImages)} updateResults={updateResults} addToSavedImages={addToSavedImages} savedImages={savedImages} />
+      <SearchResults files={searchResults} changeImage={changeImage} result={result} exampleImages={Object.keys(exampleImages)} updateResults={updateResults} addToSavedImages={addToSavedImages} savedImages={savedImages} robotText={robotText} />
       <SavedImages images={savedImages} changeImage={changeImage} submitSavedImages={submitSavedImages} />
 
     </Box>

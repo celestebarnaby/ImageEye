@@ -45,12 +45,13 @@ def text_query():
     #     img_to_embedding,
     #     search_criterion="imageeye",
     # )
-    results, prog = make_text_query(
+    results, prog, robot_text = make_text_query(
         text_query, img_to_environment, list(examples.items())
     )
     return {
         "program": prog,
         "search_results": results,
+        "robot_text": robot_text
         # 'sidebarFiles': [filename for filename in imgs][:5]
     }
 
