@@ -468,9 +468,9 @@ def get_type(prog):
         return pos_to_types[str(prog)]
 
 
-def preprocess_mscoco(img_folder):
+def preprocess_mscoco(img_folder, load_from_cache=True):
     test_images = {}
-    if os.path.exists("mscoco.json"):
+    if load_from_cache and os.path.exists("mscoco.json"):
         with open("mscoco.json", "r") as fp:
             test_images = json.load(fp)
             if img_folder in test_images:

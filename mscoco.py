@@ -1,7 +1,8 @@
 import pylab
-import matplotlib.pyplot as plt
-import skimage.io as io
-import numpy as np
+
+# import matplotlib.pyplot as plt
+# import skimage.io as io
+# import numpy as np
 from cocoapi.PythonAPI.pycocotools.coco import COCO
 import os
 from tqdm import tqdm
@@ -10,8 +11,10 @@ from detectron2.config import get_cfg
 from detectron2.engine import DefaultPredictor
 from detectron2 import model_zoo
 import cv2
-from detectron2.data import MetadataCatalog, DatasetCatalog
+from detectron2.data import MetadataCatalog
 from image_utils import *
+import json
+import argparse
 
 pylab.rcParams["figure.figsize"] = (8.0, 10.0)
 
@@ -24,30 +27,24 @@ coco = COCO(annFile)
 
 filename_to_id = {img["file_name"]: img["id"] for img in coco.dataset["images"]}
 
-# display COCO categories and supercategories
 cats = coco.loadCats(coco.getCatIds())
 nms = [cat["name"] for cat in cats]
 id_to_name = {cat["id"]: cat["name"] for cat in cats}
-print(nms)
-print()
+
+# display COCO categories and supercategories
+# cats = coco.loadCats(coco.getCatIds())
+# nms = [cat["name"] for cat in cats]
+# id_to_name = {cat["id"]: cat["name"] for cat in cats}
+# print(nms)
+# print()
 # print('COCO categories: \n{}\n'.format(' '.join(nms)))
 
-nms = set([cat["supercategory"] for cat in cats])
+# nms = set([cat["supercategory"] for cat in cats])
 # print('COCO supercategories: \n{}'.format(' '.join(nms)))
 
 # get all images containing given categories, select one at random
-catIds = coco.getCatIds(catNms=["person"])
-imgIds = coco.getImgIds(catIds=catIds)
-# imgIds = coco.getImgIds(imgIds = [324158])
-# RANDOM IMAGE
-img = coco.loadImgs(imgIds[np.random.randint(0, len(imgIds))])[0]
-
-annIds = coco.getAnnIds(imgIds=img["id"])
-anns = coco.loadAnns(annIds)
-
-ann_id = anns[0]["category_id"]
-# print(catIds)
-# print(cats)
+# catIds = coco.getCatIds(catNms=["person"])
+# imgIds = coco.getImgIds(catIds=catIds)
 
 
 def get_center(bbox):
@@ -73,6 +70,51 @@ def get_mscoco_ground_truth(filename, img_index, num_objects):
     for i, (_, details) in enumerate(sorted_objs):
         details["ObjPosInImgLeftToRight"] = i
     return env
+
+
+def preprocess_mscoco(img_folder, load_from_cache=True):
+    test_images = {}
+    if load_from_cache and os.path.exists("mscoco.json"):
+        with open("mscoco.json", "r") as fp:
+            test_images = json.load(fp)
+            if img_folder in test_images:
+                return test_images[img_folder]
+    img_to_environment = {}
+    img_index = 0
+    num_objects = 0
+    # TODO: implement this in a less dumb way. Assuming that there will be <10000 objects in gt environment
+    num_objects2 = 10000
+    for filename in os.listdir(img_folder):
+        # print("filename:", filename)
+        img_dir = img_folder + filename
+        gt_env = get_mscoco_ground_truth(filename, img_index, num_objects)
+        num_objects = num_objects + len(gt_env)
+        model_env = get_mscoco_environment(
+            img_dir, img_index, num_objects2, False, gt_env
+        )
+        num_objects2 = num_objects2 + len(model_env)
+        # model_env_with_prediction_sets = get_mscoco_environment(img_dir, True)
+        # for obj_id, obj in model_env_with_prediction_sets.items():
+        #     model_env_with_prediction_sets[obj_id] = get_all_versions_of_object(
+        #         obj, gt_env[obj_id])
+        # # this is a LIST of environments
+        # model_env_with_prediction_sets = get_all_versions_of_image(
+        #     model_env_with_prediction_sets)
+        # print("environment:", env)
+        score = len(gt_env)
+        # print("score:", score)
+        img_to_environment[img_dir] = {
+            "ground_truth": gt_env,
+            "model_env": model_env,
+            # "model_env_psets": model_env_with_prediction_sets,
+            "img_index": img_index,
+            "score": score,
+        }
+        if not gt_env:
+            continue
+        img_index += 1
+    # end_time = time.perf_counter()
+    # total_time = end_time - start_time
 
 
 def get_predictor():
@@ -110,6 +152,7 @@ def get_mscoco_environment(
 ):
     print(filename)
     im = cv2.imread(filename)
+    predictor, class_names = get_predictor()
     outputs = predictor(im)
     bboxes = outputs["instances"].pred_boxes
     classes = [class_names[i] for i in outputs["instances"].pred_classes]
@@ -135,23 +178,23 @@ def get_mscoco_environment(
     return env
 
 
-def preprocess():
-    img_folder = "../mscoco/smallcoco/"
-    i = 0
-    for filename in os.listdir(img_folder):
-        img_dir = img_folder + filename
-        img_id = filename_to_id[filename]
-        annIds = coco.getAnnIds(imgIds=img_id)
-        anns = coco.loadAnns(annIds)
-        env = {}
-        for ann in anns:
-            details = {}
-            details["Loc"] = ann["bbox"]
-            details["Type"] = "Object"
-            details["Name"] = id_to_name[ann["category_id"]]
-            env[i] = details
-            i += 1
-    print(env)
+# def preprocess():
+#     img_folder = "../mscoco/smallcoco/"
+#     i = 0
+#     for filename in os.listdir(img_folder):
+#         img_dir = img_folder + filename
+#         img_id = filename_to_id[filename]
+#         annIds = coco.getAnnIds(imgIds=img_id)
+#         anns = coco.loadAnns(annIds)
+#         env = {}
+#         for ann in anns:
+#             details = {}
+#             details["Loc"] = ann["bbox"]
+#             details["Type"] = "Object"
+#             details["Name"] = id_to_name[ann["category_id"]]
+#             env[i] = details
+#             i += 1
+#     print(env)
 
 
 def check_objects():
@@ -177,7 +220,7 @@ def check_objects():
     print(sorted_cats_to_occs)
 
 
-def make_dataset():
+def make_dataset(dataset_folder):
     multiple_people = 0
     cars_trucks = 0
     person_chair = 0
@@ -217,10 +260,33 @@ def make_dataset():
     print("Traffic light and car: " + str(traffic_light_car))
     print("Car and person: " + str(car_person))
     print(len(new_dataset))
+    if not os.path.isdir(dataset_folder):
+        os.mkdir(dataset_folder)
     for filename in new_dataset:
         img_dir = img_folder + filename
-        shutil.copyfile(img_dir, "./mscoco_images/" + filename)
+        shutil.copyfile(img_dir, dataset_folder + filename)
+
+
+def get_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--make_dataset",
+        type=bool,
+        default=True,
+    )
+    parser.add_argument(
+        "--preprocess_dataset",
+        type=bool,
+        default=True,
+    )
+    parser.add_argument("--dataset_folder", type=str, default="./mscoco_images/")
+    args = parser.parse_args()
+    return args
 
 
 if __name__ == "__main__":
-    make_dataset()
+    args = get_args()
+    if args.make_dataset:
+        make_dataset(args.dataset_folder)
+    if args.preprocess_dataset:
+        preprocess_mscoco(args.dataset_folder, False)

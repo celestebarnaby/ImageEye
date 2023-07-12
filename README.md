@@ -35,4 +35,15 @@ Our EUSolver implementation is in the `eusolver` directory. You can run it as fo
 ## Command Line Tool
 
 Our current interface is a pretty simple command line tool, but it gets the job done. To start the tool, run `python3 synthesizer.py -- --imgdir=YOUR_DIRECTORY`. You will be prompted to select an image to annotate. Once the image is displayed, select the objects and the action you would like to apply. Then press q. You will be asked on the command line whether you want to annotate another image. If you answer no, the synthesizer will run. Once a program that matches your example(s) is synthesized, the program will be applied to all images in `YOUR_DIRECTORY`. The edited images will be saved to the `output` directory.
+
+## Active Learning
+
+The mscoco test set is located in the `mscoco_images` directory. To regenerate this test set, run `python mscoco.py --make_dataset True`.
+
+To generate the environment for this images (i.e. the symbolic version of each image), run `python mscoco.py --preprocess_dataset True`
+
+The testing framework is in `testing.py`. You can use the following args:
+- `--use_ground_truth`. If set to True, we assume that the labels predicted by the object detector are the ground truth. If set to False, we use the *actual* ground truth labels. Setting the to true replicates the conditions of our PLDI paper.
+- `--use_active_learning`. If set to True, we perform synthesis using active learning. If False, we select example images using the heuristic from the PLDI paper. 
+- `--use_prediction_sets`. If set to True, we consider the prediction sets of the test images. If False, we assuming a single predicted set of objects for each image.
  
