@@ -1,14 +1,13 @@
-from interpreter import eval_extractor, partial_eval, eval_apply_action
+from interpreter import *
 import heapq as hq
 import itertools
 import signal
 from utils import *
 from image_utils import *
 from tkinter import *
-from tkinter import filedialog
 
 
-def get_prog_output(prog, env, parent):
+def get_prog_output(prog, env, parent, use_mscoco=False):
     if (
         isinstance(prog, Union)
         or isinstance(prog, Intersection)
@@ -31,22 +30,24 @@ def get_prog_output(prog, env, parent):
         prog = AboveAge(prog)
     elif isinstance(parent, BelowAge):
         prog = BelowAge(prog)
+    if use_mscoco:
+        return eval_extractor_mscoco(prog, env)
     return eval_extractor(prog, env)
 
 
 def get_attributes(output_over, output_under, dataset=None):
     return [
-        (IsFace(), [], [], [], 0),
-        (IsText(), [], [], [], 0),
-        (IsPrice(), [], [], [], 0),
-        (IsPhoneNumber(), [], [], [], 0),
-        (IsSmiling(), [], [], [], 0),
-        (EyesOpen(), [], [], [], 0),
-        (MouthOpen(), [], [], [], 0),
-        (MatchesWord(None), ["word"], [output_over], [output_under], 1),
+        # (IsFace(), [], [], [], 0),
+        # (IsText(), [], [], [], 0),
+        # (IsPrice(), [], [], [], 0),
+        # (IsPhoneNumber(), [], [], [], 0),
+        # (IsSmiling(), [], [], [], 0),
+        # (EyesOpen(), [], [], [], 0),
+        # (MouthOpen(), [], [], [], 0),
+        # (MatchesWord(None), ["word"], [output_over], [output_under], 1),
         (IsObject(None), ["obj"], [output_over], [output_under], 0),
-        (GetFace(None), ["index"], [output_over], [output_under], 1),
-        (BelowAge(18), [], [], [], 0),
+        # (GetFace(None), ["index"], [output_over], [output_under], 1),
+        # (BelowAge(18), [], [], [], 0),
     ]
 
 
@@ -66,8 +67,7 @@ def get_extractors(
     if not isinstance(parent_extr, Union):
         for i in range(2, 4):
             extrs.append(
-                (Union([None] * i), ["extr"] * i,
-                 [output_over] * i, [set()] * i, i)
+                (Union([None] * i), ["extr"] * i, [output_over] * i, [set()] * i, i)
             ),
     if not isinstance(parent_extr, Intersection):
         for i in range(2, 4):
@@ -197,12 +197,17 @@ class Synthesizer:
             )
         )
 
-    def get_indices(self, env, gt_prog):
+    def get_indices(self, env, gt_prog, use_mscoco):
         """
         Given the ground truth program, and the input image, automatically find out which are the labels by running the program on this input
         """
-        ids = eval_extractor(gt_prog, env)
-        return [env[obj_id]["ObjPosInImgLeftToRight"] for obj_id in ids]
+        ids = (
+            eval_extractor_mscoco(gt_prog, env)
+            if use_mscoco
+            else eval_extractor(gt_prog, env)
+        )
+        return ids
+        # return [env[obj_id]["ObjPosInImgLeftToRight"] for obj_id in ids]
 
     def get_differing_images(self, prog1, prog2) -> bool:
         """
@@ -214,10 +219,9 @@ class Synthesizer:
         print("prog2:", prog2)
 
         assert len(self.img_to_environment) > 0
-        incorrect_img_ids = []
+        incorrect_img_ids = set()
 
         for img_id, lib in self.img_to_environment.items():
-
             # env = lib["model_env"] if use_ground_truth else lib["ground_truth"]
             env = lib["ground_truth"]
             ids1 = eval_extractor(prog1, env)
@@ -228,7 +232,7 @@ class Synthesizer:
 
             if ids1 != ids2:
                 # print("image id:", img_id)
-                incorrect_img_ids.append(img_id)
+                incorrect_img_ids.add(img_id)
 
         print("Programs differ on " + str(len(incorrect_img_ids)) + " images")
         print("Differing images: ", incorrect_img_ids)
@@ -236,15 +240,20 @@ class Synthesizer:
 
     def synthesize_top_down(self, env, eval_cache, args):
         if args.use_prediction_sets:
-            output = {key for (key, details) in env[0].items()
-                      if "ActionApplied" in details} if env else set()
+            output = (
+                {key for (key, details) in env[0].items() if "ActionApplied" in details}
+                if env
+                else set()
+            )
         else:
-            output = {key for (key, details) in env.items()
-                      if "ActionApplied" in details}
+            output = {
+                key for (key, details) in env.items() if "ActionApplied" in details
+            }
 
         output_dict = {}
         output_dict[str(output)] = output
         seen_progs = set()
+        partial_eval_func = partial_eval_mscoco if args.use_mscoco else partial_eval
 
         tree = Tree(next(self.program_counter))
         tree.nodes[0] = Hole(0, "extr", str(output), str(output))
@@ -268,23 +277,36 @@ class Synthesizer:
                 if args.use_active_learning:
                     return progs, num_progs
                 else:
+                    if not progs:
+                        return None, num_progs
                     return progs[0], num_progs
+            if not check_intersection(prog):
+                continue
             if not get_type(prog):
                 continue
             # EQUIVALENCE REDUCTION
             if args.equiv_reduction:
                 if output_objs_str and args.partial_eval:
                     if args.use_prediction_sets:
-                        should_prune = all([partial_eval(
-                            prog.duplicate(), possible_env, output_dict, eval_cache) for possible_env in env])
+                        should_prune = all(
+                            [
+                                partial_eval_func(
+                                    prog.duplicate(),
+                                    possible_env,
+                                    output_dict,
+                                    eval_cache,
+                                )
+                                for possible_env in env
+                            ]
+                        )
                     else:
-                        should_prune = partial_eval(
-                            prog, env, output_dict, eval_cache)
+                        should_prune = partial_eval_func(
+                            prog, env, output_dict, eval_cache
+                        )
                     if should_prune:
                         continue
                 if not isinstance(prog, Hole):
-                    simplified_prog = simplify(
-                        prog.duplicate(), len(env), output_dict)
+                    simplified_prog = simplify(prog.duplicate(), len(env), output_dict)
                     if simplified_prog is None or str(simplified_prog) in seen_progs:
                         continue
                     seen_progs.add(str(simplified_prog))
@@ -294,16 +316,30 @@ class Synthesizer:
                         progs.append(copy.deepcopy(prog))
                         continue
                     for possible_env in env:
-                        extracted_objs = eval_extractor(
-                            prog, possible_env,  # output_dict=output_dict, eval_cache=eval_cache
+                        extracted_objs = (
+                            eval_extractor_mscoco(
+                                prog,
+                                possible_env,  # output_dict=output_dict, eval_cache=eval_cache
+                            )
+                            if args.use_mscoco
+                            else eval_extractor(
+                                prog,
+                                possible_env,  # output_dict=output_dict, eval_cache=eval_cache
+                            )
                         )
                         extracted_objs_str = ",".join(sorted(extracted_objs))
                         if extracted_objs_str == output_objs_str:
                             progs.append(copy.deepcopy(prog))
                             break
                 else:
-                    extracted_objs = eval_extractor(
-                        prog, env, output_dict=output_dict, eval_cache=eval_cache
+                    extracted_objs = (
+                        eval_extractor_mscoco(
+                            prog, env, output_dict=output_dict, eval_cache=eval_cache
+                        )
+                        if args.use_mscoco
+                        else eval_extractor(
+                            prog, env, output_dict=output_dict, eval_cache=eval_cache
+                        )
                     )
                     extracted_objs_str = ",".join(sorted(extracted_objs))
                     if len(env) == 0 or extracted_objs_str == output_objs_str:
@@ -330,8 +366,11 @@ class Synthesizer:
                     parent_node,
                     output_dict[hole.output_over],
                     output_dict[hole.output_under],
-                    env[0] if env and args.use_prediction_sets else {
-                    } if args.use_prediction_sets else env,
+                    env[0]
+                    if env and args.use_prediction_sets
+                    else {}
+                    if args.use_prediction_sets
+                    else env,
                 )
             elif node_type == "attr":
                 new_sub_extrs = get_attributes(
@@ -343,8 +382,11 @@ class Synthesizer:
                 new_sub_extrs = [
                     (index, [], [], [], 0)
                     for index in get_valid_indices(
-                        env[0] if env and args.use_prediction_sets else {
-                        } if args.use_prediction_sets else env,
+                        env[0]
+                        if env and args.use_prediction_sets
+                        else {}
+                        if args.use_prediction_sets
+                        else env,
                         output_dict[hole.output_under],
                         output_dict[hole.output_over],
                     )
@@ -353,8 +395,11 @@ class Synthesizer:
                 new_sub_extrs = [
                     (word, [], [], [], 0)
                     for word in get_valid_words(
-                        env[0] if env and args.use_prediction_sets else {
-                        } if args.use_prediction_sets else env,
+                        env[0]
+                        if env and args.use_prediction_sets
+                        else {}
+                        if args.use_prediction_sets
+                        else env,
                         output_dict[hole.output_under],
                         output_dict[hole.output_over],
                     )
@@ -363,8 +408,11 @@ class Synthesizer:
                 new_sub_extrs = [
                     (obj, [], [], [], 0)
                     for obj in get_valid_objects(
-                        env[0] if env and args.use_prediction_sets else {
-                        } if args.use_prediction_sets else env,
+                        env[0]
+                        if env and args.use_prediction_sets
+                        else {}
+                        if args.use_prediction_sets
+                        else env,
                         output_dict[hole.output_under],
                         output_dict[hole.output_over],
                     )
@@ -380,20 +428,33 @@ class Synthesizer:
                     sub_extr.output_over = str(hole.output_over)
                     sub_extr.output_under = str(hole.output_under)
                 if args.use_prediction_sets:
-                    prog_output = [get_prog_output(
-                        sub_extr, possible_env, parent_node) for possible_env in env]
+                    prog_output = [
+                        get_prog_output(
+                            sub_extr, possible_env, parent_node, args.use_mscoco
+                        )
+                        for possible_env in env
+                    ]
                 else:
-                    prog_output = get_prog_output(sub_extr, env, parent_node)
+                    prog_output = get_prog_output(
+                        sub_extr, env, parent_node, args.use_mscoco
+                    )
                 # OUTPUT ESTIMATION-BASED PRUNING
                 if args.goal_inference:
                     if args.use_prediction_sets:
                         prog_output = [
-                            possible_output for possible_output in prog_output if possible_output is not None]
-                        if prog_output and all([invalid_output(
-                            output_dict[hole.output_over],
-                            output_dict[hole.output_under],
-                            possible_prog_output,
-                        ) for possible_prog_output in prog_output]
+                            possible_output
+                            for possible_output in prog_output
+                            if possible_output is not None
+                        ]
+                        if prog_output and all(
+                            [
+                                invalid_output(
+                                    output_dict[hole.output_over],
+                                    output_dict[hole.output_under],
+                                    possible_prog_output,
+                                )
+                                for possible_prog_output in prog_output
+                            ]
                         ):
                             continue
                     else:
@@ -428,7 +489,7 @@ class Synthesizer:
                 hq.heappush(worklist, new_tree)
         return None
 
-    def minimax(self, progs, img_to_environment, env_name, used_imgs):
+    def minimax(self, progs, img_to_environment, env_name, used_imgs, use_mscoco):
         min_progs = 0
         min_img = None
         finished = True
@@ -438,8 +499,10 @@ class Synthesizer:
             env = env[env_name]
             inds_to_num_progs = {}
             for prog in progs:
-                extracted_objs = eval_extractor(
-                    prog, env
+                extracted_objs = (
+                    eval_extractor_mscoco(prog, env)
+                    if use_mscoco
+                    else eval_extractor(prog, env)
                 )
                 extracted_objs_str = ",".join(sorted(extracted_objs))
                 if extracted_objs_str in inds_to_num_progs:
@@ -455,7 +518,9 @@ class Synthesizer:
             return True, None, progs[0]
         return False, min_img, None
 
-    def minimax_prediction_sets(self, progs, img_to_environment, env_name, used_imgs):
+    def minimax_prediction_sets(
+        self, progs, img_to_environment, env_name, used_imgs, use_mscoco
+    ):
         min_progs = 0
         min_img = None
         finished = True
@@ -465,15 +530,21 @@ class Synthesizer:
             env = env[env_name]
             inds_to_num_progs = {}
             for prog in progs:
-                possible_outputs = [eval_extractor(
-                    prog, possible_env
-                ) for possible_env in env]
+                possible_outputs = [
+                    eval_extractor_mscoco(prog, possible_env)
+                    if use_mscoco
+                    else eval_extractor(prog, possible_env)
+                    for possible_env in env
+                ]
                 possible_output_strs = set(
-                    [",".join(sorted(possible_output)) for possible_output in possible_outputs])
+                    [
+                        ",".join(sorted(possible_output))
+                        for possible_output in possible_outputs
+                    ]
+                )
                 for possible_output_str in possible_output_strs:
                     if possible_output_str in inds_to_num_progs:
-                        inds_to_num_progs[possible_output_str].append(
-                            str(prog))
+                        inds_to_num_progs[possible_output_str].append(str(prog))
                     else:
                         inds_to_num_progs[possible_output_str] = [str(prog)]
             if len(inds_to_num_progs) > 1:
@@ -485,89 +556,143 @@ class Synthesizer:
             return True, None, progs[0]
         return False, min_img, None
 
-    def occur_number(self, progs, img_to_environment, env_name):
+    def occur_number(self, progs, img_to_environment, env_name, use_mscoco):
         skip_these = set()
         for i in range(len(progs)):
             num_indistinguishable = 0
             if i in skip_these:
                 continue
             for j in range(i + 1, len(progs)):
-                if not self.is_distinguishable(progs[i], progs[j], img_to_environment, env_name):
+                if not self.is_distinguishable(
+                    progs[i], progs[j], img_to_environment, env_name, use_mscoco
+                ):
                     num_indistinguishable += 1
                     skip_these.add(j)
-            if num_indistinguishable >= len(progs) * .75:
+            if num_indistinguishable >= len(progs) * 0.75:
                 return progs[i]
         return None
 
-    def is_distinguishable(self, prog1, prog2, img_to_environment, env_name):
+    def is_distinguishable(
+        self, prog1, prog2, img_to_environment, env_name, use_mscoco
+    ):
         for _, env in img_to_environment.items():
             env = env[env_name]
             if env_name == "model_env_psets":
                 # TODO: is this the correct way to check if progs are distinguishable?
                 # does it matter if equivalent outputs are from the SAME possible env?
                 for possible_env in env:
-                    prog1_output = eval_extractor(prog1, possible_env)
+                    prog1_output = (
+                        eval_extractor_mscoco(prog1, env)
+                        if use_mscoco
+                        else eval_extractor(prog1, env)
+                    )
                     prog1_output_str = ",".join(sorted(prog1_output))
-                    prog2_output = eval_extractor(prog2, possible_env)
+                    prog2_output = (
+                        eval_extractor_mscoco(prog2, env)
+                        if use_mscoco
+                        else eval_extractor(prog2, env)
+                    )
                     prog2_output_str = ",".join(sorted(prog2_output))
                     if prog1_output_str != prog2_output_str:
                         return True
             else:
-                prog1_output = eval_extractor(prog1, env)
+                prog1_output = (
+                    eval_extractor_mscoco(prog1, env)
+                    if use_mscoco
+                    else eval_extractor(prog1, env)
+                )
                 prog1_output_str = ",".join(sorted(prog1_output))
-                prog2_output = eval_extractor(prog2, env)
+                prog2_output = (
+                    eval_extractor_mscoco(prog2, env)
+                    if use_mscoco
+                    else eval_extractor(prog2, env)
+                )
                 prog2_output_str = ",".join(sorted(prog2_output))
                 if prog1_output_str != prog2_output_str:
                     return True
         return False
 
-    def get_challengeable_query(self, rec, progs, img_to_environment, used_imgs, env_name):
-        progs_dist_from_rec = [prog for prog in progs if self.is_distinguishable(
-            rec, prog, img_to_environment, env_name)]
+    def get_challengeable_query(
+        self, rec, progs, img_to_environment, used_imgs, env_name, use_mscoco
+    ):
+        progs_dist_from_rec = [
+            prog
+            for prog in progs
+            if self.is_distinguishable(
+                rec, prog, img_to_environment, env_name, use_mscoco
+            )
+        ]
         for img, env in img_to_environment.items():
             if img in used_imgs:
                 continue
             env = env[env_name]
             if env_name != "model_env_psets":
-                rec_output = eval_extractor(rec, env)
+                rec_output = (
+                    eval_extractor_mscoco(rec, env)
+                    if use_mscoco
+                    else eval_extractor(rec, env)
+                )
                 if not rec_output:
                     continue
                 rec_output_str = ",".join(sorted(rec_output))
                 num_progs_with_same_output = 0
                 for prog in progs_dist_from_rec:
-                    prog_output = eval_extractor(prog, env)
+                    prog_output = (
+                        eval_extractor_mscoco(prog, env)
+                        if use_mscoco
+                        else eval_extractor(prog, env)
+                    )
                     prog_output_str = ",".join(sorted(prog_output))
                     if rec_output_str == prog_output_str:
                         num_progs_with_same_output += 1
-                if num_progs_with_same_output < len(progs) * .25:
+                if num_progs_with_same_output < len(progs) * 0.25:
                     return img
             else:
-                possible_rec_outputs = [eval_extractor(
-                    rec, possible_env) for possible_env in env]
-                if not all([possible_output == [] for possible_output in possible_rec_outputs]):
+                possible_rec_outputs = [
+                    eval_extractor_mscoco(rec, possible_env)
+                    if use_mscoco
+                    else eval_extractor(prog, env)
+                    for possible_env in env
+                ]
+                if not all(
+                    [possible_output == [] for possible_output in possible_rec_outputs]
+                ):
                     continue
-                possible_rec_output_strs = set([",".join(
-                    sorted(possible_rec_output)) for possible_rec_output in possible_rec_outputs])
+                possible_rec_output_strs = set(
+                    [
+                        ",".join(sorted(possible_rec_output))
+                        for possible_rec_output in possible_rec_outputs
+                    ]
+                )
                 num_progs_with_same_output = 0
                 for prog in progs_dist_from_rec:
-                    prog_outputs = [eval_extractor(
-                        prog, possible_env) for possible_env in env]
+                    prog_outputs = [
+                        eval_extractor_mscoco(prog, possible_env)
+                        if use_mscoco
+                        else eval_extractor(prog, possible_env)
+                        for possible_env in env
+                    ]
                     prog_output_strs = set(
-                        [",".join(sorted(prog_output)) for prog_output in prog_outputs])
+                        [",".join(sorted(prog_output)) for prog_output in prog_outputs]
+                    )
                     # if rec_output_str == prog_output_str:
                     if not prog_output_strs.isdisjoint(possible_rec_output_strs):
                         num_progs_with_same_output += 1
-                if num_progs_with_same_output < len(progs) * .25:
+                if num_progs_with_same_output < len(progs) * 0.25:
                     return img
         if env_name == "model_env_psets":
             _, img, _ = self.minimax_prediction_sets(
-                progs, img_to_environment, env_name, used_imgs)
+                progs, img_to_environment, env_name, used_imgs, use_mscoco
+            )
         else:
             _, img, _ = self.minimax(
-                progs, img_to_environment, env_name, used_imgs)
+                progs, img_to_environment, env_name, used_imgs, use_mscoco
+            )
         return img
 
-    def annotate_environment(self, indices, img_dir, img_to_environment, env_name, action=Blur()):
+    def annotate_environment(
+        self, indices, img_dir, img_to_environment, env_name, action=Blur()
+    ):
         img_index = img_to_environment[img_dir]["img_index"]
         trace = [(img_index, i) for i in indices]
         env = img_to_environment[img_dir][env_name]
@@ -578,23 +703,17 @@ class Synthesizer:
                 for details_map in possible_env.values():
                     if "ActionApplied" in details_map:
                         del details_map["ActionApplied"]
-                for (img_index, index) in trace:
-                    for details_map in possible_env.values():
-                        if (
-                            details_map["ObjPosInImgLeftToRight"] == index
-                            and details_map["ImgIndex"] == img_index
-                        ):
+                for img_index, index in trace:
+                    for obj_id, details_map in possible_env.items():
+                        if obj_id == index and details_map["ImgIndex"] == img_index:
                             details_map["ActionApplied"] = action
             return env
         for details_map in env.values():
             if "ActionApplied" in details_map:
                 del details_map["ActionApplied"]
-        for (img_index, index) in trace:
-            for details_map in env.values():
-                if (
-                    details_map["ObjPosInImgLeftToRight"] == index
-                    and details_map["ImgIndex"] == img_index
-                ):
+        for img_index, index in trace:
+            for obj_id, details_map in env.items():
+                if obj_id == index and details_map["ImgIndex"] == img_index:
                     details_map["ActionApplied"] = action
         return env
 
@@ -602,7 +721,7 @@ class Synthesizer:
         self,
         args,
         gt_prog=None,
-        example_imgs=[],
+        example_images=[],
         testing=True,
     ):
         print("Starting synthesis!")
@@ -610,7 +729,7 @@ class Synthesizer:
         if gt_prog:
             print("Ground truth program: ", gt_prog)
         img_to_environment = self.img_to_environment.copy()
-        img_dirs = []
+        img_dirs = set()
         # assuming one action for now
         action = Blur()
         rounds = 1
@@ -626,41 +745,45 @@ class Synthesizer:
                 start_time = time.perf_counter()
                 if testing:
                     # Interactive testing
-                    if args.interactive:
-                        while True:
-                            filepath = filedialog.askopenfilename(
-                                title="Select an Image",
-                                filetypes=(("images", "*.jpg"),
-                                           ("all files", "*.*")),
-                            )
-                            img_dir = filepath.split("ImageEye/")[1]
-                            env = img_to_environment[img_dir]["ground_truth"]
-                            action_to_objects = annotate_image(img_dir, env)
-                            # TODO: (maybe) Support multiple actions?
-                            (action, indices) = list(
-                                action_to_objects.items())[0]
-                            if args.use_prediction_sets:
-                                new_annotated_env = self.annotate_environment(
-                                    indices, img_dir, img_to_environment, env_name)
-                                annotated_env = [l[0] | l[1] for l in itertools.product(
-                                    *[annotated_env, new_annotated_env])]
-                            else:
-                                annotated_env = (
-                                    self.annotate_environment(
-                                        indices, img_dir, img_to_environment, env_name)
-                                    | annotated_env
-                                )
-                            should_continue = input("Add another image? (y/n)")
-                            if should_continue == "n":
-                                break
+                    # if args.interactive:
+                    #     while True:
+                    #         filepath = filedialog.askopenfilename(
+                    #             title="Select an Image",
+                    #             filetypes=(("images", "*.jpg"), ("all files", "*.*")),
+                    #         )
+                    #         img_dir = filepath.split("ImageEye/")[1]
+                    #         env = img_to_environment[img_dir]["ground_truth"]
+                    #         action_to_objects = annotate_image(img_dir, env)
+                    #         # TODO: (maybe) Support multiple actions?
+                    #         (action, indices) = list(action_to_objects.items())[0]
+                    #         if args.use_prediction_sets:
+                    #             new_annotated_env = self.annotate_environment(
+                    #                 indices, img_dir, img_to_environment, env_name
+                    #             )
+                    #             annotated_env = [
+                    #                 l[0] | l[1]
+                    #                 for l in itertools.product(
+                    #                     *[annotated_env, new_annotated_env]
+                    #                 )
+                    #             ]
+                    #         else:
+                    #             annotated_env = (
+                    #                 self.annotate_environment(
+                    #                     indices, img_dir, img_to_environment, env_name
+                    #                 )
+                    #                 | annotated_env
+                    #             )
+                    #         should_continue = input("Add another image? (y/n)")
+                    #         if should_continue == "n":
+                    #             break
                     # Automatically chosen examples using heuristic
-                    else:
+                    # else:
+                    if True:
                         print("Starting round ", rounds)
                         print()
                         img_dir, _ = min(
                             [
-                                (img_dir,
-                                 img_to_environment[img_dir][model_env_name])
+                                (img_dir, img_to_environment[img_dir][model_env_name])
                                 for img_dir in img_options
                             ],
                             key=lambda tup: (len(tup[1]), str(tup[0])),
@@ -668,31 +791,46 @@ class Synthesizer:
                         print("New image: ", img_dir)
                         # image is labelled based on ground truth
                         gt_env = img_to_environment[img_dir]["ground_truth"]
-                        if gt_env != img_to_environment[img_dir][model_env_name]:
-                            print("ground truth DIFFERENT from model output")
-                        else:
-                            print("ground truth same as model output")
-                        indices = self.get_indices(gt_env, gt_prog)
+                        # if gt_env != img_to_environment[img_dir][model_env_name]:
+                        #     print(gt_env)
+                        #     print(img_to_environment[img_dir][model_env_name])
+                        #     print("ground truth DIFFERENT from model output")
+                        #     raise TypeError
+                        # else:
+                        #     print("ground truth same as model output")
+                        indices = self.get_indices(gt_env, gt_prog, args.use_mscoco)
+                        # print(indices)
+                        # print(gt_env)
+                        # print(img_to_environment[img_dir][env_name])
+                        # if rounds == 2:
+                        #     raise TypeError
                         if rounds == 1 and not indices:
                             img_options.remove(img_dir)
                             continue
-                        img_dirs.append(img_dir)
+                        img_dirs.add(img_dir)
                         if args.use_prediction_sets:
                             new_annotated_env = self.annotate_environment(
-                                indices, img_dir, img_to_environment, env_name)
-                            annotated_env = [l[0] | l[1] for l in itertools.product(
-                                *[annotated_env, new_annotated_env])]
+                                indices, img_dir, img_to_environment, env_name
+                            )
+                            annotated_env = [
+                                l[0] | l[1]
+                                for l in itertools.product(
+                                    *[annotated_env, new_annotated_env]
+                                )
+                            ]
                         else:
-                            annotated_env = (
+                            annotated_env = dict(
                                 self.annotate_environment(
-                                    indices, img_dir, img_to_environment, env_name)
-                                | annotated_env
+                                    indices, img_dir, img_to_environment, env_name
+                                ),
+                                **annotated_env
                             )
                 num_attributes = get_num_attributes(annotated_env)
                 construction_start_time = time.perf_counter()
-                prog, num_progs = self.synthesize_top_down(
-                    annotated_env, {}, args
-                )
+                print("ANNOTATED ENV: " + str(annotated_env))
+                # print(indices)
+                # raise TypeError
+                prog, num_progs = self.synthesize_top_down(annotated_env, {}, args)
                 print("Program: ", prog)
                 construction_end_time = time.perf_counter()
                 construction_time = construction_end_time - construction_start_time
@@ -723,10 +861,13 @@ class Synthesizer:
                         break
                     else:
                         continue
+                if not prog:
+                    print("Synthesis failed.")
+                    print(rounds)
+                    return None, 0, rounds, img_dirs, len(annotated_env), num_attributes
                 # the list of images where synthesized prog and gt_prog have different outputs
                 if testing:
-                    img_options = self.get_differing_images(
-                        prog, gt_prog)
+                    img_options = self.get_differing_images(prog, gt_prog) - img_dirs
                 else:
                     img_options = []
                 # if list is empty, synthesized program is correct
@@ -746,8 +887,8 @@ class Synthesizer:
                         len(annotated_env),
                         num_attributes,
                     )
-                if example_imgs:
-                    break
+                # if example_images:
+                # break
                 end_time = time.perf_counter()
                 cur_round_time = end_time - start_time
                 total_synthesis_time += cur_round_time
@@ -772,11 +913,7 @@ class Synthesizer:
         return None, 0, rounds, img_dirs, len(annotated_env), num_attributes
 
     def perform_synthesis_epssy(
-        self,
-        args,
-        gt_prog=None,
-        testing=True,
-        example_images=None
+        self, args, gt_prog=None, testing=True, example_images=None
     ):
         print("Starting synthesis!")
         print()
@@ -804,7 +941,8 @@ class Synthesizer:
                     if rounds > 1:
                         # finished, img_dir, prog = self.minimax(progs, img_to_environment)
                         prog = self.occur_number(
-                            progs, img_to_environment, env_name)
+                            progs, img_to_environment, env_name, args.use_mscoco
+                        )
                         if prog is not None:
                             print("Finished synthesis.")
                             print("Program: ", str(prog))
@@ -812,57 +950,90 @@ class Synthesizer:
                             cur_round_time = end_time - start_time
                             total_synthesis_time += cur_round_time
                             print("Number of rounds: ", str(rounds))
-                            print("Total Synthesis Time: ",
-                                  str(total_synthesis_time))
+                            print("Total Synthesis Time: ", str(total_synthesis_time))
                             return (
                                 prog,
                                 cur_round_time,
                                 len(img_dirs),
                                 img_dirs,
                                 len(annotated_env),
-                                "occur number"
+                                "occur number",
                             )
                         img_dir = self.get_challengeable_query(
-                            rec, progs, img_to_environment, img_dirs, env_name)
+                            rec,
+                            progs,
+                            img_to_environment,
+                            img_dirs,
+                            env_name,
+                            args.use_mscoco,
+                        )
                         print("New image: ", img_dir)
                         # User labels based on ground truth
                         env = img_to_environment[img_dir]["ground_truth"]
-                        indices = self.get_indices(env, gt_prog)
+                        indices = self.get_indices(env, gt_prog, args.use_mscoco)
                         img_dirs.append(img_dir)
                         # if rounds == 1 and not indices:
                         # img_options.remove(img_dir)
                         # continue
                         if args.use_prediction_sets:
                             new_annotated_env = self.annotate_environment(
-                                indices, img_dir, img_to_environment, env_name)
-                            annotated_env = [l[0] | l[1] for l in itertools.product(
-                                *[annotated_env, new_annotated_env])] if annotated_env else new_annotated_env
-                        else:
+                                indices,
+                                img_dir,
+                                img_to_environment,
+                                env_name,
+                                args.use_mscoco,
+                            )
                             annotated_env = (
+                                [
+                                    l[0] | l[1]
+                                    for l in itertools.product(
+                                        *[annotated_env, new_annotated_env]
+                                    )
+                                ]
+                                if annotated_env
+                                else new_annotated_env
+                            )
+                        else:
+                            annotated_env = dict(
                                 self.annotate_environment(
-                                    indices, img_dir, img_to_environment, env_name)
-                                | annotated_env
+                                    indices, img_dir, img_to_environment, env_name
+                                ),
+                                **annotated_env
                             )
                     elif example_images:
                         img_dir = example_images.pop()
                         env = img_to_environment[img_dir]["ground_truth"]
-                        indices = self.get_indices(env, gt_prog)
+                        indices = self.get_indices(env, gt_prog, args.use_mscoco)
                         if args.use_prediction_sets:
                             new_annotated_env = self.annotate_environment(
-                                indices, img_dir, img_to_environment, env_name)
-                            annotated_env = [l[0] | l[1] for l in itertools.product(
-                                *[annotated_env, new_annotated_env])]
+                                indices, img_dir, img_to_environment, env_name
+                            )
+                            annotated_env = [
+                                l[0] | l[1]
+                                for l in itertools.product(
+                                    *[annotated_env, new_annotated_env]
+                                )
+                            ]
                         else:
-                            annotated_env = (
+                            annotated_env = dict(
                                 self.annotate_environment(
-                                    indices, img_dir, img_to_environment, env_name)
-                                | annotated_env
+                                    indices, img_dir, img_to_environment, env_name
+                                ),
+                                **annotated_env
                             )
                 construction_start_time = time.perf_counter()
                 if rounds > 1:
-                    rec_output = eval_extractor(rec, env)
+                    rec_output = (
+                        eval_extractor_mscoco(rec, env)
+                        if args.use_mscoco
+                        else eval_extractor(rec, env)
+                    )
                     rec_output_str = ",".join(sorted(rec_output))
-                    gt_output = eval_extractor(gt_prog, env)
+                    gt_output = (
+                        eval_extractor_mscoco(gt_prog, env)
+                        if args.use_mscoco
+                        else eval_extractor(gt_prog, env)
+                    )
                     if rec_output_str == ",".join(sorted(gt_output)):
                         c += 1
                     else:
@@ -874,18 +1045,17 @@ class Synthesizer:
                         cur_round_time = end_time - start_time
                         total_synthesis_time += cur_round_time
                         print("Number of rounds: ", str(rounds))
-                        print("Total Synthesis Time: ",
-                              str(total_synthesis_time))
+                        print("Total Synthesis Time: ", str(total_synthesis_time))
                         return (
                             rec,
                             cur_round_time,
                             len(img_dirs),
                             img_dirs,
                             len(annotated_env),
-                            "recommendation"
+                            "recommendation",
                         )
-                progs, num_progs = self.synthesize_top_down(
-                    annotated_env, {}, args)
+                print(annotated_env)
+                progs, num_progs = self.synthesize_top_down(annotated_env, {}, args)
                 if not progs:
                     print("Synthesis failed.")
                     print(rounds)
@@ -897,15 +1067,14 @@ class Synthesizer:
                     cur_round_time = end_time - start_time
                     total_synthesis_time += cur_round_time
                     print("Number of rounds: ", str(rounds))
-                    print("Total Synthesis Time: ",
-                          str(total_synthesis_time))
+                    print("Total Synthesis Time: ", str(total_synthesis_time))
                     return (
                         progs[0],
                         cur_round_time,
                         len(img_dirs),
                         img_dirs,
                         len(annotated_env),
-                        "one synthesized prog"
+                        "one synthesized prog",
                     )
                 if rec is None or c == 0:
                     rec = progs[0]
@@ -945,7 +1114,6 @@ class Synthesizer:
 
 
 if __name__ == "__main__":
-
     args = get_args()
     client = get_client()
     img_folder = "../test_images/wedding_subset/"

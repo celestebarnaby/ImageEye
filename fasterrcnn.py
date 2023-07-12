@@ -9,6 +9,7 @@ from detectron2.utils.visualizer import Visualizer
 from detectron2.config import get_cfg
 from detectron2.engine import DefaultPredictor
 from detectron2 import model_zoo
+
 # from google.colab.patches import cv2_imshow
 import numpy as np
 import detectron2
@@ -18,16 +19,43 @@ import statistics
 
 setup_logger()
 
+# im = cv2.imread("./input.jpg")
+
+# cfg = get_cfg()
+# # add project-specific config (e.g., TensorMask) here if you're not running a model in detectron2's core library
+# cfg.merge_from_file(model_zoo.get_config_file(
+#     "COCO-Detection/faster_rcnn_X_101_32x8d_FPN_3x.yaml"))
+# cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.5  # set threshold for this model
+# # Find a model from detectron2's model zoo. You can use the https://dl.fbaipublicfiles... url as well
+# cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url(
+#     "COCO-Detection/faster_rcnn_X_101_32x8d_FPN_3x.yaml")
+# predictor = DefaultPredictor(cfg)
+# outputs = predictor(im)
+
+# print(outputs["instances"].pred_classes)
+# print(outputs["instances"].pred_boxes)
+
+# predictions = outputs["instances"].to("cpu")
+# classes = predictions.pred_classes.tolist(
+# ) if predictions.has("pred_classes") else None
+# print(classes)
+
+# metadata = MetadataCatalog.get(cfg.DATASETS.TRAIN[0])
+# print(type(metadata))
+# print(metadata.get("thing_classes"))
+
 
 def get_predictor():
     cfg = get_cfg()
     # add project-specific config (e.g., TensorMask) here if you're not running a model in detectron2's core library
-    cfg.merge_from_file(model_zoo.get_config_file(
-        "COCO-Detection/faster_rcnn_X_101_32x8d_FPN_3x.yaml"))
+    cfg.merge_from_file(
+        model_zoo.get_config_file("COCO-Detection/faster_rcnn_X_101_32x8d_FPN_3x.yaml")
+    )
     cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.5  # set threshold for this model
     # Find a model from detectron2's model zoo. You can use the https://dl.fbaipublicfiles... url as well
     cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url(
-        "COCO-Detection/faster_rcnn_X_101_32x8d_FPN_3x.yaml")
+        "COCO-Detection/faster_rcnn_X_101_32x8d_FPN_3x.yaml"
+    )
 
     metadata = MetadataCatalog.get(cfg.DATASETS.TRAIN[0])
     predictor = DefaultPredictor(cfg)
@@ -40,7 +68,10 @@ def get_faster_rcnn_objects(img_name, predictor):
     outputs = predictor(im)
     bboxes = outputs["instances"].pred_boxes
     classes = [class_names[i] for i in outputs["instances"].pred_classes]
-    return [{"Name": name.lower(), "bbox": bbox.tolist()} for (name, bbox) in zip(classes, bboxes)]
+    return [
+        {"Name": name.lower(), "bbox": bbox.tolist()}
+        for (name, bbox) in zip(classes, bboxes)
+    ]
 
 
 def get_rekognition_objects(img_name, client):
@@ -55,7 +86,19 @@ def get_rekognition_objects(img_name, client):
             if instance["Confidence"] < 75:
                 continue
             # Remove redundant objects
-            if obj["Name"] in {'Adult', 'Child', 'Man', 'Male', 'Woman', 'Female', 'Bride', 'Groom', 'Boy', 'Girl', 'Teen'}:
+            if obj["Name"] in {
+                "Adult",
+                "Child",
+                "Man",
+                "Male",
+                "Woman",
+                "Female",
+                "Bride",
+                "Groom",
+                "Boy",
+                "Girl",
+                "Teen",
+            }:
                 continue
             details_map = {}
             details_map["Name"] = obj["Name"].lower()
@@ -76,8 +119,7 @@ def get_object_lists(predictor):
             print(img_name)
             frcnn_objects = get_faster_rcnn_objects(img_name, predictor)
             rek_objects = get_rekognition_objects(img_name, client)
-            env[img_name] = {"faster_rcnn": frcnn_objects,
-                             "rekognition": rek_objects}
+            env[img_name] = {"faster_rcnn": frcnn_objects, "rekognition": rek_objects}
     return env
 
 
@@ -87,7 +129,7 @@ def find_matching_obj(rek_obj, frcnn_objects):
             continue
         # print("hi")
         # print(get_iou(rek_obj["bbox"], obj["bbox"]))
-        if get_iou(rek_obj["bbox"], obj["bbox"]) > .75:
+        if get_iou(rek_obj["bbox"], obj["bbox"]) > 0.75:
             return True
     return False
 
@@ -103,8 +145,10 @@ def save_bad_images(bad_images, env):
 
 def compare(env, class_names):
     num_rek_objects = [len(v["rekognition"]) for v in env.values()]
-    num_rek_objects_with_frcnn_class = [len(
-        [obj for obj in v["rekognition"] if obj["Name"] in class_names]) for v in env.values()]
+    num_rek_objects_with_frcnn_class = [
+        len([obj for obj in v["rekognition"] if obj["Name"] in class_names])
+        for v in env.values()
+    ]
     num_matched_objects = []
     unmatched_objs = {}
     bad_images = set()
@@ -123,26 +167,40 @@ def compare(env, class_names):
                     unmatched_objs[rek_obj["Name"]] = 0
                 unmatched_objs[rek_obj["Name"]] += 1
     pct_matched_objects = [
-        a/b for (a, b) in zip(num_matched_objects, num_rek_objects) if b != 0]
+        a / b for (a, b) in zip(num_matched_objects, num_rek_objects) if b != 0
+    ]
     pct_matched_objects_with_frcnn_class = [
-        a/b for (a, b) in zip(num_matched_objects, num_rek_objects_with_frcnn_class) if b != 0]
+        a / b
+        for (a, b) in zip(num_matched_objects, num_rek_objects_with_frcnn_class)
+        if b != 0
+    ]
     avg_percent = statistics.mean(pct_matched_objects_with_frcnn_class)
     unmatched_objs_with_frcnn_class = {
-        k: v for (k, v) in unmatched_objs.items() if k in class_names}
+        k: v for (k, v) in unmatched_objs.items() if k in class_names
+    }
     print("Faster R-CNN Classes: {}".format(class_names))
     # print("Percent of matched objects per image: {}".format(pct_matched_objects))
     # print("Percent of matched objects per image, only considering objects with Faster R-CNN class: {}".format(
-        # pct_matched_objects_with_frcnn_class))
-    print("Average percent of matched objects, only considering objects with Faster R-CNN class: {}".format(avg_percent))
+    # pct_matched_objects_with_frcnn_class))
+    print(
+        "Average percent of matched objects, only considering objects with Faster R-CNN class: {}".format(
+            avg_percent
+        )
+    )
 
     sorted_unmatched_objs = sorted(
-        unmatched_objs.items(), key=lambda x: x[1], reverse=True)
+        unmatched_objs.items(), key=lambda x: x[1], reverse=True
+    )
     sorted_unmatched_objs_with_frcnn_class = sorted(
-        unmatched_objs_with_frcnn_class.items(), key=lambda x: x[1], reverse=True)
+        unmatched_objs_with_frcnn_class.items(), key=lambda x: x[1], reverse=True
+    )
 
     print("Unmatched objects: {}".format(sorted_unmatched_objs))
-    print("Unmatched objects that have faster R-CNN class: {}".format(
-        sorted_unmatched_objs_with_frcnn_class))
+    print(
+        "Unmatched objects that have faster R-CNN class: {}".format(
+            sorted_unmatched_objs_with_frcnn_class
+        )
+    )
     save_bad_images(bad_images, env)
 
 
@@ -151,4 +209,3 @@ if __name__ == "__main__":
     predictor, class_names = get_predictor()
     env = get_object_lists(predictor)
     compare(env, class_names)
-    

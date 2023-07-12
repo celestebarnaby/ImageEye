@@ -2,7 +2,13 @@ import os
 from dsl import *
 from synthesizer import *
 from interpreter import get_client
-from benchmarks import benchmarks, get_ast_depth, get_ast_size
+from benchmarks import (
+    benchmarks,
+    active_learning_benchmarks,
+    get_ast_depth,
+    get_ast_size,
+)
+from mscoco import *
 import cProfile
 import time
 import signal
@@ -26,15 +32,30 @@ def get_dataset_info():
         else:
             img_folder = "test_images/" + dataset + "/"
             img_to_environment = preprocess(img_folder, args.max_faces)
-        num_objects_per_img = [len(env['environment'])
-                               for env in img_to_environment.values()]
+        num_objects_per_img = [
+            len(env["environment"]) for env in img_to_environment.values()
+        ]
         median_objs = statistics.median(num_objects_per_img)
         avg_objs = statistics.mean(num_objects_per_img)
         num_images = len(img_to_environment)
-        prog_size_per_benchmark = [benchmark.ast_size for benchmark in benchmarks if (
-            benchmark.dataset_name == dataset or dataset == 'objects' and benchmark.dataset_name in ["cars", "cats", "guitars"])]
-        prog_depth_per_benchmark = [benchmark.ast_depth for benchmark in benchmarks if (
-            benchmark.dataset_name == dataset or dataset == 'objects' and benchmark.dataset_name in ["cars", "cats", "guitars"])]
+        prog_size_per_benchmark = [
+            benchmark.ast_size
+            for benchmark in benchmarks
+            if (
+                benchmark.dataset_name == dataset
+                or dataset == "objects"
+                and benchmark.dataset_name in ["cars", "cats", "guitars"]
+            )
+        ]
+        prog_depth_per_benchmark = [
+            benchmark.ast_depth
+            for benchmark in benchmarks
+            if (
+                benchmark.dataset_name == dataset
+                or dataset == "objects"
+                and benchmark.dataset_name in ["cars", "cats", "guitars"]
+            )
+        ]
         avg_prog_size = statistics.mean(prog_size_per_benchmark)
         avg_prog_depth = statistics.mean(prog_depth_per_benchmark)
         num_benchmarks = len(prog_size_per_benchmark)
@@ -45,12 +66,12 @@ def get_dataset_info():
             avg_objs,
             num_benchmarks,
             avg_prog_size,
-            avg_prog_depth
+            avg_prog_depth,
         )
         data.append(row)
 
-    if not os.path.exists('data'):
-        os.mkdir('data')
+    if not os.path.exists("data"):
+        os.mkdir("data")
     name = "data/dataset_info.csv"
     with open(name, "w") as f:
         fw = csv.writer(f)
@@ -62,7 +83,7 @@ def get_dataset_info():
                 "Average # Objects Per Image",
                 "# Synthesis Tasks",
                 "Average size of ground truth program",
-                "Average depth of ground truth program"
+                "Average depth of ground truth program",
             ),
         )
         for row in data:
@@ -83,8 +104,10 @@ def test_model_accuracy(args):
             if set(ids1) == set(ids2):
                 correct_pairs += 1
             total_pairs += 1
-    print("percent of (benchmark, image) pairs with suitable labels: " +
-          str(correct_pairs/total_pairs))
+    print(
+        "percent of (benchmark, image) pairs with suitable labels: "
+        + str(correct_pairs / total_pairs)
+    )
     print("num images: " + str(len(lib)))
 
 
@@ -104,7 +127,6 @@ def test_benchmarks(args):
 
 
 def test_synthesis(args):
-
     # if args.get_dataset_info:
     # get_dataset_info()
 
@@ -120,11 +142,16 @@ def test_synthesis(args):
     pr = cProfile.Profile()
     pr.enable()
     benchmark_to_example_imgs = {}
-    for i, benchmark in enumerate(benchmarks):
+    for i, benchmark in enumerate(active_learning_benchmarks):
         # if args.benchmark_set and args.benchmark_set != benchmark.dataset_name:
         # continue
-        img_folder = "../test_images/" + benchmark.dataset_name + "/"
-        img_to_environment = preprocess(img_folder, args.max_faces)
+        if args.use_mscoco:
+            # todo
+            img_folder = "../objects/"
+            img_to_environment = preprocess_mscoco(img_folder)
+        else:
+            img_folder = "../test_images/" + benchmark.dataset_name + "/"
+            img_to_environment = preprocess(img_folder, args.max_faces)
         synth.img_to_environment = img_to_environment
         prog = benchmark.gt_prog
         # signal.signal(signal.SIGALRM, handler)
@@ -136,21 +163,22 @@ def test_synthesis(args):
             if args.use_examples
             else []
         )
-        perform_synthesis = synth.perform_synthesis_epssy if args.use_active_learning else synth.perform_synthesis
+        perform_synthesis = (
+            synth.perform_synthesis_epssy
+            if args.use_active_learning
+            else synth.perform_synthesis
+        )
         (
             synth_prog,
             total_time,
             rounds,
             img_dirs,
             num_objects,
-            end_condition
+            end_condition,
         ) = perform_synthesis(
-            args,
-            gt_prog=prog,
-            testing=True,
-            example_images=benchmark.example_imgs
+            args, gt_prog=prog, testing=True, example_images=benchmark.example_imgs
         )
-        benchmark_to_example_imgs[i] = img_dirs
+        benchmark_to_example_imgs[i] = list(img_dirs)
         if args.interactive:
             break
         end_time = time.perf_counter()
@@ -201,14 +229,13 @@ def test_synthesis(args):
         )
         for row in data:
             fw.writerow(row)
-    with open("example_imgs.json", "w") as f:
-        json.dump(benchmark_to_example_imgs, f)
+    # with open("example_imgs.json", "w") as f:
+    # json.dump(benchmark_to_example_imgs, f)
     write_logs(synth.logs)
     write_synthesis_overview(synth.synthesis_overview)
 
 
 if __name__ == "__main__":
-
     args = get_args()
     # test_model_accuracy(args)
     # test_benchmarks(args)

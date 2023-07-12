@@ -9,6 +9,8 @@ import time
 import numpy as np
 import random
 import itertools
+from mscoco import *
+import statistics
 
 DETAIL_KEYS = [
     "Eyeglasses",
@@ -68,7 +70,6 @@ pos_to_types = {
 
 
 def get_productions(env, states, depth):
-
     positions = [
         GetLeft(),
         GetRight(),
@@ -94,10 +95,8 @@ def get_productions(env, states, depth):
             (AboveAge(18), {"Face"}),
         ]
         prods += [(GetFace(i), {"Face"}) for i in get_valid_indices(env)]
-        prods += [(IsObject(obj), {"Object"})
-                  for obj in get_valid_objects(env)]
-        prods += [(MatchesWord(word), {"Text"})
-                  for word in get_valid_words(env)]
+        prods += [(IsObject(obj), {"Object"}) for obj in get_valid_objects(env)]
+        prods += [(MatchesWord(word), {"Text"}) for word in get_valid_words(env)]
     for pos in positions:
         prods.append((Map(None, pos), pos_to_types[str(pos)]))
     prods += [
@@ -385,43 +384,42 @@ def get_args():
         "--equiv_reduction",
         type=bool,
         default=True,
-        help="set to False to turn off equivalence reduction"
+        help="set to False to turn off equivalence reduction",
     )
     parser.add_argument(
         "--partial_eval",
         type=bool,
         default=True,
-        help="set to False to turn off partial evaluation"
+        help="set to False to turn off partial evaluation",
     )
     parser.add_argument(
         "--goal_inference",
         type=bool,
         default=True,
-        help="set to False to turn off partial evaluation"
+        help="set to False to turn off partial evaluation",
     )
     parser.add_argument(
         "--get_dataset_info",
         type=bool,
         default=True,
-        help="if True, outputs info about test dataset"
+        help="if True, outputs info about test dataset",
     )
-    parser.add_argument(
-        "--use_active_learning",
-        type=bool,
-        default=True
-    )
-    parser.add_argument(
-        "--use_ground_truth",
-        type=bool,
-        default=False
-    )
-    parser.add_argument(
-        "--use_prediction_sets",
-        type=bool,
-        default=True
-    )
+    parser.add_argument("--use_active_learning", type=bool, default=False)
+    parser.add_argument("--use_ground_truth", type=bool, default=False)
+    parser.add_argument("--use_prediction_sets", type=bool, default=False)
+    parser.add_argument("--use_mscoco", type=bool, default=True)
     args = parser.parse_args()
     return args
+
+
+def check_intersection(prog):
+    if isinstance(prog, Intersection):
+        obj_children = [
+            child for child in prog.extractors if isinstance(child, IsObject)
+        ]
+        if len(obj_children) > 1:
+            return False
+    return True
 
 
 def get_type(prog):
@@ -462,13 +460,116 @@ def get_type(prog):
     elif isinstance(prog, IsObject):
         return {"Object"}
     elif isinstance(prog, Map):
-        map_type = get_type(prog.extractor).intersection(
-            get_type(prog.position))
+        map_type = get_type(prog.extractor).intersection(get_type(prog.position))
         if not map_type:
             return map_type
         return get_type(prog.restriction)
     elif isinstance(prog, Position):
         return pos_to_types[str(prog)]
+
+
+def preprocess_mscoco(img_folder):
+    test_images = {}
+    if os.path.exists("mscoco.json"):
+        with open("mscoco.json", "r") as fp:
+            test_images = json.load(fp)
+            if img_folder in test_images:
+                return test_images[img_folder]
+    img_to_environment = {}
+    img_index = 0
+    num_objects = 0
+    # TODO: implement this in a less dumb way. Assuming that there will be <10000 objects in gt environment
+    num_objects2 = 10000
+    for filename in os.listdir(img_folder):
+        # print("filename:", filename)
+        img_dir = img_folder + filename
+        gt_env = get_mscoco_ground_truth(filename, img_index, num_objects)
+        num_objects = num_objects + len(gt_env)
+        model_env = get_mscoco_environment(
+            img_dir, img_index, num_objects2, False, gt_env
+        )
+        num_objects2 = num_objects2 + len(model_env)
+        # model_env_with_prediction_sets = get_mscoco_environment(img_dir, True)
+        # for obj_id, obj in model_env_with_prediction_sets.items():
+        #     model_env_with_prediction_sets[obj_id] = get_all_versions_of_object(
+        #         obj, gt_env[obj_id])
+        # # this is a LIST of environments
+        # model_env_with_prediction_sets = get_all_versions_of_image(
+        #     model_env_with_prediction_sets)
+        # print("environment:", env)
+        score = len(gt_env)
+        # print("score:", score)
+        img_to_environment[img_dir] = {
+            "ground_truth": gt_env,
+            "model_env": model_env,
+            # "model_env_psets": model_env_with_prediction_sets,
+            "img_index": img_index,
+            "score": score,
+        }
+        if not gt_env:
+            continue
+        img_index += 1
+    # end_time = time.perf_counter()
+    # total_time = end_time - start_time
+
+    print("preprocessing finished...")
+
+    # clean_environment(img_to_environment)
+    print("Num images: ", len(os.listdir(img_folder)))
+    # print("Total time: ", total_time)
+    test_images[img_folder] = img_to_environment
+    with open("mscoco.json", "w") as fp:
+        json.dump(test_images, fp)
+    # print(img_to_environment)
+
+    return img_to_environment
+
+
+def find_matching_obj(gt_obj, model_objects):
+    for obj in model_objects.values():
+        if obj["Name"] != gt_obj["Name"]:
+            continue
+        # print("hi")
+        # print(get_iou(rek_obj["bbox"], obj["bbox"]))
+        if get_iou(gt_obj["Loc"], obj["Loc"]) > 0.6:
+            return True
+    return False
+
+
+def compare_gt_and_model():
+    img_folder = "../objects/"
+    env = preprocess_mscoco(img_folder)
+    num_gt_objects = [len(v["ground_truth"]) for v in env.values()]
+    num_matched_objects = []
+    unmatched_objs = {}
+    bad_images = set()
+    for k, v in env.items():
+        num_matched_objects.append(0)
+        gt_objs = v["ground_truth"]
+        model_objs = v["model_env"]
+        for gt_obj in gt_objs.values():
+            has_matching_obj = find_matching_obj(gt_obj, model_objs)
+            if has_matching_obj:
+                num_matched_objects[-1] += 1
+            else:
+                if gt_obj["Name"] == "person":
+                    bad_images.add(k)
+                if gt_obj["Name"] not in unmatched_objs:
+                    unmatched_objs[gt_obj["Name"]] = 0
+                unmatched_objs[gt_obj["Name"]] += 1
+    pct_matched_objects = [
+        a / b for (a, b) in zip(num_matched_objects, num_gt_objects) if b != 0
+    ]
+    avg_percent = statistics.mean(pct_matched_objects)
+    # print("Percent of matched objects per image: {}".format(pct_matched_objects))
+    # print("Percent of matched objects per image, only considering objects with Faster R-CNN class: {}".format(
+    # pct_matched_objects_with_frcnn_class))
+    print("Average percent of matched objects: {}".format(avg_percent))
+    sorted_unmatched_objs = sorted(
+        unmatched_objs.items(), key=lambda x: x[1], reverse=True
+    )
+
+    print("Unmatched objects: {}".format(sorted_unmatched_objs))
 
 
 def preprocess(img_folder, max_faces=10):
@@ -509,10 +610,12 @@ def preprocess(img_folder, max_faces=10):
         )
         for obj_id, obj in model_env_with_prediction_sets.items():
             model_env_with_prediction_sets[obj_id] = get_all_versions_of_object(
-                obj, gt_env[obj_id])
+                obj, gt_env[obj_id]
+            )
         # this is a LIST of environments
         model_env_with_prediction_sets = get_all_versions_of_image(
-            model_env_with_prediction_sets)
+            model_env_with_prediction_sets
+        )
         # print("environment:", env)
         score = len(gt_env)
         # print("score:", score)
@@ -545,16 +648,17 @@ def preprocess(img_folder, max_faces=10):
 
 def get_all_versions_of_object(obj, gt_obj):
     # obj_lists = get_all_versions_helper(list(obj.items()))
-    model_obj = {key: obj[key] for key in [
-        "Smile", "EyesOpen", "MouthOpen", "Eyeglasses"] if key in obj}
+    model_obj = {
+        key: obj[key]
+        for key in ["Smile", "EyesOpen", "MouthOpen", "Eyeglasses"]
+        if key in obj
+    }
     if obj["Type"] != "Face":
         return [obj]
-    options = [obj["Smile"], obj["EyesOpen"],
-               obj["MouthOpen"], obj["Eyeglasses"]]
+    options = [obj["Smile"], obj["EyesOpen"], obj["MouthOpen"], obj["Eyeglasses"]]
     all_lists = list(itertools.product(*options))
     all_dicts = [
-        {"Smile": l[0], "EyesOpen": l[1],
-            "MouthOpen": l[2], "Eyeglasses": l[3]}
+        {"Smile": l[0], "EyesOpen": l[1], "MouthOpen": l[2], "Eyeglasses": l[3]}
         for l in all_lists
     ]
     for key in {"Smile", "EyesOpen", "MouthOpen", "Eyeglasses"}:
@@ -562,8 +666,11 @@ def get_all_versions_of_object(obj, gt_obj):
     all_full_dicts = []
     for d in all_dicts:
         all_full_dicts.append(d | obj)
-    gt_obj = {key: gt_obj[key] for key in [
-        "Smile", "EyesOpen", "MouthOpen", "Eyeglasses"] if key in gt_obj}
+    gt_obj = {
+        key: gt_obj[key]
+        for key in ["Smile", "EyesOpen", "MouthOpen", "Eyeglasses"]
+        if key in gt_obj
+    }
     print(gt_obj)
     print(model_obj)
 
@@ -591,11 +698,11 @@ def noisify_env(env):
     for obj_id, details in env.items():
         new_details = details.copy()
         noisy_env[obj_id] = new_details
-        if details['Type'] != 'Face':
+        if details["Type"] != "Face":
             continue
-        for key in {'Smile', 'EyesOpen', 'MouthOpen'}:
+        for key in {"Smile", "EyesOpen", "MouthOpen"}:
             rand1 = random.random()
-            if rand1 > .8:
+            if rand1 > 0.8:
                 if key in new_details:
                     del new_details[key]
                     continue
@@ -610,19 +717,19 @@ def clean_environment(img_to_environment):
     for lib in img_to_environment.values():
         gt = lib["ground_truth"]
         labels = lib["model_env"]
-        pset_labels = lib["model_env_psets"]
+        # pset_labels = lib["model_env_psets"]
         new_ground_truth = {}
         new_model_env = {}
-        new_model_env_psets = [{} for _ in pset_labels]
+        # new_model_env_psets = [{} for _ in pset_labels]
         for obj_hash, details in gt.items():
             new_ground_truth[new_id] = details
             new_model_env[new_id] = labels[obj_hash]
-            for i, possible_pset_label in enumerate(pset_labels):
-                new_model_env_psets[i][new_id] = possible_pset_label[obj_hash]
+            # for i, possible_pset_label in enumerate(pset_labels):
+            #     new_model_env_psets[i][new_id] = possible_pset_label[obj_hash]
             new_id = str(int(new_id) + 1)
         lib["ground_truth"] = new_ground_truth
         lib["model_env"] = new_model_env
-        lib["model_env_psts"] = new_model_env_psets
+        # lib["model_env_psts"] = new_model_env_psets
 
 
 def write_logs(logs):
@@ -676,8 +783,7 @@ def get_positions() -> List[Position]:
 
 def get_valid_indices(env, output_under, output_over):
     req_indices = set(
-        [env[obj_id]["Index"]
-            for obj_id in output_under if "Index" in env[obj_id]]
+        [env[obj_id]["Index"] for obj_id in output_under if "Index" in env[obj_id]]
     )
     if len(req_indices) == 1:
         return req_indices
@@ -722,9 +828,10 @@ def get_valid_words(env, output_under, output_over):
 
 
 def get_valid_objects(env, output_under, output_over):
+    if not env:
+        return ["person", "car", "chair", "traffic light", "dining table", "handbag"]
     req_objects = set(
-        [env[obj_id]["Name"]
-            for obj_id in output_under if "Name" in env[obj_id]]
+        [env[obj_id]["Name"] for obj_id in output_under if "Name" in env[obj_id]]
     )
     if len(req_objects) == 1:
         return req_objects
@@ -733,8 +840,7 @@ def get_valid_objects(env, output_under, output_over):
     return sorted(
         list(
             set(
-                [env[obj_id]["Name"]
-                    for obj_id in output_over if "Name" in env[obj_id]]
+                [env[obj_id]["Name"] for obj_id in output_over if "Name" in env[obj_id]]
             )
         )
     )
@@ -742,8 +848,7 @@ def get_valid_objects(env, output_under, output_over):
 
 def invalid_output(output_over, output_under, prog_output):
     return not (
-        output_under.issubset(
-            prog_output) and prog_output.issubset(output_over)
+        output_under.issubset(prog_output) and prog_output.issubset(output_over)
     )
 
 
@@ -783,7 +888,15 @@ def get_ast_depth(prog):
         return max([get_ast_depth(extr) for extr in prog.extractors]) + 1
     if isinstance(prog, Complement) or isinstance(prog, Map):
         return get_ast_depth(prog.extractor) + 1
-    if isinstance(prog, IsFace) or isinstance(prog, IsText) or isinstance(prog, IsPhoneNumber) or isinstance(prog, IsPrice) or isinstance(prog, IsSmiling) or isinstance(prog, EyesOpen) or isinstance(prog, MouthOpen):
+    if (
+        isinstance(prog, IsFace)
+        or isinstance(prog, IsText)
+        or isinstance(prog, IsPhoneNumber)
+        or isinstance(prog, IsPrice)
+        or isinstance(prog, IsSmiling)
+        or isinstance(prog, EyesOpen)
+        or isinstance(prog, MouthOpen)
+    ):
         return 2
     else:
         return 3
@@ -799,8 +912,25 @@ def get_ast_size(prog):
             extra_size = 1
         else:
             extra_size = 2
-        return get_ast_size(prog.extractor) + get_ast_size(prog.restriction) + extra_size - 1
-    if isinstance(prog, IsFace) or isinstance(prog, IsText) or isinstance(prog, IsPhoneNumber) or isinstance(prog, IsPrice) or isinstance(prog, IsSmiling) or isinstance(prog, EyesOpen) or isinstance(prog, MouthOpen):
+        return (
+            get_ast_size(prog.extractor)
+            + get_ast_size(prog.restriction)
+            + extra_size
+            - 1
+        )
+    if (
+        isinstance(prog, IsFace)
+        or isinstance(prog, IsText)
+        or isinstance(prog, IsPhoneNumber)
+        or isinstance(prog, IsPrice)
+        or isinstance(prog, IsSmiling)
+        or isinstance(prog, EyesOpen)
+        or isinstance(prog, MouthOpen)
+    ):
         return 2
     else:
         return 3
+
+
+if __name__ == "__main__":
+    compare_gt_and_model()
