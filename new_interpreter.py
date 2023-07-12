@@ -3,6 +3,41 @@ from utils import *
 from image_utils import *
 
 
+def checkMatchingObj(var, obj):
+    return (
+        (var == "face" and obj["Type"] == "Face")
+        or (var == "smilingFace" and "Smile" in obj)
+        or (var == "eyesOpenFace" and "EyesOpen" in obj)
+        or (
+            var.startswith("id")
+            and var[2:].isdigit()
+            and "Index" in obj
+            and obj["Index"] == int(var[2:])
+        )
+        or (obj["Type"] == "Object" and obj["Name"].lower() == var.lower())
+    )
+
+
+def checkIsAbove(obj1, obj2):
+    left1, top1, right1, bottom1 = obj1["Loc"]
+    left2, top2, right2, bottom2 = obj2["Loc"]
+    center_y_1 = (top1 + bottom1) / 2
+    center_y_2 = (top2 + bottom2) / 2
+    if right1 < left2 or left1 > right2:
+        return False
+    return center_y_1 < center_y_2
+
+
+def checkIsLeft(obj1, obj2):
+    left1, top1, right1, bottom1 = obj1["Loc"]
+    left2, top2, right2, bottom2 = obj2["Loc"]
+    center_x_1 = (top1 + bottom1) / 2
+    center_x_2 = (top2 + bottom2) / 2
+    if bottom1 < top2 or top1 > bottom2:
+        return False
+    return center_x_1 < center_x_2
+
+
 def eval_prog(prog, env, vars_to_vals={}):
     if isinstance(prog, Exists):
         for obj in env.values():
@@ -41,41 +76,58 @@ def eval_prog(prog, env, vars_to_vals={}):
             return eval_prog(prog.subformula2, env, vars_to_vals)
         return True
     if isinstance(prog, IsAbove):
-        # TODO: make this more flexible
-        if prog.var1 not in vars_to_vals or prog.var2 not in vars_to_vals:
+        if prog.var1 not in vars_to_vals:
             return False
-        val1, val2 = vars_to_vals[prog.var1], vars_to_vals[prog.var2]
-        left1, top1, right1, bottom1 = val1["Loc"]
-        left2, top2, right2, bottom2 = val2["Loc"]
-        center_y_1 = (top1 + bottom1) / 2
-        center_y_2 = (top2 + bottom2) / 2
-        if right1 < left2 or left1 > right2:
-            return False
-        return center_y_1 < center_y_2
+        val1 = vars_to_vals[prog.var1]
+        if prog.var2 in vars_to_vals:
+            val2 = vars_to_vals[prog.var2]
+            return checkIsAbove(val1, val2)
+        for obj in env.values():
+            if checkMatchingObj(prog.var2, obj):
+                return checkIsAbove(val1, obj)
     if isinstance(prog, IsLeft):
-        if prog.var1 not in vars_to_vals or prog.var2 not in vars_to_vals:
+        if prog.var1 not in vars_to_vals:
             return False
-        val1, val2 = vars_to_vals[prog.var1], vars_to_vals[prog.var2]
-        left1, top1, right1, bottom1 = val1["Loc"]
-        left2, top2, right2, bottom2 = val2["Loc"]
-        center_x_1 = (top1 + bottom1) / 2
-        center_x_2 = (top2 + bottom2) / 2
-        if bottom1 < top2 or top1 > bottom2:
+        val1 = vars_to_vals[prog.var1]
+        if prog.var2 in vars_to_vals:
+            val2 = vars_to_vals[prog.var2]
+            return checkIsLeft(val1, val2)
+        for obj in env.values():
+            if checkMatchingObj(prog.var2, obj):
+                if checkIsLeft(val1, obj):
+                    return True
             return False
-        return center_x_1 < center_x_2
     if isinstance(prog, IsInside):
-        if prog.var1 not in vars_to_vals or prog.var2 not in vars_to_vals:
+        if prog.var1 not in vars_to_vals:
             return False
-        val1, val2 = vars_to_vals[prog.var1], vars_to_vals[prog.var2]
-        return is_contained(val1["Loc"], val2["Loc"])
+        val1 = vars_to_vals[prog.var1]
+        if prog.var2 in vars_to_vals:
+            val2 = vars_to_vals[prog.var2]
+            return is_contained(val1["Loc"], val2["Loc"])
+        for obj in env.values():
+            if checkMatchingObj(prog.var2, obj):
+                if is_contained(val1["Loc"], obj["Loc"]):
+                    return True
+            return False
     if isinstance(prog, IsNextTo):
-        if prog.var1 not in vars_to_vals or prog.var2 not in vars_to_vals:
+        if prog.var1 not in vars_to_vals:
             return False
-        val1, val2 = vars_to_vals[prog.var1], vars_to_vals[prog.var2]
-        return (
-            val1["ObjPosInImgLeftToRight"] == val2["ObjPosInImgLeftToRight"] + 1
-            or val1["ObjPosInImgLeftToRight"] == val2["ObjPosInImgLeftToRight"] - 1
-        )
+        val1 = vars_to_vals[prog.var1]
+        if prog.var2 in vars_to_vals:
+            val2 = vars_to_vals[prog.var2]
+            return (
+                val1["ObjPosInImgLeftToRight"] == val2["ObjPosInImgLeftToRight"] + 1
+                or val1["ObjPosInImgLeftToRight"] == val2["ObjPosInImgLeftToRight"] - 1
+            )
+        for obj in env.values():
+            if checkMatchingObj(prog.var2, obj):
+                if (
+                    val1["ObjPosInImgLeftToRight"] == obj["ObjPosInImgLeftToRight"] + 1
+                    or val1["ObjPosInImgLeftToRight"]
+                    == obj["ObjPosInImgLeftToRight"] - 1
+                ):
+                    return True
+            return False
 
 
 def test_interpreter():
