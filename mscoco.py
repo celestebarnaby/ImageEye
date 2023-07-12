@@ -219,4 +219,8 @@ def make_dataset():
     print(len(new_dataset))
     for filename in new_dataset:
         img_dir = img_folder + filename
-        shutil.copyfile(img_dir, "../objects/" + filename)
+        shutil.copyfile(img_dir, "./mscoco_images/" + filename)
+
+
+if __name__ == "__main__":
+    make_dataset()
