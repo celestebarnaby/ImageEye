@@ -38,6 +38,8 @@ Our current interface is a pretty simple command line tool, but it gets the job 
 
 ## Active Learning
 
+To set up environment, `conda env create -n imageeye --file imageeye.yml`
+
 The mscoco test set is located in the `mscoco_images` directory. To regenerate this test set, run `python mscoco.py --make_dataset True`.
 
 To generate the environment for this images (i.e. the symbolic version of each image), run `python mscoco.py --preprocess_dataset True`
