@@ -1,4 +1,3 @@
-import itertools
 from new_dsl import *
 from new_interpreter import *
 

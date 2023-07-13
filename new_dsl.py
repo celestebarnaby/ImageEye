@@ -9,7 +9,8 @@ class ForAll(Formula):
         self.subformula = subformula
 
     def __str__(self):
-        return type(self).__name__ + "(" + self.var + "," + str(self.subformula) + ")"
+        # return type(self).__name__ + "(" + self.var + "," + str(self.subformula) + ")"
+        return "ForAll {}.({})".format(self.var, str(self.subformula))
 
 
 class Exists(Formula):
@@ -19,7 +20,8 @@ class Exists(Formula):
         self.subformula = subformula
 
     def __str__(self):
-        return type(self).__name__ + "(" + self.var + "," + str(self.subformula) + ")"
+        # return type(self).__name__ + "(" + self.var + "," + str(self.subformula) + ")"
+        return "Exists {}.({})".format(self.var, str(self.subformula))
 
 
 class Subformula(Formula):
@@ -32,14 +34,15 @@ class And(Subformula):
         self.subformula2 = subformula2
 
     def __str__(self):
-        return (
-            type(self).__name__
-            + "("
-            + str(self.subformula1)
-            + ","
-            + str(self.subformula2)
-            + ")"
-        )
+        # return (
+        #     type(self).__name__
+        #     + "("
+        #     + str(self.subformula1)
+        #     + ","
+        #     + str(self.subformula2)
+        #     + ")"
+        # )
+        return "({}) And ({})".format(str(self.subformula1), str(self.subformula2))
 
 
 class IfThen(Subformula):
@@ -48,14 +51,15 @@ class IfThen(Subformula):
         self.subformula2 = subformula2
 
     def __str__(self):
-        return (
-            type(self).__name__
-            + "("
-            + str(self.subformula1)
-            + ","
-            + str(self.subformula2)
-            + ")"
-        )
+        # return (
+        #     type(self).__name__
+        #     + "("
+        #     + str(self.subformula1)
+        #     + ","
+        #     + str(self.subformula2)
+        #     + ")"
+        # )
+        return "({}) -> ({})".format(str(self.subformula1), str(self.subformula2))
 
 
 class Not(Subformula):
@@ -63,7 +67,8 @@ class Not(Subformula):
         self.subformula = subformula
 
     def __str__(self):
-        return type(self).__name__ + "(" + str(self.subformula) + ")"
+        # return type(self).__name__ + "(" + str(self.subformula) + ")"
+        return "Not ({})".format(str(self.subformula))
 
 
 class Predicate(Subformula):

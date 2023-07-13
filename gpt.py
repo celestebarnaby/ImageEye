@@ -555,6 +555,47 @@ def gtp_experiment1():
             fw.writerow(row)
 
 
+def camel_case_to_words(camel_case_string):
+    # Split camel case string into separate words
+    words = re.findall(r"[A-Z](?:[a-z]+|[A-Z]*(?=[A-Z]|$))", camel_case_string)
+
+    # Convert words to lowercase and join with a space
+    separate_words = " ".join(word.lower() for word in words)
+
+    return separate_words
+
+
+def insert_and_after_last_comma(string):
+    parts = string.rsplit(",", 1)
+    if len(parts) > 1:
+        return f"{parts[0]}, and {parts[1].strip()}"
+    else:
+        return string
+
+
+def get_holes(tree):
+    holes = []
+    for var_node in tree.var_nodes:
+        node = tree.nodes[var_node]
+        if isinstance(node, Predicate):
+            holes.append(camel_case_to_words)
+        else:
+            holes.append(str(node))
+    return holes
+
+
+def ask_for_hole_expl(holes):
+    hole_str = ", ".join(holes)
+    hole_str = insert_and_after_last_comma(hole_str)
+    plural = "s" if len(holes) > 1 else ""
+    expl = """
+I don't know the term{} {}. Can you add a few positive and negative examples to show me what you mean?
+""".format(
+        plural, hole_str
+    )
+    return expl
+
+
 def make_text_query(query, env, examples):
     example_progs = [
         (
@@ -605,7 +646,7 @@ def make_text_query(query, env, examples):
     query_content = "task: {}\nprogram: ".format(query)
     message = {"role": "system", "content": message_text + query_content}
     gpt_output = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo", temperature=0.8, messages=[message], n=5
+        model="gpt-3.5-turbo", temperature=0.9, messages=[message], n=20
     )
     objects = get_objects(env)
     # output_trees = [
@@ -617,28 +658,32 @@ def make_text_query(query, env, examples):
         tree = Tree()
         gpt_text = choice["message"]["content"].strip()
         # We only take the progs that parse
-        if parse_formula2(gpt_text, tree, objects):
-            output_trees.append((tree, gpt_text))
+        res, holes = parse_formula2(gpt_text, tree, objects, [])
+        if res:
+            output_trees.append((tree, gpt_text, holes))
 
     print("GPT output:")
     print([choice["message"]["content"] for choice in gpt_output["choices"]])
     print()
 
     output_progs = [
-        (fill_in_holes(tree, examples, env, objects), gpt_text)
+        (fill_in_holes(tree, examples, env, objects), gpt_text, holes)
         if len(tree.var_nodes) > 0
-        else (construct_prog_from_tree(tree), gpt_text)
-        for tree, gpt_text in output_trees
+        else (construct_prog_from_tree(tree), gpt_text, holes)
+        for tree, gpt_text, holes in output_trees
     ]
 
-    output_progs = list(filter(lambda x: x is not None, output_progs))
+    output_progs = list(filter(lambda x: x[0] is not None, output_progs))
     print("Progs:")
-    print([str(prog) for (prog, _) in output_progs])
+    print([str(prog) for (prog, _, _) in output_progs])
     print()
+
+    if not output_progs:
+        return [], "", "Something went wrong :("
 
     if examples:
         progs_matching_examples = []
-        for prog, _ in output_progs:
+        for prog, _, _ in output_progs:
             matching = True
             for img, output in examples:
                 if eval_prog(prog, env[img]["environment"]) != output:
@@ -646,15 +691,29 @@ def make_text_query(query, env, examples):
                     break
             if matching:
                 progs_matching_examples.append(prog)
+        if not progs_matching_examples:
+            return (
+                [],
+                "",
+                "I don't think your query matches your example images. Can you replace some of your examples with different images, or edit your text query?",
+            )
+        top_prog = progs_matching_examples[0]
     else:
-        progs_matching_examples = output_progs
-    if not progs_matching_examples:
-        return (
-            [],
-            str([choice["message"]["content"] for choice in gpt_output["choices"]]),
-            "Your text query doesn't match your example images.",
-        )
-    top_prog, top_gpt_text = progs_matching_examples[0]
+        progs_without_holes = list(filter(lambda x: len(x[2]) == 0, output_progs))
+        if not progs_without_holes:
+            top_prog, top_gpt_text, holes = output_progs[0]
+            return [], str(top_prog), ask_for_hole_expl(set(holes))
+        top_prog, top_gpt_text, _ = progs_without_holes[0]
+
+    if not top_prog:
+        print("find source of error")
+        raise TypeError
+        # return (
+        #     [],
+        #     str([choice["message"]["content"] for choice in gpt_output["choices"]]),
+        #     "Your text query doesn't match your example images.",
+        # )
+    # top_prog, top_gpt_text = progs_matching_examples[0]
     matching_imgs = []
     print("Top prog:")
     print(top_prog)
@@ -666,27 +725,27 @@ def make_text_query(query, env, examples):
     # expl_query = "Write this formula in plain english: {}".format(str(top_gpt_text))
     expl_query = """
     input: ForAll x.(Exists y.((Is(y, cat)) And ((Is(x, person)) -> (IsNextTo(x, y)))))
-    output: I found all images where every person is next to a cat.
+    output: I found all images where every person I can see is next to a cat.
 
     input: Exists x.((Is(x, smilingFace)) And (Is(x, eyesOpenFace)))
-    output: I found all images that contain a face that is smiling, and has their eyes open.
+    output: I found all images where I can see a face that is smiling, and has their eyes open.
     
     input: Exists x.(ForAll y.((Is(x, Alice)) And ((Is(y, face)) -> (Is(y, smilingFace)))))
-    output: I found all images where Alice is in the image and everyone is smiling.
+    output: I found all images where I see Alice and everyone I can see is smiling.
 
     input: Exists x.(Exists y.((Is(y, cat) And ((Is(x, box)) And (IsInside(y, x))))))
-    output: I found all images where there is a cat inside a box.
+    output: I found all images where I can see a cat inside a box.
 
     input: Exists x.(Exists y.((Is(x, chair)) And (Is(y, table))))
-    output: I found all images where there is a chair and a table",
+    output: I found all images where I can see a chair and a table",
 
     input: ForAll x.((Is(x, face)) -> (Not (Is(x, smilingFace))))
-    output: I found all images where no faces are smiling.
+    output: I found all images where no faces that I can see are smiling.
 
     input: {}
     output:
     """.format(
-        top_gpt_text
+        str(top_prog)
     )
     expl_message = {"role": "system", "content": expl_query}
     expl_output = openai.ChatCompletion.create(
@@ -759,7 +818,7 @@ def gpt_experiment2():
         message = {"role": "system", "content": message_text + query_content}
         print(message)
         output = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo", temperature=0.8, messages=[message], n=5
+            model="gpt-3.5-turbo", temperature=0.8, messages=[message], n=20
         )
         print(output)
         rows.append(
@@ -835,7 +894,7 @@ str_to_pred = {
 }
 
 
-def parse_formula2(formula, tree, objects, parent_node_num=None, used_vars=[]):
+def parse_formula2(formula, tree, objects, holes, parent_node_num=None, used_vars=[]):
     formulas = [
         ("^ForAll (\w*).\((.*)\)$", ForAll),
         ("^Exists (\w*).\((.*)\)$", Exists),
@@ -858,14 +917,14 @@ def parse_formula2(formula, tree, objects, parent_node_num=None, used_vars=[]):
             new_node = f(var, None)
             tree.nodes[new_node_num] = new_node
             tree.to_children[new_node_num] = []
-            successful_parse = parse_formula2(
-                subformula, tree, objects, new_node_num, used_vars
+            successful_parse, _ = parse_formula2(
+                subformula, tree, objects, holes, new_node_num, used_vars
             )
             if successful_parse:
                 if parent_node_num is not None:
                     tree.to_parent[new_node_num] = parent_node_num
                     tree.to_children[parent_node_num].append(new_node_num)
-                return True
+                return True, holes
     for regex, f in one_param_subformulas:
         m = re.search(regex, formula)
         if m is not None:
@@ -873,28 +932,30 @@ def parse_formula2(formula, tree, objects, parent_node_num=None, used_vars=[]):
             new_node = f(None)
             tree.nodes[new_node_num] = new_node
             tree.to_children[new_node_num] = []
-            successful_parse = parse_formula2(
-                subformula, tree, objects, new_node_num, used_vars
+            successful_parse, _ = parse_formula2(
+                subformula, tree, objects, holes, new_node_num, used_vars
             )
             if successful_parse:
                 if parent_node_num is not None:
                     tree.to_parent[new_node_num] = parent_node_num
                     tree.to_children[parent_node_num].append(new_node_num)
-                return True
+                return True, holes
     for regex, f in two_param_subformulas:
         m = re.findall(regex, formula)
         for subformula1, subformula2 in m:
             new_node = f(None, None)
             tree.nodes[new_node_num] = new_node
             tree.to_children[new_node_num] = []
-            successful_parse1, successful_parse2 = parse_formula2(
-                subformula1, tree, objects, new_node_num, used_vars
-            ), parse_formula2(subformula2, tree, objects, new_node_num, used_vars)
+            (successful_parse1, _), (successful_parse2, _) = parse_formula2(
+                subformula1, tree, objects, holes, new_node_num, used_vars
+            ), parse_formula2(
+                subformula2, tree, objects, holes, new_node_num, used_vars
+            )
             if successful_parse1 and successful_parse2:
                 if parent_node_num is not None:
                     tree.to_parent[new_node_num] = parent_node_num
                     tree.to_children[parent_node_num].append(new_node_num)
-                return True
+                return True, holes
     m = re.search(predicate, formula)
     if m is not None:
         pred_str = m.group(1)
@@ -903,6 +964,7 @@ def parse_formula2(formula, tree, objects, parent_node_num=None, used_vars=[]):
             f = str_to_pred[pred_str]
             new_node = f(var1, var2)
         else:
+            holes.append('"' + camel_case_to_words(pred_str) + '"')
             new_node = Hole("relation")
             tree.var_nodes.append(new_node_num)
         # new_node = f(var1, var2)
@@ -914,6 +976,7 @@ def parse_formula2(formula, tree, objects, parent_node_num=None, used_vars=[]):
                 new_child_node = var
             else:
                 new_child_node = Hole("var")
+                holes.append('"' + var + '"')
                 tree.var_nodes.append(new_child_node_num)
             tree.nodes[new_child_node_num] = new_child_node
             tree.to_children[new_node_num].append(new_child_node_num)
@@ -921,8 +984,8 @@ def parse_formula2(formula, tree, objects, parent_node_num=None, used_vars=[]):
         if parent_node_num is not None:
             tree.to_parent[new_node_num] = parent_node_num
             tree.to_children[parent_node_num].append(new_node_num)
-        return True
-    return False
+        return True, holes
+    return False, holes
 
 
 def test_parser():
