@@ -60,7 +60,7 @@ def get_mscoco_ground_truth(filename, img_index, num_objects):
     for i, ann in enumerate(anns):
         details = {}
         left, top, width, height = ann["bbox"]
-        details["Loc"] = (left, top, left + width, top + height)
+        details["Bbox"] = (left, top, left + width, top + height)
         details["Center"] = get_center(ann["bbox"])
         details["Type"] = "Object"
         details["Name"] = id_to_name[ann["category_id"]]
@@ -82,39 +82,41 @@ def preprocess_mscoco(img_folder, load_from_cache=True):
     img_to_environment = {}
     img_index = 0
     num_objects = 0
-    # TODO: implement this in a less dumb way. Assuming that there will be <10000 objects in gt environment
-    num_objects2 = 10000
+
     for filename in os.listdir(img_folder):
-        # print("filename:", filename)
         img_dir = img_folder + filename
         gt_env = get_mscoco_ground_truth(filename, img_index, num_objects)
         num_objects = num_objects + len(gt_env)
-        model_env = get_mscoco_environment(
-            img_dir, img_index, num_objects2, False, gt_env
-        )
-        num_objects2 = num_objects2 + len(model_env)
-        # model_env_with_prediction_sets = get_mscoco_environment(img_dir, True)
-        # for obj_id, obj in model_env_with_prediction_sets.items():
-        #     model_env_with_prediction_sets[obj_id] = get_all_versions_of_object(
-        #         obj, gt_env[obj_id])
-        # # this is a LIST of environments
-        # model_env_with_prediction_sets = get_all_versions_of_image(
-        #     model_env_with_prediction_sets)
-        # print("environment:", env)
         score = len(gt_env)
-        # print("score:", score)
         img_to_environment[img_dir] = {
             "ground_truth": gt_env,
-            "model_env": model_env,
-            # "model_env_psets": model_env_with_prediction_sets,
             "img_index": img_index,
+            # this is used for heuristically selecting examples
             "score": score,
         }
         if not gt_env:
             continue
         img_index += 1
-    # end_time = time.perf_counter()
-    # total_time = end_time - start_time
+    # do a second pass to generate the environments with predicted labels
+    for filename in os.listdir(img_folder):
+        img_dir = img_folder + filename
+        img_index = img_to_environment[img_dir]["img_index"]
+        gt_env = img_to_environment[img_dir]["ground_truth"]
+        model_env = get_mscoco_environment(
+            img_dir, img_index, num_objects, False, gt_env
+        )
+        # model_env_with_prediction_sets = get_mscoco_environment(
+        # img_dir, img_index, num_objects, True, gt_env
+        # )
+        num_objects = num_objects + len(model_env)
+        img_to_environment[img_dir]["model_env"] = model_env
+        # img_to_environment[img_dir]["model_env_with_psets"] = model_env_with_prediction_sets
+
+    test_images[img_folder] = img_to_environment
+    with open("test_images.json", "w") as fp:
+        json.dump(test_images, fp)
+
+    return img_to_environment
 
 
 def get_predictor():
@@ -138,12 +140,43 @@ def get_predictor():
 # predictor, class_names = get_predictor()
 
 
-def find_matching_obj(obj, gt_env):
-    for obj_id, gt_obj in gt_env.items():
-        if obj["Name"] != gt_obj["Name"]:
+def map_gt_objs_to_preds(env, gt_env):
+    """1. maps each ground truth object to list of predicted objects with same label and iou > 0
+    2. for each ground truth object, selects matching predicted object with max iou
+    3. generates new model environment where obj ids are replaced with matching ids in the gt env (ONLY WHEN there is a matching obj)
+    """
+
+    gt_to_preds = {gt_id: [] for gt_id in gt_env.keys()}
+    for obj_id, obj in env.items():
+        closest_matching_gt_obj = None
+        biggest_iou = 0
+        for gt_obj_id, gt_obj in gt_env.items():
+            iou = get_iou(gt_obj["Bbox"], obj["Bbox"])
+            if obj["Name"] != gt_obj["Name"] or iou <= biggest_iou:
+                continue
+            closest_matching_gt_obj = gt_obj_id
+            biggest_iou = iou
+        if closest_matching_gt_obj is not None:
+            gt_to_preds[closest_matching_gt_obj].append((biggest_iou, obj_id))
+
+    pred_to_gt = {}
+    for gt_obj_id, pred_list in gt_to_preds.items():
+        if not pred_list:
             continue
-        if get_iou(gt_obj["Loc"], obj["Loc"]) > 0.6:
-            return obj_id
+        _, matching_pred = max(pred_list)
+        pred_to_gt[matching_pred] = gt_obj_id
+
+    new_env = {}
+    for obj_id, details in env.items():
+        if obj_id in pred_to_gt:
+            new_env[pred_to_gt[obj_id]] = details
+        else:
+            new_env[obj_id] = details
+    return new_env
+
+
+def get_prediction_set(env):
+    # TODO
     return None
 
 
@@ -155,46 +188,28 @@ def get_mscoco_environment(
     predictor, class_names = get_predictor()
     outputs = predictor(im)
     bboxes = outputs["instances"].pred_boxes
+    scores = outputs["instances"].scores
     classes = [class_names[i] for i in outputs["instances"].pred_classes]
     obj_list = [
         {
             "Name": name.lower(),
-            "Loc": bbox.tolist(),
+            "Bbox": bbox.tolist(),
             "Center": get_center(bbox.tolist()),
+            "ConfidenceScore": score.item(),
             "ImgIndex": img_index,
             "Type": "Object",
         }
-        for (name, bbox) in zip(classes, bboxes)
+        for (name, bbox, score) in zip(classes, bboxes, scores)
     ]
     sorted_objs = sorted(obj_list, key=lambda x: x["Center"][0])
     env = {}
     for i, details in enumerate(sorted_objs):
         details["ObjPosInImgLeftToRight"] = i
-        matching_id = find_matching_obj(details, gt_env)
-        if matching_id:
-            env[matching_id] = details
-        else:
-            env[str(i + num_objects)] = details
+        env[str(i + num_objects)] = details
+    env = map_gt_objs_to_preds(env, gt_env)
+    if use_prediction_sets:
+        return get_prediction_set(env)
     return env
-
-
-# def preprocess():
-#     img_folder = "../mscoco/smallcoco/"
-#     i = 0
-#     for filename in os.listdir(img_folder):
-#         img_dir = img_folder + filename
-#         img_id = filename_to_id[filename]
-#         annIds = coco.getAnnIds(imgIds=img_id)
-#         anns = coco.loadAnns(annIds)
-#         env = {}
-#         for ann in anns:
-#             details = {}
-#             details["Loc"] = ann["bbox"]
-#             details["Type"] = "Object"
-#             details["Name"] = id_to_name[ann["category_id"]]
-#             env[i] = details
-#             i += 1
-#     print(env)
 
 
 def check_objects():
@@ -272,7 +287,7 @@ def get_args():
     parser.add_argument(
         "--make_dataset",
         type=bool,
-        default=True,
+        default=False,
     )
     parser.add_argument(
         "--preprocess_dataset",
