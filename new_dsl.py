@@ -28,7 +28,7 @@ class Subformula(Formula):
     pass
 
 
-class And(Subformula):
+class And(Formula):
     def __init__(self, subformula1, subformula2):
         self.subformula1 = subformula1
         self.subformula2 = subformula2
@@ -45,7 +45,7 @@ class And(Subformula):
         return "({}) And ({})".format(str(self.subformula1), str(self.subformula2))
 
 
-class IfThen(Subformula):
+class IfThen(Formula):
     def __init__(self, subformula1, subformula2):
         self.subformula1 = subformula1
         self.subformula2 = subformula2
@@ -62,7 +62,7 @@ class IfThen(Subformula):
         return "({}) -> ({})".format(str(self.subformula1), str(self.subformula2))
 
 
-class Not(Subformula):
+class Not(Formula):
     def __init__(self, subformula):
         self.subformula = subformula
 
@@ -71,7 +71,7 @@ class Not(Subformula):
         return "Not ({})".format(str(self.subformula))
 
 
-class Predicate(Subformula):
+class Predicate(Formula):
     pass
 
 

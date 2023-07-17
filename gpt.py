@@ -17,13 +17,13 @@ openai.api_key = sk
 class Hole:
     def __init__(self, node_type, val=None):
         self.node_type = node_type
-        self.val = None
+        self.val = val
 
     def __str__(self):
         return type(self).__name__
 
     def duplicate(self):
-        return Hole(self.node_type)
+        return Hole(self.node_type, self.val)
 
     def __lt__(self, other):
         if not isinstance(other, Hole):
@@ -596,6 +596,37 @@ I don't know the term{} {}. Can you add a few positive and negative examples to 
     return expl
 
 
+def prog_to_expl(prog):
+    if isinstance(prog, ForAll):
+        return "for each object {} that I can see in the image, {}".format(
+            prog.var, prog_to_expl(prog.subformula)
+        )
+    if isinstance(prog, Exists):
+        return "I can see an object {} in the image such that {}".format(
+            prog.var, prog_to_expl(prog.subformula)
+        )
+    if isinstance(prog, And):
+        return "{} and {}".format(
+            prog_to_expl(prog.subformula1), prog_to_expl(prog.subformula2)
+        )
+    if isinstance(prog, IfThen):
+        return "if {}, then {}".format(
+            prog_to_expl(prog.subformula1), prog_to_expl(prog.subformula2)
+        )
+    if isinstance(prog, Not):
+        return "it is not the case that {}".format(prog_to_expl(prog.subformula))
+    if isinstance(prog, Is):
+        return "{} is a {}".format(prog.var1, prog.var2)
+    if isinstance(prog, IsAbove):
+        return "{} is above {}".format(prog.var1, prog.var2)
+    if isinstance(prog, IsLeft):
+        return "{} is left of {}".format(prog.var1, prog.var2)
+    if isinstance(prog, IsNextTo):
+        return "{} is next to {}".format(prog.var1, prog.var2)
+    if isinstance(prog, IsNextTo):
+        return "{} is inside {}".format(prog.var1, prog.var2)
+
+
 def make_text_query(query, env, examples):
     example_progs = [
         (
@@ -649,6 +680,7 @@ def make_text_query(query, env, examples):
         model="gpt-3.5-turbo", temperature=0.9, messages=[message], n=20
     )
     objects = get_objects(env)
+    print(objects)
     # output_trees = [
     #     parse_formula2(choice["message"]["content"].strip(), Tree(), objects)
     #     for choice in output["choices"]
@@ -679,7 +711,18 @@ def make_text_query(query, env, examples):
     print()
 
     if not output_progs:
-        return [], "", "Something went wrong :("
+        if not examples:
+            return (
+                [],
+                "",
+                "I am confused by your query. Could you try writing it in a different way?",
+            )
+        else:
+            return (
+                [],
+                "",
+                "I don't think your query matches your example images. Can you replace some of your examples with different images, or edit your text query?",
+            )
 
     if examples:
         progs_matching_examples = []
@@ -723,31 +766,66 @@ def make_text_query(query, env, examples):
             matching_imgs.append(img)
     print(len(matching_imgs))
     # expl_query = "Write this formula in plain english: {}".format(str(top_gpt_text))
-    expl_query = """
-    input: ForAll x.(Exists y.((Is(y, cat)) And ((Is(x, person)) -> (IsNextTo(x, y)))))
+    # expl_query = """
+    # input: ForAll x.(Exists y.((Is(y, cat)) And ((Is(x, person)) -> (IsNextTo(x, y)))))
+    # output: I found all images where every person I can see is next to a cat.
+
+    # input: Exists x.((Is(x, smilingFace)) And (Is(x, eyesOpenFace)))
+    # output: I found all images where I can see a face that is smiling, and has their eyes open.
+
+    # input: Exists x.(ForAll y.((Is(x, Alice)) And ((Is(y, face)) -> (Is(y, smilingFace)))))
+    # output: I found all images where I see Alice and everyone I can see is smiling.
+
+    # input: Exists x.(Exists y.((Is(y, cat) And ((Is(x, box)) And (IsInside(y, x))))))
+    # output: I found all images where I can see a cat inside a box.
+
+    # input: Exists x.(Exists y.((Is(x, chair)) And (Is(y, table))))
+    # output: I found all images where I can see a chair and a table,
+
+    # input: ForAll x.((Is(x, face)) -> (Not (Is(x, smilingFace))))
+    # output: I found all images where no faces that I can see are smiling.
+
+    # input: {}
+    # output:
+    # """.format(
+    #     str(top_prog)
+    # )
+
+    expl_query2 = """
+    input: For each object x that I can see in the image, I can see an object y in the image such that if y is cat and x is person, then x is next to y.
     output: I found all images where every person I can see is next to a cat.
 
-    input: Exists x.((Is(x, smilingFace)) And (Is(x, eyesOpenFace)))
+    input: I can see an object x in the image such that x is smilingFace and x is eyesOpenFace.
     output: I found all images where I can see a face that is smiling, and has their eyes open.
-    
-    input: Exists x.(ForAll y.((Is(x, Alice)) And ((Is(y, face)) -> (Is(y, smilingFace)))))
-    output: I found all images where I see Alice and everyone I can see is smiling.
 
-    input: Exists x.(Exists y.((Is(y, cat) And ((Is(x, box)) And (IsInside(y, x))))))
+    input: I can see an object x in the image such that for each object y that I can see in the image, x is id23 and if y is face, then y is smiling face.
+    output: I found all images where I see face #23 and everyone I can see is smiling.
+
+    input: I can see an object x in the image such that I can see an object y in the image such that x is id57 and y is id6.
+    output: I found all images where I see face #57 and face #5.
+
+    input: I can see an object x in the image such that I can see an object y in the image such that y is cat and x is box and y is inside x.  
     output: I found all images where I can see a cat inside a box.
 
-    input: Exists x.(Exists y.((Is(x, chair)) And (Is(y, table))))
-    output: I found all images where I can see a chair and a table",
+    input: I can see an object x in the image such that I can see an object y in the image such that x is chair and y is table.
+    output: I found all images where I can see a chair and a table.
 
-    input: ForAll x.((Is(x, face)) -> (Not (Is(x, smilingFace))))
-    output: I found all images where no faces that I can see are smiling.
+    input: For each object x that I can see in the image, if x is face then it is not that case that x is smilingFace.
+    output:  I found all images where no faces that I can see are smiling.
+
+    input: I can see an object x in the image such that x is a cat and x is a box
+    output: I found all images where there is a cat that is a box.
+
+    input: I can see an object x in the image such that if x is person then x is person
+    output: I found all images where there is a person who is a person.
 
     input: {}
     output:
-    """.format(
-        str(top_prog)
+""".format(
+        prog_to_expl(top_prog)
     )
-    expl_message = {"role": "system", "content": expl_query}
+
+    expl_message = {"role": "system", "content": expl_query2}
     expl_output = openai.ChatCompletion.create(
         model="gpt-3.5-turbo", messages=[expl_message]
     )
@@ -972,10 +1050,14 @@ def parse_formula2(formula, tree, objects, holes, parent_node_num=None, used_var
         tree.to_children[new_node_num] = []
         for var in [var1, var2]:
             new_child_node_num = len(tree.nodes)
-            if var in used_vars or var in objects:
+            if (
+                var in used_vars
+                or var in objects
+                or var in {"smilingFace", "eyesOpenFace"}
+            ):
                 new_child_node = var
             else:
-                new_child_node = Hole("var")
+                new_child_node = Hole("var", var)
                 holes.append('"' + var + '"')
                 tree.var_nodes.append(new_child_node_num)
             tree.nodes[new_child_node_num] = new_child_node

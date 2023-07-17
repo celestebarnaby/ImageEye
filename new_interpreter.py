@@ -5,7 +5,7 @@ from image_utils import *
 
 def checkMatchingObj(var, obj):
     return (
-        (var == "face" and obj["Type"] == "Face")
+        ((var == "face" or var == "person") and obj["Type"] == "Face")
         or (var == "smilingFace" and "Smile" in obj)
         or (var == "eyesOpenFace" and "EyesOpen" in obj)
         or (
@@ -31,8 +31,8 @@ def checkIsAbove(obj1, obj2):
 def checkIsLeft(obj1, obj2):
     left1, top1, right1, bottom1 = obj1["Loc"]
     left2, top2, right2, bottom2 = obj2["Loc"]
-    center_x_1 = (top1 + bottom1) / 2
-    center_x_2 = (top2 + bottom2) / 2
+    center_x_1 = (left1 + right1) / 2
+    center_x_2 = (left2 + right2) / 2
     if bottom1 < top2 or top1 > bottom2:
         return False
     return center_x_1 < center_x_2
@@ -61,8 +61,12 @@ def eval_prog(prog, env, vars_to_vals={}):
         if prog.var1 not in vars_to_vals:
             return False
         val = vars_to_vals[prog.var1]
-        if prog.var2 == "face":
-            return val["Type"] == "Face"
+        if prog.var2 == "face" or prog.var2 == "person":
+            return (
+                val["Type"] == "Face"
+                or val["Type"] == "Object"
+                and val["Name"].lower() == "person"
+            )
         if prog.var2 == "smilingFace":
             return "Smile" in val
         if prog.var2 == "eyesOpenFace":

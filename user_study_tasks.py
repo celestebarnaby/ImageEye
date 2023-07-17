@@ -20,17 +20,17 @@ tasks = {
     },
     3: {
         "description": "Find all images where Gabe’s face is to the right of Laura’s face.",
-        "dataset": "wedding2",
+        "dataset": "wedding3",
         "gt": "gabe_right_of_laura",
     },
     4: {
         "description": "Find all images with Rachel",
-        "dataset": "wedding2",
+        "dataset": "wedding3",
         "gt": "rachel",
     },
     5: {
         "description": "Find all images that contain a face that is smiling, and has their eyes open.",
-        "dataset": "wedding2",
+        "dataset": "wedding3",
         "gt": "smiling_and_eyes_open",
     },
     6: {
