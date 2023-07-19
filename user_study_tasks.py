@@ -4,39 +4,39 @@ import os
 
 tasks = {
     0: {
-        "description": "Find all images that contain a car with a person inside (where the person’s face is visible).",
+        "description": "Find all images that contain a car with a person inside.",
         "dataset": "objects",
         "gt": "car_with_person",
     },
     1: {
-        "description": "Find all images with a guitar or a microphone",
+        "description": "Find all images with a guitar and a microphone",
         "dataset": "concert2",
-        "gt": "guitar_or_microphone",
+        "gt": "guitar_and_microphone",
     },
     2: {
-        "description": "Find all images that contain a face that is not smiling.",
+        "description": "Find all images where someone is playing guitar and no one is smiling.",
         "dataset": "concert2",
-        "gt": "not_smiling_face",
+        "gt": "guitar_and_no_smiles",
     },
     3: {
-        "description": "Find all images where Gabe’s face is to the right of Laura’s face.",
-        "dataset": "wedding3",
-        "gt": "gabe_right_of_laura",
+        "description": "Find all images with no people.",
+        "dataset": "concert2",
+        "gt": "no_people",
     },
     4: {
-        "description": "Find all images with Rachel",
+        "description": "Find all images with the bride and groom",
         "dataset": "wedding3",
-        "gt": "rachel",
+        "gt": "bride_and_groom",
     },
     5: {
-        "description": "Find all images that contain a face that is smiling, and has their eyes open.",
+        "description": "Find all images where the bride is left of the groom.",
         "dataset": "wedding3",
-        "gt": "smiling_and_eyes_open",
+        "gt": "bride_left_of_groom",
     },
     6: {
-        "description": "Find all images that contain a person whose face you can see.",
-        "dataset": "concert2",
-        "gt": "person_with_visible_face",
+        "description": "Find all images that contain the bride and not the groom.",
+        "dataset": "wedding3",
+        "gt": "bride_and_no_groom",
     },
 }
 

@@ -9,8 +9,7 @@ import SmartToyIcon from '@mui/icons-material/SmartToy';
 import AddIcon from '@mui/icons-material/Add';
 import IconButton from '@mui/material/IconButton';
 
-function SearchResults({ files, changeImage, result, exampleImages, updateResults, addToSavedImages, savedImages, robotText }) {
-
+function SearchResults({ files, changeImage, result, exampleImages, updateResults, addToSavedImages, savedImages, robotText, robotText2 }) {
   return (
     <Box sx={{ height: "100%", paddingBottom: "5%" }} className="sidebar">
       <div style={{ display: "flex", flexDirection: "row", alignItems: "center", justifyContent: "center" }}>
@@ -25,6 +24,13 @@ function SearchResults({ files, changeImage, result, exampleImages, updateResult
               text={robotText}
             />
           </div>
+          {robotText2 ? <div class="side-by-side">
+            <SmartToyIcon fontSize='large' sx={{ marginRight: "10px" }} />
+            <SpeechBubble
+              text={robotText2}
+            />
+          </div> : <div></div>}
+
           <ImageList sx={{ margin: "8px", width: "100%", height: "calc(100% - 76px)" }} cols={3} rowHeight={164}>
             {files.map(img => {
               let class_name = savedImages.includes(img) ? "grayed-out" : "";
@@ -43,7 +49,8 @@ function SearchResults({ files, changeImage, result, exampleImages, updateResult
           <SpeechBubble
             text={robotText}
           />
-        </div>}
+        </div>
+      }
     </Box>
   );
 }

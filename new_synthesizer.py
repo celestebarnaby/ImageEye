@@ -12,9 +12,11 @@ def get_relations():
     ]
 
 
-def get_objects(img_to_env):
+def get_objects(img_to_env, examples=None):
     vals = set()
-    for env in img_to_env.values():
+    for img, env in img_to_env.items():
+        if examples is not None and img not in examples:
+            continue
         env = env["environment"]
         for obj in env.values():
             if obj["Type"] == "Object":
@@ -58,21 +60,23 @@ def construct_prog_from_tree(tree, node_num=0, should_copy=False):
 def fill_in_holes(tree, example_images, img_to_env, objects):
     worklist = [tree]
     num_iters = 0
+    if not example_images:
+        return None, None
     while worklist:
         num_iters += 1
         cur_tree = worklist.pop(0)
         if not cur_tree.var_nodes:
             prog = construct_prog_from_tree(cur_tree)
             matching = True
-            if not example_images:
-                return prog
+            # if not example_images:
+            #     return prog
             for img, result in example_images:
                 env = img_to_env[img]["environment"]
                 if eval_prog(prog, env) != result:
                     matching = False
                     break
             if matching:
-                return prog
+                return prog, cur_tree.holes_to_vals
             continue
         hole_num = cur_tree.var_nodes.pop(0)
         hole = cur_tree.nodes[hole_num]
@@ -83,6 +87,8 @@ def fill_in_holes(tree, example_images, img_to_env, objects):
             new_sub_progs = objects
         for sub_prog in new_sub_progs:
             new_tree = cur_tree.duplicate()
+            if node_type == "var":
+                new_tree.holes_to_vals[hole.val] = sub_prog
             new_tree.nodes[hole_num] = sub_prog
             worklist.append(new_tree)
-    return None
+    return None, None

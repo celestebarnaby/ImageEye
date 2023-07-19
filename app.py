@@ -36,6 +36,7 @@ def text_query():
     text_query = body["text_query"]
     examples = body["examples"]
     logged_info["text queries"].append(text_query)
+    logged_info["example images"].append(examples)
     # results = get_top_N_images(
     #     text_query,
     #     tokenizer,
@@ -45,13 +46,15 @@ def text_query():
     #     img_to_embedding,
     #     search_criterion="imageeye",
     # )
-    results, prog, robot_text = make_text_query(
+    results, robot_text, robot_text2, prog = make_text_query(
         text_query, img_to_environment, list(examples.items())
     )
+    logged_info["synthesized_progs"].append(prog)
+    logged_info["synthesis_results"].append(results)
     return {
-        "program": prog,
         "search_results": results,
-        "robot_text": robot_text
+        "robot_text": robot_text,
+        "robot_text2": robot_text2
         # 'sidebarFiles': [filename for filename in imgs][:5]
     }
 
@@ -77,7 +80,7 @@ def load_files():
     logged_info["task"] = task["description"]
     logged_info["dataset"] = task["dataset"]
     logged_info["text queries"] = []
-    logged_info["annotated images"] = []
+    logged_info["example images"] = []
     logged_info["num"] = task_num
     logged_info["start time"] = time.perf_counter()
     logged_info["synthesis_results"] = []
@@ -127,31 +130,8 @@ def get_synthesis_results():
         output = eval_extractor(prog, env)
         if not output:
             continue
-        # alt_img_dir = '.' + img_dir.split('/ui')[1]
-        # results.append(alt_img_dir)
         results.append(img_dir)
     explanation = get_nl_explanation(prog)
-    # alt_used_imgs = ['.' + img_dir.split('/ui')[1] for img_dir in data.keys()]
-    # used_imgs = list(data.keys())
-    # images that are different from annotated images and in search results
-    # top_5_indices = []
-    # for i in indices:
-    #     if len(top_5_indices) >= 5:
-    #         break
-    #     if imgs[i] in used_imgs:
-    #         continue
-    #     if imgs[i] in results:
-    #         top_5_indices.append(imgs[i])
-    # # images that are similar to annotated images but NOT in search results
-    # bottom_5_indices = []
-    # for i in reversed(indices):
-    #     if len(bottom_5_indices) >= 5:
-    #         break
-    #     if imgs[i] in used_imgs:
-    #         continue
-    #     if imgs[i] not in results:
-    #         bottom_5_indices.append(imgs[i])
-    # recs = top_5_indices + bottom_5_indices
     logged_info["synthesis_results"].append(results)
     logged_info["synthesized_progs"].append(str(prog))
     response = {"program": explanation, "search_results": results}
@@ -176,10 +156,12 @@ def log_results():
                 "Task",
                 "Dataset",
                 "Text Queries",
-                "Annotated Images",
+                "Example Images",
                 "Synthesized Programs",
                 "Synthesis Results",
                 "Submitted Images",
+                "Manually Added Images",
+                "Manually Removed Images",
                 "Total Time",
             ),
         )
@@ -188,10 +170,12 @@ def log_results():
                 logged_info["task"],
                 logged_info["dataset"],
                 logged_info["text queries"],
-                logged_info["annotated images"],
+                logged_info["example images"],
                 logged_info["synthesized_progs"],
                 logged_info["synthesis_results"],
                 results["results"],
+                results["manually_added"],
+                results["manually_removed"],
                 total_time,
             )
         )

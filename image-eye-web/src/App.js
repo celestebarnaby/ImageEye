@@ -53,6 +53,9 @@ export default function App() {
   const [savedImages, setSavedImages] = useState([]);
   const [selectedObject, setSelectedObject] = useState(null);
   const [robotText, setRobotText] = useState("Enter text query and add example images to begin search.")
+  const [robotText2, setRobotText2] = useState("");
+  const [manuallyAdded, setManuallyAdded] = useState([]);
+  const [manuallyRemoved, setManuallyRemoved] = useState([]);
 
   let closeError = () => {
     setErrorMessage('');
@@ -91,17 +94,23 @@ export default function App() {
   }
 
   let addToSavedImages = (images) => {
-    images.forEach(image => handleSavedImages(image, false));
+    images.forEach(image => handleSavedImages(image, false, false));
   }
 
-  let handleSavedImages = (img_dir, remove_if_present) => {
+  let handleSavedImages = (img_dir, remove_if_present, manual) => {
     if (savedImages.includes(img_dir)) {
       if (remove_if_present) {
         const index = savedImages.indexOf(img_dir);
         savedImages.splice(index, 1);
       }
+      if (manual) {
+        manuallyRemoved.push(img_dir);
+      }
     } else {
       savedImages.push(img_dir);
+      if (manual) {
+        manuallyAdded.push(img_dir);
+      }
     }
     setSavedImages([...savedImages]);
   }
@@ -120,18 +129,11 @@ export default function App() {
     })
       .then(response => response.json())
       .then(data => {
-        // setFiles(data.files);
-        // setDataset([]);
-        // setSidebarFiles(data.sidebarFiles);
-        console.log('hi');
-        console.log(data);
         setResult(data.program);
         setSearchResults(data.search_results);
         setIsLoading(false);
-        // setMainImage(data.sidebarFiles[0]);
         setRobotText(data.robot_text);
-        console.log(robotText);
-        console.log("!!");
+        setRobotText2(data.robot_text2);
       })
   }
 
@@ -173,8 +175,6 @@ export default function App() {
             setIsLoading(false);
           } else {
             setResult(data.program);
-            // setManuallyAdded(new Set());
-            // setManuallyRemoved(new Set());
             setSearchResults(data.search_results);
             setSidebarFiles(data.recs);
             setIsLoading(false);
@@ -203,7 +203,7 @@ export default function App() {
           'Content-Type': 'application/json'
         },
         // body: JSON.stringify(searchResults)
-        body: JSON.stringify({ results: searchResults })
+        body: JSON.stringify({ results: searchResults, manually_added: manuallyAdded, manually_removed: manuallyRemoved })
       })
     }
   }
@@ -250,10 +250,12 @@ export default function App() {
             handleSavedImages={handleSavedImages}
             addToSavedImages={addToSavedImages}
             robotText={robotText}
+            robotText2={robotText2}
+            setSavedImages={setSavedImages}
           /> : <SubmittedResults searchResults={searchResults} />}
         </Box>
       </Box>
-      {/* <Dialog open={isOpen}>
+      <Dialog open={isOpen}>
         <DialogTitle>Select Task</DialogTitle>
         <DialogContent>
           <div className="side-by-side">
@@ -266,8 +268,8 @@ export default function App() {
             <button className="button-12" onClick={() => handleChange(6)}>6</button>
           </div>
         </DialogContent>
-      </Dialog> */}
-      <Dialog open={isOpen}>
+      </Dialog>
+      {/* <Dialog open={isOpen}>
         <DialogTitle>Select Dataset</DialogTitle>
         <DialogContent>
           <div className="side-by-side">
@@ -276,7 +278,7 @@ export default function App() {
             <button className="button-12" onClick={() => handleChange(3)}>Wedding</button>
           </div>
         </DialogContent>
-      </Dialog>
+      </Dialog> */}
       <Dialog open={errorMessage}>
         <DialogTitle>
           <IconButton

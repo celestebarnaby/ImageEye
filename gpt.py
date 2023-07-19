@@ -41,6 +41,7 @@ class Tree:
         # self.depth = 1
         # self.size = 1
         self.var_nodes = []
+        self.holes_to_vals = {}
 
     def duplicate(self) -> "Tree":
         ret = Tree()
@@ -55,6 +56,7 @@ class Tree:
         ret.to_parent = self.to_parent.copy()
         # ret.node_id_counter = itertools.tee(self.node_id_counter)[1]
         ret.var_nodes = self.var_nodes.copy()
+        ret.holes_to_vals = self.holes_to_vals.copy()
         # ret.depth = self.depth
         # ret.size = self.size
         return ret
@@ -596,6 +598,23 @@ I don't know the term{} {}. Can you add a few positive and negative examples to 
     return expl
 
 
+def get_hole_expl_for_top_prog(holes_to_vals):
+    holes = ['"{}"'.format(hole) for hole in holes_to_vals.keys()]
+    hole_str = ", ".join(holes)
+    hole_str = insert_and_after_last_comma(hole_str)
+    plural = "s" if len(holes) > 1 else ""
+    holes_and_vals = ['"{}" is "{}"'.format(k, v) for (k, v) in holes_to_vals.items()]
+    holes_and_vals_str = ", ".join(holes_and_vals)
+    holes_and_vals_str = insert_and_after_last_comma(holes_and_vals_str)
+    expl = """
+
+I don't know the term{} {} in your query. Based on your example images, I assume that {}. If I have made a mistake, please add some more example images to clarify what you mean.
+""".format(
+        plural, hole_str, holes_and_vals_str
+    )
+    return expl
+
+
 def prog_to_expl(prog):
     if isinstance(prog, ForAll):
         return "for each object {} that I can see in the image, {}".format(
@@ -641,34 +660,22 @@ def make_text_query(query, env, examples):
             "Alice is in the image and everyone is smiling",
             "Exists x.(ForAll y.((Is(x, Alice)) And ((Is(y, face)) -> (Is(y, smilingFace)))))",
         ),
-        # (
-        #     "The image contains a face that is not smiling",
-        #     "Exists x.((Is(x, face)) And (Not (Is(x, smilingFace))))",
-        # ),
-        # (
-        #     "Every bicycle in the image is being ridden by a person",
-        #     "ForAll x.(Exists y.((Is(y, person)) And (Is(x, bicycle)) -> (IsAbove(y, x))))",
-        # ),
         (
             "The image contains a cat inside a box.",
             "Exists x.(Exists y.((Is(y, cat) And ((Is(x, box)) And (IsInside(y, x))))))",
         ),
-        # (
-        #     "Alice is to the right of Bob",
-        #     "Exists x.((Is(x, Alice)) And (IsRight(x, Bob)))",
-        # ),
         ("There is a tree in the image.", "Exists x.(Is(x, Tree))"),
         (
             "The image contains a chair and a table",
             "Exists x.(Exists y.((Is(x, chair)) And (Is(y, table))))",
         ),
-        # (
-        #     "Alice and Bob are next to each other",
-        #     "Exists x.((Is(x, Alice)) And (IsNextTo(x, Bob)))",
-        # ),
         (
-            "All faces are not smiling",
-            "ForAll x.((Is(x, face)) -> (Not (Is(x, smilingFace))))",
+            "The image contains a chair to the left of a table",
+            "Exists x.(Exists y.((Is(x, chair)) And ((Is(y, table)) And (IsLeft(x, y)))))",
+        ),
+        (
+            "All faces do not have eyes open",
+            "ForAll x.((Is(x, face)) -> (Not (Is(x, eyesOpenFace))))",
         ),
     ]
     message_text = ""
@@ -676,15 +683,14 @@ def make_text_query(query, env, examples):
         message_text += "task: {}\nprogram:{}\n\n".format(prog[0], prog[1])
     query_content = "task: {}\nprogram: ".format(query)
     message = {"role": "system", "content": message_text + query_content}
-    gpt_output = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo", temperature=0.9, messages=[message], n=20
-    )
+    try:
+        gpt_output = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo", temperature=0.9, messages=[message], n=20
+        )
+    except:
+        return ([], "There was a server error. Try again!", "", None)
     objects = get_objects(env)
     print(objects)
-    # output_trees = [
-    #     parse_formula2(choice["message"]["content"].strip(), Tree(), objects)
-    #     for choice in output["choices"]
-    # ]
     output_trees = []
     for choice in gpt_output["choices"]:
         tree = Tree()
@@ -696,67 +702,52 @@ def make_text_query(query, env, examples):
 
     print("GPT output:")
     print([choice["message"]["content"] for choice in gpt_output["choices"]])
+    print("Num outputs parsed: {}".format(str(len(output_trees))))
     print()
 
-    output_progs = [
-        (fill_in_holes(tree, examples, env, objects), gpt_text, holes)
-        if len(tree.var_nodes) > 0
-        else (construct_prog_from_tree(tree), gpt_text, holes)
-        for tree, gpt_text, holes in output_trees
-    ]
-
-    output_progs = list(filter(lambda x: x[0] is not None, output_progs))
-    print("Progs:")
-    print([str(prog) for (prog, _, _) in output_progs])
-    print()
-
-    if not output_progs:
-        if not examples:
-            return (
-                [],
-                "",
-                "I am confused by your query. Could you try writing it in a different way?",
-            )
+    top_prog = None
+    prog_without_holes = False
+    example_imgs = [tup[0] for tup in examples]
+    env_objects = get_objects(env, example_imgs)
+    holes_to_vals = None
+    for tree, gpt_text, holes in output_trees:
+        # prog = construct_prog_from_tree(tree)
+        # print(prog)
+        if len(tree.var_nodes) > 0:
+            prog, holes_to_vals = fill_in_holes(tree, examples, env, env_objects)
+            if prog is not None:
+                top_prog = prog
+                break
         else:
-            return (
-                [],
-                "",
-                "I don't think your query matches your example images. Can you replace some of your examples with different images, or edit your text query?",
-            )
-
-    if examples:
-        progs_matching_examples = []
-        for prog, _, _ in output_progs:
+            prog = construct_prog_from_tree(tree)
+            prog_without_holes = True
             matching = True
             for img, output in examples:
                 if eval_prog(prog, env[img]["environment"]) != output:
                     matching = False
                     break
             if matching:
-                progs_matching_examples.append(prog)
-        if not progs_matching_examples:
-            return (
-                [],
-                "",
-                "I don't think your query matches your example images. Can you replace some of your examples with different images, or edit your text query?",
-            )
-        top_prog = progs_matching_examples[0]
-    else:
-        progs_without_holes = list(filter(lambda x: len(x[2]) == 0, output_progs))
-        if not progs_without_holes:
-            top_prog, top_gpt_text, holes = output_progs[0]
-            return [], str(top_prog), ask_for_hole_expl(set(holes))
-        top_prog, top_gpt_text, _ = progs_without_holes[0]
+                top_prog = prog
+                break
 
     if not top_prog:
-        print("find source of error")
-        raise TypeError
-        # return (
-        #     [],
-        #     str([choice["message"]["content"] for choice in gpt_output["choices"]]),
-        #     "Your text query doesn't match your example images.",
-        # )
-    # top_prog, top_gpt_text = progs_matching_examples[0]
+        if not examples:
+            if prog_without_holes:
+                return (
+                    [],
+                    "I am confused by your query. Could you try writing it in a different way, or adding some example images?",
+                    "",
+                    None,
+                )
+            holes = output_trees[0][2]
+            return [], ask_for_hole_expl(set(holes)), "", None
+        return (
+            [],
+            "I don't think your query matches your example images. Can you replace some of your examples with different images, or edit your text query?",
+            "",
+            None,
+        )
+
     matching_imgs = []
     print("Top prog:")
     print(top_prog)
@@ -829,7 +820,16 @@ def make_text_query(query, env, examples):
     expl_output = openai.ChatCompletion.create(
         model="gpt-3.5-turbo", messages=[expl_message]
     )
-    return matching_imgs, str(top_prog), expl_output["choices"][0]["message"]["content"]
+    if holes_to_vals:
+        hole_expl = get_hole_expl_for_top_prog(holes_to_vals)
+    else:
+        hole_expl = ""
+    return (
+        matching_imgs,
+        expl_output["choices"][0]["message"]["content"],
+        hole_expl,
+        str(top_prog),
+    )
 
 
 def gpt_experiment2():

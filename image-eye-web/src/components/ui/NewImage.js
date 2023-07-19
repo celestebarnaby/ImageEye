@@ -1,21 +1,10 @@
 import React, { useState } from 'react';
 import ImageMapper from 'react-img-mapper';
-// import ImageMapper2 from './ImageMapper2';
 import Button from '@mui/material/Button';
-import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
-import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
-import ListItemText from '@mui/material/ListItemText';
-import { Divider } from '@mui/material';
 import IconButton from '@mui/material/IconButton';
-import DeleteIcon from '@mui/icons-material/Delete';
-import ImageList from '@mui/material/ImageList';
-import ImageListItem from '@mui/material/ImageListItem';
-import { alignProperty } from '@mui/material/styles/cssUtils';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
-import SaveAltIcon from '@mui/icons-material/SaveAlt';
 
 export default function NewImage({ image, imgToEnvironment, exampleImages, selectObject, selectedObject, addImage, removeImage, objectList, imgSaved, handleSavedImages }) {
     const [hoveredObjectList, setHoveredObjectList] = useState([]);
@@ -56,9 +45,6 @@ export default function NewImage({ image, imgToEnvironment, exampleImages, selec
                 curY2 * (new_height / cur_height)
             ],
             id: i,
-            // preFillColor: ((annotated && annotations.includes(objs[i]['ObjPosInImgLeftToRight'])) ? "rgba(255, 100, 255, 0.5)" :
-            // (objectList.includes(objs[i]['ObjPosInImgLeftToRight']) || hoveredObjectList.includes(objs[i]['ObjPosInImgLeftToRight']) ? "rgba(255, 255, 255, 0.5)" : undefined)),
-            // undefined),
         };
     });
 
@@ -87,7 +73,7 @@ function UnannotatedImage(image, map, selectObject, new_width, addImage, img_dir
         {/* <img src={require(image)} className="center-image"/> */}
         <div className='side-by-side'>
             {/* <div sx={{ marginBottom: "auto" }}>Select the objects in the image that pertain to your task.</div> */}
-            <IconButton onClick={() => handleSavedImages(img_dir, true)}>{icon}</IconButton>
+            <IconButton onClick={() => handleSavedImages(img_dir, true, true)}>{icon}</IconButton>
         </div>
         <ImageMapper src={image.replace("image-eye-web/public/", "./")} map={map} onMouseLeave={(area, index) => selectObject(null)} onMouseEnter={(area, index) => selectObject(objs[index]['ObjPosInImgLeftToRight'])} toggleHighlighted={true} stayMultiHighlighted={true} width={new_width} />
         <Box className="buttons-container">
@@ -104,7 +90,9 @@ function UnannotatedImage(image, map, selectObject, new_width, addImage, img_dir
         </Box>
         {/* <div style={{ paddingBottom: "25%" }} className="side-by-side"> */}
         <div style={{ marginTop: 10, width: 500 }}>
-            {desc}
+            <Box sx={{ maxWidth: "400px" }}>
+                {desc ? desc : <div style={{ margin: 250 }} />}
+            </Box>
         </div>
         {/* </div> */}
     </Box>
@@ -118,7 +106,7 @@ function AnnotatedImage(image, map, selectObject, new_width, objs, img_dir, remo
         {/* <img src={require(image)} className="center-image"/> */}
         <div className='side-by-side'>
             <div>{text}</div>
-            <IconButton sx={{ marginLeft: "auto" }} onClick={() => handleSavedImages(img_dir, true)}>{icon}</IconButton>
+            <IconButton sx={{ marginLeft: "auto" }} onClick={() => handleSavedImages(img_dir, true, true)}>{icon}</IconButton>
         </div>
         <ImageMapper src={image.replace("image-eye-web/public/", "./")} map={map} onMouseLeave={(area, index) => selectObject(null)} onMouseEnter={(area, index) => selectObject(objs[index]['ObjPosInImgLeftToRight'])} toggleHighlighted={true} stayMultiHighlighted={true} width={new_width} />
         <Box className="buttons-container">
@@ -130,7 +118,9 @@ function AnnotatedImage(image, map, selectObject, new_width, objs, img_dir, remo
             }} variant="outlined" onClick={() => removeImage(img_dir)}>Remove Example</Button>
         </Box>
         <div>
-            {desc}
+            <Box sx={{ maxWidth: "400px" }}>
+                {desc ? desc : "\n\n\n"}
+            </Box>
         </div>
     </Box>
 }
