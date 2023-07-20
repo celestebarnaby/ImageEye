@@ -15,6 +15,7 @@ from detectron2.data import MetadataCatalog
 from image_utils import *
 import json
 import argparse
+import pickle
 
 pylab.rcParams["figure.figsize"] = (8.0, 10.0)
 
@@ -174,11 +175,49 @@ def map_gt_objs_to_preds(env, gt_env):
             new_env[obj_id] = details
     return new_env
 
+def get_conformal_quantile(score_list, delta):
+    calibration_size = len(score_list)
+    desired_quantile = np.ceil((1 - delta) * (calibration_size + 1)) / calibration_size
+    chosen_quantile = np.minimum(1.0, desired_quantile)
+    w = np.quantile(score_list, chosen_quantile)
+    return w
 
-def get_prediction_set(env):
-    # TODO
-    return None
+def get_confidence_bounds(calib_data, delta):
+    lc_score_list = list()
+    hic_score_list = list()
+    for imgname, img_envs in calib_data.items():
+        lc = 2
+        hic = -1
+        gt_env = img_envs['ground_truth']
+        # Assuming the pred_env already has detections mapped to ground truths
+        pred_env = img_envs['model_env']
+        gt_indices = gt_env.keys()
+        for index, obj in pred_env.items():
+            if index in gt_indices: # Chosen detection object
+                lc = min(obj['ConfidenceScore'], lc)
+            else:                   # Not chosen
+                hic = max(obj['ConfidenceScore'], hic)
+        lc_score_list.append(-1 * lc)
+        hic_score_list.append(hic)
 
+    delta_lc = delta / 2 # Determining uncertainty split between two scores - can be hyperparameter 
+    delta_hic = delta - delta_lc
+    lc_quantile = get_conformal_quantile(lc_score_list, delta_lc)
+    corrected_lc_quantile = -1 * lc_quantile
+    hic_quantile = get_conformal_quantile(hic_score_list, delta_hic)
+
+    return corrected_lc_quantile, hic_quantile
+
+def get_prediction_set(env, calib_data, delta):
+    # Assuming we have calibration data where ground truths are mapped to detections 
+    lc, hic = get_confidence_bounds(calib_data, delta)
+    pred_set = list()
+    for index, obj in env.items():
+        if obj['ConfidenceScore'] >= hic: # object is in image
+            pred_set.append((obj, 1))
+        elif obj['ConfidenceScore'] > lc: # object may or may not be in image
+            pred_set.append((obj, 0))
+    return pred_set
 
 def get_mscoco_environment(
     filename, img_index, num_objects, use_prediction_sets, gt_env
@@ -304,4 +343,7 @@ if __name__ == "__main__":
     if args.make_dataset:
         make_dataset(args.dataset_folder)
     if args.preprocess_dataset:
-        preprocess_mscoco(args.dataset_folder, False)
+        img_to_env = preprocess_mscoco(args.dataset_folder, False)
+
+        # Using data to get lower and upper confidence bounds for object scores 
+        lc_quantile, hic_quantile = get_confidence_bounds(img_to_env, 0.1)
