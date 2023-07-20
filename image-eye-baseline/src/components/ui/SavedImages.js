@@ -4,6 +4,7 @@ import ImageListItem from '@mui/material/ImageListItem';
 import { Typography } from '@mui/material';
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
+import Button from '@mui/material/Button';
 import KeyboardDoubleArrowRightIcon from '@mui/icons-material/KeyboardDoubleArrowRight';
 
 export default function SavedImages({ images, changeImage, submitSavedImages }) {
@@ -12,6 +13,11 @@ export default function SavedImages({ images, changeImage, submitSavedImages }) 
             <div style={{ display: "flex", flexDirection: "row", alignItems: "center", justifyContent: "center" }}>
                 <Typography>Saved Images</Typography>
                 <IconButton sx={{ color: "white" }} onClick={() => submitSavedImages()}><KeyboardDoubleArrowRightIcon /></IconButton>
+                <Button sx={{
+                    color: "#fff", '&:hover': {
+                        backgroundColor: 'orange'
+                    },
+                }} onClick={() => setSavedImages([])}>{"Clear"}</Button>
             </div>
             <ImageList
                 sx={{

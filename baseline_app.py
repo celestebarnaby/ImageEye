@@ -117,7 +117,7 @@ def log_results():
 
     logged_info["end time"] = time.perf_counter()
     total_time = logged_info["end time"] - logged_info["start time"]
-    name = "output_{}.csv".format(logged_info["num"])
+    name = "baseline_output_{}.csv".format(logged_info["num"])
     with open(name, "w") as f:
         fw = csv.writer(f)
         fw.writerow(
@@ -129,6 +129,8 @@ def log_results():
                 "Text Query Results",
                 "Image Query Results",
                 "Submitted Images",
+                "Manually Added",
+                "Manually Removed",
                 "Total Time",
             ),
         )
@@ -141,6 +143,8 @@ def log_results():
                 logged_info["text query results"],
                 logged_info["image query results"],
                 results["results"],
+                results["manually_added"],
+                results["manually_removed"],
                 total_time,
             )
         )

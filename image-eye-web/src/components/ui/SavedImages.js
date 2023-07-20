@@ -14,7 +14,7 @@ export default function SavedImages({ images, changeImage, submitSavedImages, se
                 <Typography>Saved Images</Typography>
                 <IconButton sx={{ color: "white" }} onClick={() => submitSavedImages()}><KeyboardDoubleArrowRightIcon /></IconButton>
                 <Button sx={{
-                    color: "#fff", background: "#1976D2", '&:hover': {
+                    color: "#fff", '&:hover': {
                         backgroundColor: '#305fc4'
                     },
                 }} onClick={() => setSavedImages([])}>{"Clear"}</Button>

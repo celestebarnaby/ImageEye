@@ -29,7 +29,7 @@ function Image(image, new_width, handleImageSubmit, handleSavedImages, img_dir, 
 
     return <Box>
         {/* <img src={require(image)} className="center-image"/> */}
-        <IconButton sx={{ marginLeft: "auto", display: "flex" }} onClick={() => handleSavedImages(img_dir, true)}>{icon}</IconButton>
+        <IconButton sx={{ marginLeft: "auto", display: "flex" }} onClick={() => handleSavedImages(img_dir, true, true)}>{icon}</IconButton>
         <ImageMapper src={image.replace("image-eye-web/public/", "./")} toggleHighlighted={true} stayMultiHighlighted={true} width={new_width} />
         <Box className="buttons-container">
             <Button sx={{

@@ -47,6 +47,8 @@ export default function App() {
   const [tentativeSubmit, setTentativeSubmit] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [savedImages, setSavedImages] = useState([]);
+  const [manuallyAdded, setManuallyAdded] = useState([]);
+  const [manuallyRemoved, setManuallyRemoved] = useState([]);
 
 
   let closeError = () => {
@@ -79,7 +81,7 @@ export default function App() {
           'Content-Type': 'application/json'
         },
         // body: JSON.stringify(searchResults)
-        body: JSON.stringify({ results: savedImages })
+        body: JSON.stringify({ results: savedImages, manually_added: manuallyAdded, manually_removed: manuallyRemoved })
       })
     }
   }
@@ -103,19 +105,23 @@ export default function App() {
   }
 
   let addToSavedImages = (images) => {
-    images.forEach(image => handleSavedImages(image, false));
+    images.forEach(image => handleSavedImages(image, false, false));
   }
 
-  let handleSavedImages = (img_dir, remove_if_present) => {
+  let handleSavedImages = (img_dir, remove_if_present, manual) => {
     if (savedImages.includes(img_dir)) {
       if (remove_if_present) {
         const index = savedImages.indexOf(img_dir);
         savedImages.splice(index, 1);
       }
-      // manuallyRemoved.add(img_dir)
+      if (manual) {
+        manuallyRemoved.push(img_dir)
+      }
     } else {
       savedImages.push(img_dir);
-      // manuallyAdded.add(img_dir)
+      if (manual) {
+        manuallyAdded.push(img_dir)
+      }
     }
     setSavedImages([...savedImages]);
     // setManuallyAdded(manuallyAdded);

@@ -19,6 +19,7 @@ function Sidebar({ allFiles, changeImage, handleTextChange, handleTextSubmit, sa
                 variant="outlined"
                 sx={{ background: "white" }}
                 onChange={handleTextChange}
+                autoComplete='off'
             />
             <Button sx={{
                 marginTop: 1, marginBottom: 1, backgroundColor: "#D27519", '&:hover': {

@@ -817,9 +817,12 @@ def make_text_query(query, env, examples):
     )
 
     expl_message = {"role": "system", "content": expl_query2}
-    expl_output = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo", messages=[expl_message]
-    )
+    try:
+        expl_output = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo", messages=[expl_message]
+        )
+    except:
+        return [], "There was a server error. Try again!", "", None
     if holes_to_vals:
         hole_expl = get_hole_expl_for_top_prog(holes_to_vals)
     else:
