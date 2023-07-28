@@ -43,8 +43,11 @@ button {
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    height: 100%;
-    padding-top: 50px;
+    height: 50%;
+    padding-top: 20px;
+    overflow: auto;
+    /* padding: 100px; */
+
 }
 
 .center-image {
@@ -255,4 +258,5 @@ div.scrollmenu a:hover {
     background-color: #D27519;
     color: white;
     text-align: center;
+    margin-top: auto;
 }

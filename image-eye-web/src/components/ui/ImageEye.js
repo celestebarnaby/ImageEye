@@ -8,7 +8,7 @@ import SavedImages from './SavedImages';
 import Box from '@mui/material/Box';
 
 
-export function ImageEye({ files, message, updateResults, handleTextChange, handleTextSubmit, searchResults, sidebarFiles, mainImage, changeImage, selectObject, addImage, removeImage, selectedObject, exampleImages, result, submitSavedImages, handleSavedImages, addToSavedImages, savedImages, robotText, robotText2, setSavedImages }) {
+export function ImageEye({ files, message, updateResults, handleTextChange, handleTextSubmit, searchResults, sidebarFiles, mainImage, changeImage, setHighlightedObject, addImage, removeImage, highlightedObject, exampleImages, result, submitSavedImages, handleSavedImages, addToSavedImages, savedImages, robotText, robotText2, setSavedImages, handleTaggingTextChange, handleTaggingTextSubmit, selectedObject, setSelectedObject, tags }) {
 
   // const [message, setMessage] = useState(message);
   // const [files, setFiles] = useState(files);
@@ -43,15 +43,20 @@ export function ImageEye({ files, message, updateResults, handleTextChange, hand
           image={mainImage}
           exampleImages={exampleImages}
           imgToEnvironment={message}
-          selectObject={selectObject}
+          setHighlightedObject={setHighlightedObject}
           addImage={addImage}
           removeImage={removeImage}
           getAnnotationDescription={getAnnotationDescription}
-          selectedObject={selectedObject}
+          highlightedObject={highlightedObject}
           changeImage={changeImage}
           updateResults={updateResults}
           imgSaved={imgSaved}
           handleSavedImages={handleSavedImages}
+          handleTaggingTextChange={handleTaggingTextChange}
+          handleTaggingTextSubmit={handleTaggingTextSubmit}
+          selectedObject={selectedObject}
+          setSelectedObject={setSelectedObject}
+          tags={tags}
         />
       </Box>
       <SearchResults files={searchResults} changeImage={changeImage} result={result} exampleImages={Object.keys(exampleImages)} updateResults={updateResults} addToSavedImages={addToSavedImages} savedImages={savedImages} robotText={robotText} robotText2={robotText2} />

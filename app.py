@@ -37,25 +37,23 @@ def text_query():
     examples = body["examples"]
     logged_info["text queries"].append(text_query)
     logged_info["example images"].append(examples)
-    # results = get_top_N_images(
-    #     text_query,
-    #     tokenizer,
-    #     model,
-    #     processor,
-    #     device,
-    #     img_to_embedding,
-    #     search_criterion="imageeye",
-    # )
-    results, robot_text, robot_text2, prog = make_text_query(
-        text_query, img_to_environment, list(examples.items())
-    )
+    try:
+        results, robot_text, robot_text2, prog = make_text_query(
+            text_query, img_to_environment, list(examples.items())
+        )
+    except TimeoutError:
+        results = []
+        robot_text = """
+Your query timed out. Try changing your text query, or removing some example images.
+"""
+        robot_text2 = ""
+        prog = None
     logged_info["synthesized_progs"].append(prog)
     logged_info["synthesis_results"].append(results)
     return {
         "search_results": results,
         "robot_text": robot_text,
-        "robot_text2": robot_text2
-        # 'sidebarFiles': [filename for filename in imgs][:5]
+        "robot_text2": robot_text2,
     }
 
 

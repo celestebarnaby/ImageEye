@@ -516,9 +516,6 @@ def preprocess(img_folder, max_faces=100):
     if os.path.exists("./test_images_ui.json"):
         with open("./test_images_ui.json", "r") as fp:
             test_images = json.load(fp)
-            # print(key)
-            # print(test_images.keys())
-            # raise TypeError
             if key in test_images:
                 return test_images[key], test_images[key + "obj_str"]
     client = get_client()
@@ -607,45 +604,45 @@ def get_img_vector(objs, obj_strs):
     return list(d.values())
 
 
-def consolidate_environment(img_to_environment):
-    for img, lib in img_to_environment.items():
-        env = lib["environment"]
-        new_details_list = []
-        for obj_id, obj in env.items():
-            add_face = True
-            if obj["Type"] == "Object" and obj["Name"] in {
-                "Adult",
-                "Child",
-                "Man",
-                "Male",
-                "Woman",
-                "Female",
-                "Bride",
-                "Groom",
-                "Boy",
-                "Girl",
-            }:
-                continue
-            # if obj["Type"] != "Face":
-            #     new_details_list.append((obj_id, obj))
-            #     continue
-            # for _, other_obj in env.items():
-            #     if other_obj["Type"] != "Object" or other_obj["Name"] != "Person":
-            #         continue
-            #     if is_contained(obj['Loc'], other_obj['Loc']):
-            #         add_face = False
-            #         for attr in {"Smile", "MouthOpen", "EyesOpen", "Eyeglasses", "AgeRange", "Index"}:
-            #             if attr in obj:
-            #                 other_obj[attr] = obj[attr]
-            #             other_obj["AlsoFace"] = True
-            if add_face:
-                new_details_list.append((obj_id, obj))
-        new_details_list.sort(key=lambda d: d[1]["Loc"][0])
-        new_env = {}
-        for i, (obj_id, obj) in enumerate(new_details_list):
-            obj["ObjPosInImgLeftToRight"] = i
-            new_env[obj_id] = obj
-        lib["environment"] = new_env
+# def consolidate_environment(img_to_environment):
+#     for img, lib in img_to_environment.items():
+#         env = lib["environment"]
+#         new_details_list = []
+#         for obj_id, obj in env.items():
+#             add_face = True
+#             if obj["Type"] == "Object" and obj["Name"] in {
+#                 "Adult",
+#                 "Child",
+#                 "Man",
+#                 "Male",
+#                 "Woman",
+#                 "Female",
+#                 # "Bride",
+#                 # "Groom",
+#                 "Boy",
+#                 "Girl",
+#             }:
+#                 continue
+#             # if obj["Type"] != "Face":
+#             #     new_details_list.append((obj_id, obj))
+#             #     continue
+#             # for _, other_obj in env.items():
+#             #     if other_obj["Type"] != "Object" or other_obj["Name"] != "Person":
+#             #         continue
+#             #     if is_contained(obj['Loc'], other_obj['Loc']):
+#             #         add_face = False
+#             #         for attr in {"Smile", "MouthOpen", "EyesOpen", "Eyeglasses", "AgeRange", "Index"}:
+#             #             if attr in obj:
+#             #                 other_obj[attr] = obj[attr]
+#             #             other_obj["AlsoFace"] = True
+#             if add_face:
+#                 new_details_list.append((obj_id, obj))
+#         new_details_list.sort(key=lambda d: d[1]["Loc"][0])
+#         new_env = {}
+#         for i, (obj_id, obj) in enumerate(new_details_list):
+#             obj["ObjPosInImgLeftToRight"] = i
+#             new_env[obj_id] = obj
+#         lib["environment"] = new_env
 
 
 def add_descriptions(img_to_environment):
@@ -657,6 +654,10 @@ def add_descriptions(img_to_environment):
 
 def get_description(obj):
     if obj["Type"] == "Object":
+        if obj["Name"].lower() in name_to_parent:
+            return "{}, {}".format(
+                name_to_parent[obj["Name"].lower()], obj["Name"]
+            ).capitalize()
         return obj["Name"]
     if obj["Type"] == "Text":
         return "Text that reads '{}'".format(obj["Text"])

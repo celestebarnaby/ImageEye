@@ -105,7 +105,8 @@ export default function App() {
   }
 
   let addToSavedImages = (images) => {
-    images.forEach(image => handleSavedImages(image, false, false));
+    let manual = images.length <= 3;
+    images.forEach(image => handleSavedImages(image, false, manual));
   }
 
   let handleSavedImages = (img_dir, remove_if_present, manual) => {
@@ -114,18 +115,16 @@ export default function App() {
         const index = savedImages.indexOf(img_dir);
         savedImages.splice(index, 1);
       }
-      if (manual) {
-        manuallyRemoved.push(img_dir)
+      if (manual & remove_if_present) {
+        manuallyRemoved.push(img_dir);
       }
     } else {
       savedImages.push(img_dir);
       if (manual) {
-        manuallyAdded.push(img_dir)
+        manuallyAdded.push(img_dir);
       }
     }
     setSavedImages([...savedImages]);
-    // setManuallyAdded(manuallyAdded);
-    // setManuallyRemoved(manuallyRemoved);
   }
 
 
@@ -201,6 +200,7 @@ export default function App() {
             submitSavedImages={submitSavedImages}
             savedImages={savedImages}
             addToSavedImages={addToSavedImages}
+            setSavedImages={setSavedImages}
           /> : <SubmittedResults searchResults={savedImages} />}
         </Box>
       </Box>

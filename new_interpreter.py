@@ -15,6 +15,11 @@ def checkMatchingObj(var, obj):
             and obj["Index"] == int(var[2:])
         )
         or (obj["Type"] == "Object" and obj["Name"].lower() == var.lower())
+        or (
+            obj["Type"] == "Object"
+            and obj["Name"].lower() in name_to_parent
+            and name_to_parent[obj["Name"].lower()] == var.lower()
+        )
     )
 
 
@@ -73,6 +78,11 @@ def eval_prog(prog, env, vars_to_vals={}):
             return "EyesOpen" in val
         if prog.var2.startswith("id") and prog.var2[2:].isdigit():
             return "Index" in val and val["Index"] == int(prog.var2[2:])
+        if prog.var2.lower() in name_to_parent:
+            val["Type"] == "Object" and (
+                val["Name"].lower() == prog.var2.lower()
+                or val["Name"].lower() == name_to_parent[prog.var2.lower()]
+            )
         return val["Type"] == "Object" and val["Name"].lower() == prog.var2.lower()
     if isinstance(prog, IfThen):
         if_eval = eval_prog(prog.subformula1, env, vars_to_vals)

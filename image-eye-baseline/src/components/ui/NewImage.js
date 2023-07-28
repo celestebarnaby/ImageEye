@@ -37,11 +37,6 @@ function Image(image, new_width, handleImageSubmit, handleSavedImages, img_dir, 
                     backgroundColor: '#e8933e'
                 },
             }} onClick={() => handleImageSubmit(img_dir)}>Search for Similar Images</Button>
-            {/* <Button sx={{
-                margin: "auto", backgroundColor: "#D27519", color: "#fff", '&:hover': {
-                    backgroundColor: '#e8933e'
-                },
-            }} onClick={() => handleSearchResults(img_dir)}>{button_text}</Button> */}
         </Box>
     </Box>
 }

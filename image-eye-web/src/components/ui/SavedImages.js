@@ -13,11 +13,6 @@ export default function SavedImages({ images, changeImage, submitSavedImages, se
             <div style={{ display: "flex", flexDirection: "row", alignItems: "center", justifyContent: "center" }}>
                 <Typography>Saved Images</Typography>
                 <IconButton sx={{ color: "white" }} onClick={() => submitSavedImages()}><KeyboardDoubleArrowRightIcon /></IconButton>
-                <Button sx={{
-                    color: "#fff", '&:hover': {
-                        backgroundColor: '#305fc4'
-                    },
-                }} onClick={() => setSavedImages([])}>{"Clear"}</Button>
             </div>
             <ImageList
                 sx={{
@@ -37,6 +32,14 @@ export default function SavedImages({ images, changeImage, submitSavedImages, se
                     </ImageListItem>
                 ))}
             </ImageList>
+            <Button sx={{
+                color: "#fff", '&:hover': {
+                    backgroundColor: 'orange'
+                },
+                position: 'absolute',
+                right: '0',
+                bottom: '0'
+            }} onClick={() => setSavedImages([])}>{"Clear"}</Button>
         </div>
     );
 };

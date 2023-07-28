@@ -25,7 +25,9 @@ def is_contained(bbox1, bbox2, include_edges=False):
     left1, top1, right1, bottom1 = bbox1
     left2, top2, right2, bottom2 = bbox2
     if include_edges:
-        return left1 >= left2 and top1 >= top2 and bottom1 <= bottom2 and right1 <= right2
+        return (
+            left1 >= left2 and top1 >= top2 and bottom1 <= bottom2 and right1 <= right2
+        )
     else:
         return left1 > left2 and top1 > top2 and bottom1 < bottom2 and right1 < right2
 
@@ -103,7 +105,10 @@ def get_client():
             secret_access_key = line[3]
 
     client = boto3.client(
-        "rekognition", aws_access_key_id=access_key_id, aws_secret_access_key=secret_access_key, region_name="us-west-2"
+        "rekognition",
+        aws_access_key_id=access_key_id,
+        aws_secret_access_key=secret_access_key,
+        region_name="us-west-2",
     )
     return client
 
@@ -125,8 +130,7 @@ def get_environment(
             MaxFaces=max_faces,
             DetectionAttributes=["ALL"],
         )
-        text_response = client.detect_text(
-            Image={"Bytes": get_source_bytes(img_dir)})
+        text_response = client.detect_text(Image={"Bytes": get_source_bytes(img_dir)})
         object_response = client.detect_labels(
             Image={"Bytes": get_source_bytes(img_dir)}, MaxLabels=100, MinConfidence=90
         )
@@ -136,7 +140,14 @@ def get_environment(
         object_responses.append(object_response)
         imgs.append(img)
     return get_details(
-        face_responses, text_responses, object_responses, keys, imgs, client, img_index, prev_environment
+        face_responses,
+        text_responses,
+        object_responses,
+        keys,
+        imgs,
+        client,
+        img_index,
+        prev_environment,
     )
 
 
@@ -171,8 +182,7 @@ def apply_action_to_object(action, img, details_map):
         # Insert ROI back into image
         img[top:bottom, left:right] = brightened
     elif isinstance(action, Blackout):
-        ROI = np.array([[left, top], [right, top], [
-                       right, bottom], [left, bottom]])
+        ROI = np.array([[left, top], [right, top], [right, bottom], [left, bottom]])
         cv2.fillPoly(img, pts=[ROI], color=(0, 0, 0))
     return img
 
@@ -184,7 +194,7 @@ def make_sidebar(img):
     left = 1
     right = 150 - 1
     top = 1
-    box_length = int(img_height/5) - 1
+    box_length = int(img_height / 5) - 1
     color = (0, 0, 0)
     thickness = 2
     actions = ["Blur", "Blackout", "Crop", "Undo", "Done"]
@@ -193,13 +203,19 @@ def make_sidebar(img):
         top = (box_length * i) + 1
         bottom = (box_length * (i + 1)) - 1
         cv2.rectangle(sidebar, (left, top), (right, bottom), color, thickness)
-        action_to_bb[actions[i]] = (
-            left + img_width, top, right + img_width, bottom)
-        text_horiz = int(img_width/2)
+        action_to_bb[actions[i]] = (left + img_width, top, right + img_width, bottom)
+        text_horiz = int(img_width / 2)
         # text_vert = int((bottom - box_length)/2)
         text_vert = 100
-        cv2.putText(sidebar, actions[i], (10, bottom - int(box_length/2)),
-                    cv2.FONT_HERSHEY_SIMPLEX, 1, color, thickness)
+        cv2.putText(
+            sidebar,
+            actions[i],
+            (10, bottom - int(box_length / 2)),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            1,
+            color,
+            thickness,
+        )
     return (sidebar, action_to_bb)
 
 
@@ -219,14 +235,15 @@ def annotate_image(img_dir, env):
         cur_img_with_rectangles = draw_rectangles(cur_img.copy(), cur_env)
         # if num_rounds == 0:
         cur_img_with_rectangles = np.concatenate(
-            (cur_img_with_rectangles, sidebar), axis=1)
+            (cur_img_with_rectangles, sidebar), axis=1
+        )
         # Display image
         while True:
             cv2.imshow("image", cur_img_with_rectangles)
-            cv2.namedWindow('image')
-            cv2.setMouseCallback('image', on_click, (cur_env, action_to_bb))
+            cv2.namedWindow("image")
+            cv2.setMouseCallback("image", on_click, (cur_env, action_to_bb))
             k = cv2.waitKey(1) & 0xFF
-            if k == ord('q'):
+            if k == ord("q"):
                 break
         cv2.destroyAllWindows()
         if int(action_num) == 1:
@@ -261,7 +278,7 @@ def annotate_image(img_dir, env):
         action_to_objects.append((action, list(inds)))
         inds = set()
     action_to_objects_dict = {}
-    for (action, objects) in action_to_objects:
+    for action, objects in action_to_objects:
         if action in action_to_objects_dict:
             action_to_objects_dict[action] += objects
         else:
@@ -291,7 +308,11 @@ def apply_crop(img, details_map, inds):
         if is_contained(details["Loc"], cur_coords, include_edges=True):
             new_details_map[obj_id] = copy.deepcopy(details)
             new_details_map[obj_id]["Loc"] = (
-                obj_left - left, obj_top - top, obj_right - left, obj_bottom - top)
+                obj_left - left,
+                obj_top - top,
+                obj_right - left,
+                obj_bottom - top,
+            )
     return img, new_details_map
 
 
@@ -316,22 +337,30 @@ def on_click(event, x, y, flags, params):
             ind = details_map["ObjPosInImgLeftToRight"]
             name = details_map["Name"] if "Name" in details_map else details_map["Type"]
             if x > left and x < right and y > top and y < bottom:
-                if cur_loc is None or get_size(cur_loc) > get_size((left, top, right, bottom)):
+                if cur_loc is None or get_size(cur_loc) > get_size(
+                    (left, top, right, bottom)
+                ):
                     cur_loc = (left, top, right, bottom)
                     cur_ind = ind
                     cur_name = name
         for i, (action, loc) in enumerate(list(action_to_bb.items())):
             left, top, right, bottom = loc
             if x > left and x < right and y > top and y < bottom:
-                cv2.rectangle(cur_img_with_rectangles, (left, top),
-                              (right, bottom), red_color, 2)
+                cv2.rectangle(
+                    cur_img_with_rectangles, (left, top), (right, bottom), red_color, 2
+                )
                 action_num = i + 1
                 for other_action, other_loc in action_to_bb.items():
                     if action == other_action:
                         continue
                     left, top, right, bottom = other_loc
-                    cv2.rectangle(cur_img_with_rectangles,
-                                  (left, top), (right, bottom), black_color, 2)
+                    cv2.rectangle(
+                        cur_img_with_rectangles,
+                        (left, top),
+                        (right, bottom),
+                        black_color,
+                        2,
+                    )
                 return
         if cur_loc is None:
             return
@@ -339,13 +368,23 @@ def on_click(event, x, y, flags, params):
         if cur_ind not in inds:
             inds.add(cur_ind)
             print("Added " + cur_name)
-            cv2.rectangle(cur_img_with_rectangles, (left, top),
-                          (right, bottom), green_color, thickness)
+            cv2.rectangle(
+                cur_img_with_rectangles,
+                (left, top),
+                (right, bottom),
+                green_color,
+                thickness,
+            )
         else:
             inds.remove(cur_ind)
             print("Removed " + cur_name)
-            cv2.rectangle(cur_img_with_rectangles, (left, top),
-                          (right, bottom), red_color, thickness)
+            cv2.rectangle(
+                cur_img_with_rectangles,
+                (left, top),
+                (right, bottom),
+                red_color,
+                thickness,
+            )
 
 
 def get_size(loc):
@@ -362,9 +401,44 @@ def draw_rectangles(img, env):
         color = (0, 100, 0)
         thickness = 2
         keys = []
-        img = cv2.rectangle(
-            img, (left, top), (right, bottom), color, thickness)
+        img = cv2.rectangle(img, (left, top), (right, bottom), color, thickness)
     return img
+
+
+name_to_parent = {
+    "bride": "person",
+    "groom": "person",
+}
+
+
+def find_matching_obj(env, bbox, name):
+    for obj in env.values():
+        if obj["Type"] != "Object" or obj["Name"] != name:
+            continue
+        if get_iou(bbox, obj["Loc"]) > 0.95:
+            return obj
+    return None
+
+
+def consolidate_environment(img_to_environment):
+    for img, lib in img_to_environment.items():
+        env = lib["environment"]
+        new_details_list = []
+        for obj_id, obj in env.items():
+            if obj["Type"] == "Object" and obj["Name"] in name_to_parent:
+                matching_obj = find_matching_obj(
+                    env, obj["Loc"], name_to_parent[obj["Name"]]
+                )
+                if matching_obj:
+                    matching_obj["Name"] = obj["Name"]
+            else:
+                new_details_list.append((obj_id, obj))
+        new_details_list.sort(key=lambda d: d[1]["Loc"][0])
+        new_env = {}
+        for i, (obj_id, obj) in enumerate(new_details_list):
+            obj["ObjPosInImgLeftToRight"] = i
+            new_env[obj_id] = obj
+        lib["environment"] = new_env
 
 
 def get_details(
@@ -378,7 +452,6 @@ def get_details(
     prev_environment=None,
     max_faces=10,
 ) -> Dict[str, Dict[str, Any]]:
-
     details_list = []
 
     if not prev_environment:
@@ -386,9 +459,10 @@ def get_details(
         img_count = 0
     else:
         obj_count = len(prev_environment)
-        img_count = max(item["ImgIndex"]
-                        for item in prev_environment.values()) + 1
-    for img_index, (face_response, text_response, img) in enumerate(zip(face_responses, text_responses, imgs)):
+        img_count = max(item["ImgIndex"] for item in prev_environment.values()) + 1
+    for img_index, (face_response, text_response, img) in enumerate(
+        zip(face_responses, text_responses, imgs)
+    ):
         faces = face_response["FaceRecords"]
         text_objects = text_response["TextDetections"]
         objects = object_responses[0]["Labels"]
@@ -419,15 +493,20 @@ def get_details(
                     face_index = obj_count
                 else:
                     search_response = client.search_faces(
-                        CollectionId="library2", FaceId=face_hash, MaxFaces=max_faces, FaceMatchThreshold=80
+                        CollectionId="library2",
+                        FaceId=face_hash,
+                        MaxFaces=max_faces,
+                        FaceMatchThreshold=80,
                     )
                     hashes_to_indices = {
                         details["Hash"]: details["Index"]
                         for details in prev_environment.values()
                         if details["Type"] == "Face"
                     }
-                    matched_face_hashes = [item["Face"]["FaceId"]
-                                           for item in search_response["FaceMatches"]]
+                    matched_face_hashes = [
+                        item["Face"]["FaceId"]
+                        for item in search_response["FaceMatches"]
+                    ]
                     face_index = obj_count
                     for matched_face_hash in matched_face_hashes:
                         if matched_face_hash == face_hash:
@@ -445,7 +524,9 @@ def get_details(
             if text_object["Confidence"] < 90:
                 continue
             bbox = get_loc(img, text_object["Geometry"]["BoundingBox"])
-            if not is_unique_text_object(bbox_to_text, bbox, text_object["DetectedText"]):
+            if not is_unique_text_object(
+                bbox_to_text, bbox, text_object["DetectedText"]
+            ):
                 continue
             details_map = {}
             details_map["Type"] = "Text"
@@ -463,10 +544,10 @@ def get_details(
             obj_count += 1
         for obj in objects:
             for instance in obj["Instances"]:
-                if instance["Confidence"] < 90:
+                if instance["Confidence"] < 85:
                     continue
                 # Remove redundant objects
-                if obj["Name"] in {'Adult', 'Child', 'Man', 'Male', 'Woman', 'Female', 'Bride', 'Groom'}:
+                if obj["Name"] in {"Adult", "Child", "Man", "Male", "Woman", "Female"}:
                     continue
                 details_map = {}
                 details_map["Type"] = "Object"

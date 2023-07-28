@@ -51,11 +51,14 @@ export default function App() {
   const [tentativeSubmit, setTentativeSubmit] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [savedImages, setSavedImages] = useState([]);
-  const [selectedObject, setSelectedObject] = useState(null);
+  const [highlightedObject, setHighlightedObject] = useState(null);
   const [robotText, setRobotText] = useState("Enter text query and add example images to begin search.")
   const [robotText2, setRobotText2] = useState("");
   const [manuallyAdded, setManuallyAdded] = useState([]);
   const [manuallyRemoved, setManuallyRemoved] = useState([]);
+  const [tags, setTags] = useState({});
+  const [selectedObject, setSelectedObject] = useState(null);
+  const [inputTaggingText, setInputTaggingText] = useState("");
 
   let closeError = () => {
     setErrorMessage('');
@@ -68,6 +71,7 @@ export default function App() {
   let changeImage = (image) => {
     setMainImage(image);
     setSelectedObject(null);
+    setHighlightedObject(null);
     // setObjectList([]);
   };
 
@@ -75,12 +79,13 @@ export default function App() {
     setInputText(event.target.value);
   }
 
-  let selectObject = (index) => {
-    setSelectedObject(index);
+  let handleTaggingTextChange = (event) => {
+    console.log('i hate this soooo fucking much');
+    setInputTaggingText(event.target.value);
   }
 
-  let deselectObject = () => {
-    setSelectedObject(null);
+  let dehighlightObject = () => {
+    setHighlightedObject(null);
   }
 
   let addImage = (image, val) => {
@@ -94,7 +99,8 @@ export default function App() {
   }
 
   let addToSavedImages = (images) => {
-    images.forEach(image => handleSavedImages(image, false, false));
+    let manual = images.length <= 3;
+    images.forEach(image => handleSavedImages(image, false, manual));
   }
 
   let handleSavedImages = (img_dir, remove_if_present, manual) => {
@@ -103,7 +109,7 @@ export default function App() {
         const index = savedImages.indexOf(img_dir);
         savedImages.splice(index, 1);
       }
-      if (manual) {
+      if (manual & remove_if_present) {
         manuallyRemoved.push(img_dir);
       }
     } else {
@@ -113,6 +119,16 @@ export default function App() {
       }
     }
     setSavedImages([...savedImages]);
+  }
+
+
+  let handleTaggingTextSubmit = (selectedObjectIndex, remove) => {
+    if (remove) {
+      delete tags[selectedObjectIndex];
+    } else {
+      tags[selectedObjectIndex] = inputTaggingText;
+    }
+    setTags({ ...tags });
   }
 
 
@@ -238,11 +254,11 @@ export default function App() {
             sidebarFiles={sidebarFiles}
             mainImage={mainImage}
             changeImage={changeImage}
-            selectObject={selectObject}
+            setHighlightedObject={setHighlightedObject}
             // addObjectsByName={addObjectsByName}
             addImage={addImage}
             removeImage={removeImage}
-            selectedObject={selectedObject}
+            highlightedObject={highlightedObject}
             exampleImages={exampleImages}
             result={result}
             submitSavedImages={submitSavedImages}
@@ -252,6 +268,11 @@ export default function App() {
             robotText={robotText}
             robotText2={robotText2}
             setSavedImages={setSavedImages}
+            handleTaggingTextChange={handleTaggingTextChange}
+            handleTaggingTextSubmit={handleTaggingTextSubmit}
+            selectedObject={selectedObject}
+            setSelectedObject={setSelectedObject}
+            tags={tags}
           /> : <SubmittedResults searchResults={searchResults} />}
         </Box>
       </Box>

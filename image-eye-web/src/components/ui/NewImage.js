@@ -5,9 +5,9 @@ import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
+import TextField from '@mui/material/TextField';
 
-export default function NewImage({ image, imgToEnvironment, exampleImages, selectObject, selectedObject, addImage, removeImage, objectList, imgSaved, handleSavedImages }) {
-    const [hoveredObjectList, setHoveredObjectList] = useState([]);
+export default function NewImage({ image, imgToEnvironment, exampleImages, setHighlightedObject, highlightedObject, addImage, removeImage, imgSaved, handleSavedImages, handleTaggingTextChange, handleTaggingTextSubmit, selectedObject, setSelectedObject, tags }) {
 
     let img_dir = image ? image : null;
 
@@ -21,12 +21,14 @@ export default function NewImage({ image, imgToEnvironment, exampleImages, selec
     let env = img_dir ? imgToEnvironment[img_dir]['environment'] : [];
     let i = -1;
     let objs = Object.values(env);
-    // let descs = getDescription(objs, annotations, annotated);
-    let desc = selectedObject !== null ? objs[selectedObject]["Description"] : "";
-    // let object_names = objs.filter(obj => obj["Type"] == "Object").map(obj => obj["Name"]);
-    // let type_names = objs.filter(obj => obj["Type"] != "Object").map(obj => obj["Type"]);
-    // let full_object_names = [...new Set(object_names.concat(type_names))];
     objs.sort((a, b) => ((a['Loc'][2] - a['Loc'][0]) * (a['Loc'][3] - a['Loc'][1])) - ((b['Loc'][2] - b['Loc'][0]) * (b['Loc'][3] - b['Loc'][1])))
+
+    // let descs = getDescription(objs, annotations, annotated);
+    let desc = highlightedObject !== null ? objs[highlightedObject]["Description"] : "";
+    let isFace = selectedObject !== null && objs[selectedObject]["Type"] == "Face";
+    let isTagged = isFace && Object.keys(tags).includes(objs[selectedObject]["Index"].toString());
+
+
 
     let areas = objs.map((value) => {
         const curX1 = value['Loc'][0];
@@ -58,7 +60,7 @@ export default function NewImage({ image, imgToEnvironment, exampleImages, selec
         <div>
             <Box className="image-container">
                 {image && (
-                    annotated ? AnnotatedImage(image, map, selectObject, new_width, objs, img_dir, removeImage, imgSaved, handleSavedImages, exampleImages, desc) : UnannotatedImage(image, map, selectObject, new_width, addImage, img_dir, objs, imgSaved, handleSavedImages, desc))}
+                    annotated ? AnnotatedImage(image, map, setHighlightedObject, new_width, objs, img_dir, removeImage, imgSaved, handleSavedImages, exampleImages, desc) : UnannotatedImage(image, map, setHighlightedObject, new_width, addImage, img_dir, objs, imgSaved, handleSavedImages, desc, setSelectedObject, selectedObject, isFace, handleTaggingTextChange, handleTaggingTextSubmit, isTagged))}
             </Box>
             {/* {ExampleSet(Object.keys(exampleImages), changeImage, updateResults)} */}
         </div>
@@ -66,7 +68,7 @@ export default function NewImage({ image, imgToEnvironment, exampleImages, selec
 }
 
 
-function UnannotatedImage(image, map, selectObject, new_width, addImage, img_dir, objs, imgSaved, handleSavedImages, desc) {
+function UnannotatedImage(image, map, setHighlightedObject, new_width, addImage, img_dir, objs, imgSaved, handleSavedImages, desc, setSelectedObject, selectedObject, isFace, handleTaggingTextChange, handleTaggingTextSubmit, isTagged) {
     const icon = imgSaved ? <RemoveIcon /> : <AddIcon />;
 
     return <Box>
@@ -75,7 +77,7 @@ function UnannotatedImage(image, map, selectObject, new_width, addImage, img_dir
             {/* <div sx={{ marginBottom: "auto" }}>Select the objects in the image that pertain to your task.</div> */}
             <IconButton onClick={() => handleSavedImages(img_dir, true, true)}>{icon}</IconButton>
         </div>
-        <ImageMapper src={image.replace("image-eye-web/public/", "./")} map={map} onMouseLeave={(area, index) => selectObject(null)} onMouseEnter={(area, index) => selectObject(objs[index]['ObjPosInImgLeftToRight'])} toggleHighlighted={true} stayMultiHighlighted={true} width={new_width} />
+        <ImageMapper src={image.replace("image-eye-web/public/", "./")} map={map} onMouseLeave={(area, index) => setHighlightedObject(null)} onClick={(area, index) => setSelectedObject(index)} onMouseEnter={(area, index) => setHighlightedObject(index)} toggleHighlighted={true} stayHighlighted={true} width={new_width} />
         <Box className="buttons-container">
             <Button sx={{
                 margin: "auto", color: "#fff", background: "#1976D2", '&:hover': {
@@ -91,14 +93,27 @@ function UnannotatedImage(image, map, selectObject, new_width, addImage, img_dir
         {/* <div style={{ paddingBottom: "25%" }} className="side-by-side"> */}
         <div style={{ marginTop: 10, width: 500 }}>
             <Box sx={{ maxWidth: "400px" }}>
-                {desc ? desc : <div style={{ margin: 250 }} />}
+                {desc}
             </Box>
         </div>
         {/* </div> */}
+        {isFace ?
+            (isTagged ? <Button sx={{ marginTop: 1, marginBottom: 1 }} fullWidth variant="contained" onClick={() => handleTaggingTextSubmit(objs[selectedObject]["Index"], true)}>Remove Tag</Button> : <div>
+                <Button sx={{ marginTop: 1, marginBottom: 1 }} fullWidth variant="contained" onClick={() => handleTaggingTextSubmit(objs[selectedObject]["Index"], false)}>Search </Button>
+                <TextField
+                    fullWidth
+                    id="outlined-name"
+                    label="Describe images to search"
+                    variant="outlined"
+                    sx={{ background: "white" }}
+                    onChange={handleTaggingTextChange}
+                    autoComplete='off'
+                />
+            </div>) : <div />}
     </Box>
 }
 
-function AnnotatedImage(image, map, selectObject, new_width, objs, img_dir, removeImage, imgSaved, handleSavedImages, exampleImages, desc) {
+function AnnotatedImage(image, map, setHighlightedObject, new_width, objs, img_dir, removeImage, imgSaved, handleSavedImages, exampleImages, desc) {
     const icon = imgSaved ? <RemoveIcon /> : <AddIcon />;
     const text = exampleImages[image] ? "Image has been added as a positive example." : "Image has been added as a negative example.";
 
@@ -108,7 +123,7 @@ function AnnotatedImage(image, map, selectObject, new_width, objs, img_dir, remo
             <div>{text}</div>
             <IconButton sx={{ marginLeft: "auto" }} onClick={() => handleSavedImages(img_dir, true, true)}>{icon}</IconButton>
         </div>
-        <ImageMapper src={image.replace("image-eye-web/public/", "./")} map={map} onMouseLeave={(area, index) => selectObject(null)} onMouseEnter={(area, index) => selectObject(objs[index]['ObjPosInImgLeftToRight'])} toggleHighlighted={true} stayMultiHighlighted={true} width={new_width} />
+        <ImageMapper src={image.replace("image-eye-web/public/", "./")} map={map} onMouseLeave={(area, index) => setHighlightedObject(null)} onMouseEnter={(area, index) => setHighlightedObject(objs[index]['ObjPosInImgLeftToRight'])} toggleHighlighted={true} stayMultiHighlighted={true} width={new_width} />
         <Box className="buttons-container">
             {/* <button className="button-10-2">Annotate</button> */}
             <Button sx={{

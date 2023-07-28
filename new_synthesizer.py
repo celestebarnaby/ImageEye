@@ -62,7 +62,11 @@ def fill_in_holes(tree, example_images, img_to_env, objects):
     num_iters = 0
     if not example_images:
         return None, None
+    start_time = time.perf_counter()
     while worklist:
+        cur_time = time.perf_counter()
+        if cur_time - start_time > 15:
+            raise TimeoutError
         num_iters += 1
         cur_tree = worklist.pop(0)
         if not cur_tree.var_nodes:

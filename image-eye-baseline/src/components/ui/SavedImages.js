@@ -7,17 +7,12 @@ import IconButton from '@mui/material/IconButton';
 import Button from '@mui/material/Button';
 import KeyboardDoubleArrowRightIcon from '@mui/icons-material/KeyboardDoubleArrowRight';
 
-export default function SavedImages({ images, changeImage, submitSavedImages }) {
+export default function SavedImages({ images, changeImage, submitSavedImages, setSavedImages }) {
     return (
         <div class="footer">
             <div style={{ display: "flex", flexDirection: "row", alignItems: "center", justifyContent: "center" }}>
                 <Typography>Saved Images</Typography>
                 <IconButton sx={{ color: "white" }} onClick={() => submitSavedImages()}><KeyboardDoubleArrowRightIcon /></IconButton>
-                <Button sx={{
-                    color: "#fff", '&:hover': {
-                        backgroundColor: 'orange'
-                    },
-                }} onClick={() => setSavedImages([])}>{"Clear"}</Button>
             </div>
             <ImageList
                 sx={{
@@ -37,6 +32,14 @@ export default function SavedImages({ images, changeImage, submitSavedImages }) 
                     </ImageListItem>
                 ))}
             </ImageList>
+            <Button sx={{
+                color: "#fff", '&:hover': {
+                    backgroundColor: 'orange'
+                },
+                position: 'absolute',
+                right: '0',
+                bottom: '0'
+            }} onClick={() => setSavedImages([])}>{"Clear"}</Button>
         </div>
     );
 };
