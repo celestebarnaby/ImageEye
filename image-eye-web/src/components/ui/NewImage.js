@@ -60,7 +60,7 @@ export default function NewImage({ image, imgToEnvironment, exampleImages, setHi
         <div>
             <Box className="image-container">
                 {image && (
-                    annotated ? AnnotatedImage(image, map, setHighlightedObject, new_width, objs, img_dir, removeImage, imgSaved, handleSavedImages, exampleImages, desc) : UnannotatedImage(image, map, setHighlightedObject, new_width, addImage, img_dir, objs, imgSaved, handleSavedImages, desc, setSelectedObject, selectedObject, isFace, handleTaggingTextChange, handleTaggingTextSubmit, isTagged))}
+                    annotated ? AnnotatedImage(image, map, setHighlightedObject, new_width, objs, img_dir, removeImage, imgSaved, handleSavedImages, exampleImages, desc, isFace, isTagged, tags, selectedObject, setSelectedObject, handleTaggingTextChange, handleTaggingTextSubmit) : UnannotatedImage(image, map, setHighlightedObject, new_width, addImage, img_dir, objs, imgSaved, handleSavedImages, desc, setSelectedObject, selectedObject, isFace, handleTaggingTextChange, handleTaggingTextSubmit, isTagged, tags))}
             </Box>
             {/* {ExampleSet(Object.keys(exampleImages), changeImage, updateResults)} */}
         </div>
@@ -68,7 +68,7 @@ export default function NewImage({ image, imgToEnvironment, exampleImages, setHi
 }
 
 
-function UnannotatedImage(image, map, setHighlightedObject, new_width, addImage, img_dir, objs, imgSaved, handleSavedImages, desc, setSelectedObject, selectedObject, isFace, handleTaggingTextChange, handleTaggingTextSubmit, isTagged) {
+function UnannotatedImage(image, map, setHighlightedObject, new_width, addImage, img_dir, objs, imgSaved, handleSavedImages, desc, setSelectedObject, selectedObject, isFace, handleTaggingTextChange, handleTaggingTextSubmit, isTagged, tags) {
     const icon = imgSaved ? <RemoveIcon /> : <AddIcon />;
 
     return <Box>
@@ -98,22 +98,26 @@ function UnannotatedImage(image, map, setHighlightedObject, new_width, addImage,
         </div>
         {/* </div> */}
         {isFace ?
-            (isTagged ? <Button sx={{ marginTop: 1, marginBottom: 1 }} fullWidth variant="contained" onClick={() => handleTaggingTextSubmit(objs[selectedObject]["Index"], true)}>Remove Tag</Button> : <div>
-                <Button sx={{ marginTop: 1, marginBottom: 1 }} fullWidth variant="contained" onClick={() => handleTaggingTextSubmit(objs[selectedObject]["Index"], false)}>Search </Button>
-                <TextField
-                    fullWidth
-                    id="outlined-name"
-                    label="Describe images to search"
-                    variant="outlined"
-                    sx={{ background: "white" }}
-                    onChange={handleTaggingTextChange}
-                    autoComplete='off'
-                />
-            </div>) : <div />}
+            (isTagged ?
+                <div>
+                    {"This face is tagged as " + tags[objs[selectedObject]["Index"]]["text"]}
+                    <Button sx={{ marginTop: 1, marginBottom: 1 }} fullWidth variant="contained" onClick={() => handleTaggingTextSubmit(objs[selectedObject]["Index"], true)}>Remove Tag</Button></div> :
+                <div>
+                    <Button sx={{ marginTop: 1, marginBottom: 1 }} fullWidth variant="contained" onClick={() => handleTaggingTextSubmit(objs[selectedObject]["Index"], false)}>Add Tag</Button>
+                    <TextField
+                        fullWidth
+                        id="outlined-name"
+                        // label=""
+                        variant="outlined"
+                        sx={{ background: "white" }}
+                        onChange={handleTaggingTextChange}
+                        autoComplete='off'
+                    />
+                </div>) : <div />}
     </Box>
 }
 
-function AnnotatedImage(image, map, setHighlightedObject, new_width, objs, img_dir, removeImage, imgSaved, handleSavedImages, exampleImages, desc) {
+function AnnotatedImage(image, map, setHighlightedObject, new_width, objs, img_dir, removeImage, imgSaved, handleSavedImages, exampleImages, desc, isFace, isTagged, tags, selectedObject, setSelectedObject, handleTaggingTextChange, handleTaggingTextSubmit) {
     const icon = imgSaved ? <RemoveIcon /> : <AddIcon />;
     const text = exampleImages[image] ? "Image has been added as a positive example." : "Image has been added as a negative example.";
 
@@ -123,7 +127,7 @@ function AnnotatedImage(image, map, setHighlightedObject, new_width, objs, img_d
             <div>{text}</div>
             <IconButton sx={{ marginLeft: "auto" }} onClick={() => handleSavedImages(img_dir, true, true)}>{icon}</IconButton>
         </div>
-        <ImageMapper src={image.replace("image-eye-web/public/", "./")} map={map} onMouseLeave={(area, index) => setHighlightedObject(null)} onMouseEnter={(area, index) => setHighlightedObject(objs[index]['ObjPosInImgLeftToRight'])} toggleHighlighted={true} stayMultiHighlighted={true} width={new_width} />
+        <ImageMapper src={image.replace("image-eye-web/public/", "./")} map={map} onMouseLeave={(area, index) => setHighlightedObject(null)} onClick={(area, index) => setSelectedObject(index)} onMouseEnter={(area, index) => setHighlightedObject(index)} toggleHighlighted={true} stayHighlighted={true} width={new_width} />
         <Box className="buttons-container">
             {/* <button className="button-10-2">Annotate</button> */}
             <Button sx={{
@@ -137,5 +141,22 @@ function AnnotatedImage(image, map, setHighlightedObject, new_width, objs, img_d
                 {desc ? desc : "\n\n\n"}
             </Box>
         </div>
+        {isFace ?
+            (isTagged ?
+                <div>
+                    {"This face is tagged as " + tags[objs[selectedObject]["Index"]]["text"]}
+                    <Button sx={{ marginTop: 1, marginBottom: 1 }} fullWidth variant="contained" onClick={() => handleTaggingTextSubmit(objs[selectedObject]["Index"], true)}>Remove Tag</Button></div> :
+                <div>
+                    <Button sx={{ marginTop: 1, marginBottom: 1 }} fullWidth variant="contained" onClick={() => handleTaggingTextSubmit(objs[selectedObject]["Index"], false)}>Add Tag</Button>
+                    <TextField
+                        fullWidth
+                        id="outlined-name"
+                        // label=""
+                        variant="outlined"
+                        sx={{ background: "white" }}
+                        onChange={handleTaggingTextChange}
+                        autoComplete='off'
+                    />
+                </div>) : <div />}
     </Box>
 }

@@ -36,6 +36,7 @@ export function ImageEye({ files, message, updateResults, handleTextChange, hand
         exampleImages={exampleImages}
         updateResults={updateResults}
         savedImages={savedImages}
+        tags={tags}
       />
       {/* <Box sx={{ flex: 1 }}> */}
       <Box sx={{ flex: 1, overflow: "scroll" }}>

@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import Box from '@mui/material/Box';
 
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
 import ImageList from '@mui/material/ImageList';
 import ImageListItem from '@mui/material/ImageListItem';
 import Button from '@mui/material/Button';
@@ -8,7 +10,7 @@ import TextField from '@mui/material/TextField';
 import Divider from '@mui/material/Divider';
 
 
-function Sidebar({ allFiles, changeImage, savedImages, handleTextChange, handleTextSubmit, exampleImages }) {
+function Sidebar({ allFiles, changeImage, savedImages, handleTextChange, handleTextSubmit, exampleImages, tags }) {
 
     return (
         <Box sx={{ height: "100%" }} className="sidebar">
@@ -38,6 +40,16 @@ function Sidebar({ allFiles, changeImage, savedImages, handleTextChange, handleT
                     </ImageList>
                 </Box> : <div>Add example images to refine search.</div>
             }
+            {/* {Object.keys(tags).length > 0 ?
+                <Box sx={{ paddingRight: "30px", height: "auto" }}>
+                    <h3>Tagged Faces</h3>
+                    <List sx={{ margin: "8px", width: "100%", height: "calc(100% - 76px)" }} cols={3} rowHeight={164}>
+                        {Object.values(tags).map((tag) => {
+                            return tag["text"]
+                        })}
+                    </List>
+                </Box> : <div />
+            } */}
             <Divider></Divider>
             {/* <Divider /> */}
             {AllImages(allFiles, savedImages, changeImage)}

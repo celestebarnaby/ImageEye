@@ -646,7 +646,7 @@ def prog_to_expl(prog):
         return "{} is inside {}".format(prog.var1, prog.var2)
 
 
-def make_text_query(query, env, examples):
+def make_text_query(query, env, examples, tags):
     example_progs = [
         (
             "Every person is next to a cat",
@@ -690,6 +690,7 @@ def make_text_query(query, env, examples):
     except:
         return ([], "There was a server error. Try again!", "", None)
     objects = get_objects(env)
+    objects = objects.union(tags)
     print(objects)
     output_trees = []
     for choice in gpt_output["choices"]:

@@ -25,6 +25,26 @@ model_ID = "openai/clip-vit-base-patch32"
 model, processor, tokenizer = get_model_info(model_ID, device)
 
 
+@app.route("/tagImage", methods=["POST"])
+@cross_origin()
+def tag_image():
+    global img_to_environment
+    global logged_info
+    global img_to_embedding
+
+    body = request.get_json()
+    tags = body["tags"]
+    for env in img_to_environment.values():
+        env = env["environment"]
+        for obj in env.values():
+            if str(obj["Index"]) in tags:
+                obj["Tag"] = tags[str(obj["Index"])]["text"]
+            elif "Tag" in obj:
+                del obj["Tag"]
+            obj["Description"] = get_description(obj, tags)
+    return {"message": img_to_environment}
+
+
 @app.route("/textQuery", methods=["POST"])
 @cross_origin()
 def text_query():
@@ -35,11 +55,16 @@ def text_query():
     body = request.get_json()
     text_query = body["text_query"]
     examples = body["examples"]
+    tags = body["tags"]
+    tags = set([tag["text"] for tag in tags.values()])
     logged_info["text queries"].append(text_query)
     logged_info["example images"].append(examples)
     try:
         results, robot_text, robot_text2, prog = make_text_query(
-            text_query, img_to_environment, list(examples.items())
+            text_query,
+            img_to_environment,
+            list(examples.items()),
+            tags,
         )
     except TimeoutError:
         results = []

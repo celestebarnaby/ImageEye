@@ -20,6 +20,7 @@ def checkMatchingObj(var, obj):
             and obj["Name"].lower() in name_to_parent
             and name_to_parent[obj["Name"].lower()] == var.lower()
         )
+        or (("Tag" in obj and obj["Tag"] == var.lower()))
     )
 
 
@@ -83,7 +84,9 @@ def eval_prog(prog, env, vars_to_vals={}):
                 val["Name"].lower() == prog.var2.lower()
                 or val["Name"].lower() == name_to_parent[prog.var2.lower()]
             )
-        return val["Type"] == "Object" and val["Name"].lower() == prog.var2.lower()
+        return (
+            val["Type"] == "Object" and val["Name"].lower() == prog.var2.lower()
+        ) or ("Tag" in val and val["Tag"] == prog.var2.lower())
     if isinstance(prog, IfThen):
         if_eval = eval_prog(prog.subformula1, env, vars_to_vals)
         if if_eval:

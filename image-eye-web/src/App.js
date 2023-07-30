@@ -126,15 +126,27 @@ export default function App() {
     if (remove) {
       delete tags[selectedObjectIndex];
     } else {
-      tags[selectedObjectIndex] = inputTaggingText;
+      tags[selectedObjectIndex] = { 'text': inputTaggingText };
     }
-    setTags({ ...tags });
+    var body = { tags: tags }
+    fetch('http://127.0.0.1:5001/tagImage', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      // body: JSON.stringify(inputText)
+      body: JSON.stringify(body)
+    })
+      .then(response => response.json())
+      .then(data => {
+        setMessage(data.message);
+      })
   }
 
 
   let handleTextSubmit = () => {
     setIsLoading(true);
-    var body = { text_query: inputText, examples: exampleImages }
+    var body = { text_query: inputText, examples: exampleImages, tags: tags }
     fetch('http://127.0.0.1:5001/textQuery', {
       method: 'POST',
       headers: {

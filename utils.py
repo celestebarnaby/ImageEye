@@ -652,7 +652,7 @@ def add_descriptions(img_to_environment):
             obj["Description"] = get_description(obj)
 
 
-def get_description(obj):
+def get_description(obj, tags={}):
     if obj["Type"] == "Object":
         if obj["Name"].lower() in name_to_parent:
             return "{}, {}".format(
@@ -667,7 +667,10 @@ def get_description(obj):
     if "EyesOpen" in obj:
         addl_features.append("has eyes open")
     if "Index" in obj:
-        addl_features.append("has id {}".format(obj["Index"]))
+        if str(obj["Index"]) in tags:
+            addl_features.append("tagged as {}".format(tags[str(obj["Index"])]["text"]))
+        else:
+            addl_features.append("has id {}".format(obj["Index"]))
     if addl_features:
         return "Face that {}, and is between {} and {} years old".format(
             ", ".join(addl_features), obj["AgeRange"]["Low"], obj["AgeRange"]["High"]
