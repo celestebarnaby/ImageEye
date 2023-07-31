@@ -1056,7 +1056,7 @@ def parse_formula2(formula, tree, objects, holes, parent_node_num=None, used_var
             new_child_node_num = len(tree.nodes)
             if (
                 var in used_vars
-                or var in objects
+                or var.lower() in objects
                 or var in {"smilingFace", "eyesOpenFace"}
             ):
                 new_child_node = var

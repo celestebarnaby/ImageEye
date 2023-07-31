@@ -56,7 +56,7 @@ def text_query():
     text_query = body["text_query"]
     examples = body["examples"]
     tags = body["tags"]
-    tags = set([tag["text"] for tag in tags.values()])
+    tags = set([tag["text"].lower() for tag in tags.values()])
     logged_info["text queries"].append(text_query)
     logged_info["example images"].append(examples)
     try:
