@@ -230,7 +230,7 @@ export default function App() {
           'Content-Type': 'application/json'
         },
         // body: JSON.stringify(searchResults)
-        body: JSON.stringify({ results: searchResults, manually_added: manuallyAdded, manually_removed: manuallyRemoved })
+        body: JSON.stringify({ results: savedImages, manually_added: manuallyAdded, manually_removed: manuallyRemoved })
       })
     }
   }
@@ -284,7 +284,7 @@ export default function App() {
             selectedObject={selectedObject}
             setSelectedObject={setSelectedObject}
             tags={tags}
-          /> : <SubmittedResults searchResults={searchResults} />}
+          /> : <SubmittedResults savedImages={savedImages} />}
         </Box>
       </Box>
       <Dialog open={isOpen}>

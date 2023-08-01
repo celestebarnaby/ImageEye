@@ -168,6 +168,8 @@ def log_results():
     global obj_strs
     global img_to_embedding
     results = request.get_json()
+    print("hi")
+    print(len(results["results"]))
 
     logged_info["end time"] = time.perf_counter()
     total_time = logged_info["end time"] - logged_info["start time"]

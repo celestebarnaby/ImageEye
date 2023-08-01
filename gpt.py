@@ -706,6 +706,9 @@ def make_text_query(query, env, examples, tags):
     print("Num outputs parsed: {}".format(str(len(output_trees))))
     print()
 
+    if not output_trees:
+        return ([], "I didn't understand your query.", "", None)
+
     top_prog = None
     prog_without_holes = False
     example_imgs = [tup[0] for tup in examples]
