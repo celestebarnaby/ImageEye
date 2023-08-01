@@ -80,7 +80,6 @@ export default function App() {
   }
 
   let handleTaggingTextChange = (event) => {
-    console.log('i hate this soooo fucking much');
     setInputTaggingText(event.target.value);
   }
 

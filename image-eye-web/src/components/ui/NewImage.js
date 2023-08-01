@@ -9,6 +9,7 @@ import TextField from '@mui/material/TextField';
 
 export default function NewImage({ image, imgToEnvironment, exampleImages, setHighlightedObject, highlightedObject, addImage, removeImage, imgSaved, handleSavedImages, handleTaggingTextChange, handleTaggingTextSubmit, selectedObject, setSelectedObject, tags }) {
 
+    console.log(image);
     let img_dir = image ? image : null;
 
     let annotated = Object.keys(exampleImages).includes(img_dir)

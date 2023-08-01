@@ -45,9 +45,6 @@ button {
     align-items: center;
     height: 50%;
     padding-top: 20px;
-    overflow: auto;
-    /* padding: 100px; */
-
 }
 
 .center-image {
