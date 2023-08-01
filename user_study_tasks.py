@@ -17,27 +17,27 @@ tasks = {
         "dataset": "concert2",
         "gt": "guitar_and_microphone",
     },
+    # 2: {
+    #     "description": "Find all images where someone is playing guitar and no one is smiling.",
+    #     "dataset": "concert2",
+    #     "gt": "guitar_and_no_smiles",
+    # },
     2: {
-        "description": "Find all images where someone is playing guitar and no one is smiling.",
-        "dataset": "concert2",
-        "gt": "guitar_and_no_smiles",
-    },
-    3: {
         "description": "Find all images with no people.",
         "dataset": "concert2",
         "gt": "no_people",
     },
-    4: {
+    3: {
         "description": "Find all images with the bride and groom",
         "dataset": "wedding3",
         "gt": "bride_and_groom",
     },
-    5: {
+    4: {
         "description": "Find all images where the bride is left of the groom.",
         "dataset": "wedding3",
         "gt": "bride_left_of_groom",
     },
-    6: {
+    5: {
         "description": "Find all images that contain the bride and not the groom.",
         "dataset": "wedding3",
         "gt": "bride_and_no_groom",

@@ -298,7 +298,7 @@ export default function App() {
             <button className="button-12" onClick={() => handleChange(3)}>3</button>
             <button className="button-12" onClick={() => handleChange(4)}>4</button>
             <button className="button-12" onClick={() => handleChange(5)}>5</button>
-            <button className="button-12" onClick={() => handleChange(6)}>6</button>
+            {/* <button className="button-12" onClick={() => handleChange(6)}>6</button> */}
           </div>
         </DialogContent>
       </Dialog>
