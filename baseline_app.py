@@ -7,7 +7,7 @@ from synthesizer import *
 import torch
 import numpy as np
 import time
-from user_study_tasks import tasks
+from user_study_tasks import tasks, get_f1_score
 
 from flask_cors import CORS, cross_origin
 from PIL import Image
@@ -40,11 +40,27 @@ def text_query():
     results = get_top_N_images(
         text_query, tokenizer, model, processor, device, img_to_embedding
     )
-    logged_info["text query results"].append(results)
+    logged_info["text query results"].append((results, logged_info["start time"]))
     return {
         "search_results": results,
         # 'sidebarFiles': [filename for filename in imgs][:5]
     }
+
+
+@app.route("/logSavedImages", methods=["POST"])
+@cross_origin()
+def log_saved_images():
+    global logged_info
+
+    body = request.get_json()
+    saved_images = body["saved_images"]
+    logged_info["f1_score_of_saved_images"].append(
+        (
+            get_f1_score(saved_images, logged_info["num"]),
+            time.perf_counter() - logged_info["start time"],
+        )
+    )
+    return {"success": True}
 
 
 @app.route("/imageQuery", methods=["POST"])
@@ -65,7 +81,9 @@ def image_query():
         img_to_embedding,
         search_criterion="image",
     )
-    logged_info["image query results"].append(results)
+    logged_info["image query results"].append(
+        (results, time.perf_counter() - logged_info["start time"])
+    )
     return {
         "search_results": results,
         # 'sidebarFiles': [filename for filename in imgs][:5]
@@ -98,6 +116,7 @@ def load_files():
     logged_info["image queries"] = []
     logged_info["text query results"] = []
     logged_info["image query results"] = []
+    logged_info["f1_score_of_saved_images"] = []
     logged_info["num"] = task_num
     logged_info["start time"] = time.perf_counter()
     return {
@@ -128,6 +147,7 @@ def log_results():
                 "Image Queries",
                 "Text Query Results",
                 "Image Query Results",
+                "Saved Images F1 Over Time",
                 "Submitted Images",
                 "Manually Added",
                 "Manually Removed",
@@ -142,6 +162,7 @@ def log_results():
                 logged_info["image queries"],
                 logged_info["text query results"],
                 logged_info["image query results"],
+                logged_info["f1_score_of_saved_images"],
                 results["results"],
                 results["manually_added"],
                 results["manually_removed"],

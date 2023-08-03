@@ -6,6 +6,7 @@ import numpy as np
 from user_study_tasks import tasks
 from PIL import Image
 from gpt import *
+from user_study_tasks import get_f1_score
 
 from flask_cors import CORS, cross_origin
 
@@ -45,6 +46,22 @@ def tag_image():
     return {"message": img_to_environment}
 
 
+@app.route("/logSavedImages", methods=["POST"])
+@cross_origin()
+def log_saved_images():
+    global logged_info
+
+    body = request.get_json()
+    saved_images = body["saved_images"]
+    logged_info["f1_score_of_saved_images"].append(
+        (
+            get_f1_score(saved_images, logged_info["num"]),
+            time.perf_counter() - logged_info["start time"],
+        )
+    )
+    return {"success": True}
+
+
 @app.route("/textQuery", methods=["POST"])
 @cross_origin()
 def text_query():
@@ -74,7 +91,9 @@ Your query timed out. Try changing your text query, or removing some example ima
         robot_text2 = ""
         prog = None
     logged_info["synthesized_progs"].append(prog)
-    logged_info["synthesis_results"].append(results)
+    logged_info["synthesis_results"].append(
+        (results, time.perf_counter() - logged_info["start time"])
+    )
     return {
         "search_results": results,
         "robot_text": robot_text,
@@ -108,6 +127,7 @@ def load_files():
     logged_info["start time"] = time.perf_counter()
     logged_info["synthesis_results"] = []
     logged_info["synthesized_progs"] = []
+    logged_info["f1_score_of_saved_images"] = []
     return {
         "message": img_to_environment,
         "files": [filename for filename in img_to_environment.keys()],
@@ -168,8 +188,6 @@ def log_results():
     global obj_strs
     global img_to_embedding
     results = request.get_json()
-    print("hi")
-    print(len(results["results"]))
 
     logged_info["end time"] = time.perf_counter()
     total_time = logged_info["end time"] - logged_info["start time"]
@@ -182,8 +200,9 @@ def log_results():
                 "Dataset",
                 "Text Queries",
                 "Example Images",
-                "Synthesized Programs",
-                "Synthesis Results",
+                "Synthesized Program per Query",
+                "Search Results per Query",
+                "Saved Images F1 Over Time",
                 "Submitted Images",
                 "Manually Added Images",
                 "Manually Removed Images",
@@ -198,6 +217,7 @@ def log_results():
                 logged_info["example images"],
                 logged_info["synthesized_progs"],
                 logged_info["synthesis_results"],
+                logged_info["f1_score_of_saved_images"],
                 results["results"],
                 results["manually_added"],
                 results["manually_removed"],

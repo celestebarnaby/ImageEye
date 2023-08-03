@@ -107,6 +107,18 @@ export default function App() {
   let addToSavedImages = (images) => {
     let manual = images.length <= 3;
     images.forEach(image => handleSavedImages(image, false, manual));
+    if (!manual) {
+      var body = { saved_images: savedImages }
+      fetch('http://127.0.0.1:5000/logSavedImages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        // body: JSON.stringify(inputText)
+        body: JSON.stringify(body)
+      })
+        .then(response => response.json())
+    }
   }
 
   let handleSavedImages = (img_dir, remove_if_present, manual) => {
@@ -125,6 +137,18 @@ export default function App() {
       }
     }
     setSavedImages([...savedImages]);
+    if (manual) {
+      var body = { saved_images: savedImages }
+      fetch('http://127.0.0.1:5000/logSavedImages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        // body: JSON.stringify(inputText)
+        body: JSON.stringify(body)
+      })
+        .then(response => response.json())
+    }
   }
 
 
@@ -213,7 +237,7 @@ export default function App() {
             <button className="button-12" onClick={() => handleChange(2)}>2</button>
             <button className="button-12" onClick={() => handleChange(3)}>3</button>
             <button className="button-12" onClick={() => handleChange(4)}>4</button>
-            <button className="button-12" onClick={() => handleChange(5)}>5</button>
+            {/* <button className="button-12" onClick={() => handleChange(5)}>5</button> */}
             {/* <button className="button-12" onClick={() => handleChange(6)}>6</button> */}
           </div>
         </DialogContent>
