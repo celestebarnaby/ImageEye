@@ -37,11 +37,11 @@ tasks = {
         "dataset": "wedding3",
         "gt": "bride_left_of_groom",
     },
-    # 5: {
-    #     "description": "Find all images that contain the bride and not the groom.",
-    #     "dataset": "wedding3",
-    #     "gt": "bride_and_no_groom",
-    # },
+    5: {
+        "description": "Find all images that contain the bride and not the groom.",
+        "dataset": "wedding3",
+        "gt": "bride_and_no_groom",
+    },
 }
 
 
@@ -76,7 +76,7 @@ def get_study_results():
             "Total Time",
         ),
     ]
-    for participant in {"test"}:
+    for participant in {"7"}:
         folder = "./{}/".format(participant)
         for results_filename in os.listdir(folder):
             if results_filename == ".DS_Store":

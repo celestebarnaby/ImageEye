@@ -146,6 +146,10 @@ export default function App() {
 
 
   let handleTaggingTextSubmit = (selectedObjectIndex, remove) => {
+    if (inputTaggingText.trim().split(' ').length > 1 || inputTaggingText.trim() == '') {
+      setErrorMessage('Please enter only one word.');
+      return;
+    }
     if (remove) {
       delete tags[selectedObjectIndex];
     } else {
@@ -320,7 +324,7 @@ export default function App() {
             <button className="button-12" onClick={() => handleChange(2)}>2</button>
             <button className="button-12" onClick={() => handleChange(3)}>3</button>
             <button className="button-12" onClick={() => handleChange(4)}>4</button>
-            {/* <button className="button-12" onClick={() => handleChange(5)}>5</button> */}
+            <button className="button-12" onClick={() => handleChange(5)}>5</button>
             {/* <button className="button-12" onClick={() => handleChange(6)}>6</button> */}
           </div>
         </DialogContent>

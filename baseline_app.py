@@ -106,6 +106,11 @@ def load_files():
     img_to_embedding = preprocess_embeddings(
         img_folder, img_to_environment, processor, device, model
     )
+    image_names = list(img_to_embedding.keys())
+    for image_name in image_names:
+        if image_name not in img_to_environment:
+            del img_to_embedding[image_name]
+
     # for image_name in img_to_environment:
     #     image = Image.open(image_name)
     #     img_to_embedding[image_name] = (
