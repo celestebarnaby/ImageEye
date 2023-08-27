@@ -132,18 +132,24 @@ def eval_prog(prog, env, vars_to_vals={}):
         val1 = vars_to_vals[prog.var1]
         if prog.var2 in vars_to_vals:
             val2 = vars_to_vals[prog.var2]
-            return (
-                val1["ObjPosInImgLeftToRight"] == val2["ObjPosInImgLeftToRight"] + 1
-                or val1["ObjPosInImgLeftToRight"] == val2["ObjPosInImgLeftToRight"] - 1
-            )
-        for obj in env.values():
-            if checkMatchingObj(prog.var2, obj):
+            for i in range(1, 5):
                 if (
-                    val1["ObjPosInImgLeftToRight"] == obj["ObjPosInImgLeftToRight"] + 1
+                    val1["ObjPosInImgLeftToRight"] == val2["ObjPosInImgLeftToRight"] + i
                     or val1["ObjPosInImgLeftToRight"]
-                    == obj["ObjPosInImgLeftToRight"] - 1
+                    == val2["ObjPosInImgLeftToRight"] - i
                 ):
                     return True
+            return False
+        for obj in env.values():
+            for i in range(1, 5):
+                if checkMatchingObj(prog.var2, obj):
+                    if (
+                        val1["ObjPosInImgLeftToRight"]
+                        == obj["ObjPosInImgLeftToRight"] + i
+                        or val1["ObjPosInImgLeftToRight"]
+                        == obj["ObjPosInImgLeftToRight"] - i
+                    ):
+                        return True
             return False
 
 

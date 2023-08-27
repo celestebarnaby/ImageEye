@@ -76,8 +76,29 @@ def get_study_results():
             "Total Time",
         ),
     ]
-    for participant in {"7"}:
-        folder = "./{}/".format(participant)
+    for participant in {
+        "8",
+        "9",
+        "10",
+        "11",
+        "12",
+        "13",
+        "14",
+        "15",
+        "16",
+        "17",
+        "18",
+        "19",
+        "20",
+        "21",
+        "22",
+        "23",
+        "24",
+        "25",
+        "26",
+        "27",
+    }:
+        folder = "./user_study_results/{}/".format(participant)
         for results_filename in os.listdir(folder):
             if results_filename == ".DS_Store":
                 continue

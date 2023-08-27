@@ -2,6 +2,7 @@ import openai
 import random
 import copy
 import time
+import interpreter as old_interpreter
 from new_interpreter import *
 from utils import *
 from new_dsl import *
@@ -432,8 +433,7 @@ def get_prompts():
             if len(v["environment"]) <= 15 and len(v["environment"]) > 0
         }
         need_true = random.random()
-        # if need_true > 0.75:
-        if False:
+        if need_true > 0.75:
             has_true = False
             used_imgs = set()
             while not has_true:
@@ -443,7 +443,9 @@ def get_prompts():
                 rand_img = random.choice(
                     list(set(small_img_to_environment.keys()) - used_imgs)
                 )
-                output = eval_extractor(b.gt_prog, small_img_to_environment[rand_img])
+                output = old_interpreter.eval_extractor(
+                    b.gt_prog, small_img_to_environment[rand_img]
+                )
                 if len(output) > 0:
                     has_true = True
                 else:
@@ -451,7 +453,9 @@ def get_prompts():
         else:
             rand_img = random.choice(list(small_img_to_environment.keys()))
             print(small_img_to_environment[rand_img])
-            output = eval_extractor(b.gt_prog, small_img_to_environment[rand_img])
+            output = old_interpreter.eval_extractor(
+                b.gt_prog, small_img_to_environment[rand_img]
+            )
         if rand_img:
             img_rep = clean_img(copy.deepcopy(small_img_to_environment[rand_img]))
             if len(output) > 0:
@@ -557,14 +561,12 @@ def gtp_experiment1():
             fw.writerow(row)
 
 
-def camel_case_to_words(camel_case_string):
-    # Split camel case string into separate words
-    words = re.findall(r"[A-Z](?:[a-z]+|[A-Z]*(?=[A-Z]|$))", camel_case_string)
-
-    # Convert words to lowercase and join with a space
-    separate_words = " ".join(word.lower() for word in words)
-
-    return separate_words
+def camel_case_to_words(s):
+    # Use regular expressions to split the input string at camelCase boundaries
+    # and then join the words with spaces and convert to lowercase.
+    words = re.findall(r"[A-Z][a-z]*|[a-z]+", s)
+    transformed_string = " ".join(words).lower()
+    return transformed_string
 
 
 def insert_and_after_last_comma(string):
@@ -575,15 +577,16 @@ def insert_and_after_last_comma(string):
         return string
 
 
-def get_holes(tree):
-    holes = []
-    for var_node in tree.var_nodes:
-        node = tree.nodes[var_node]
-        if isinstance(node, Predicate):
-            holes.append(camel_case_to_words)
-        else:
-            holes.append(str(node))
-    return holes
+# def get_holes(tree):
+#     holes = []
+#     for var_node in tree.var_nodes:
+#         node = tree.nodes[var_node]
+#         # if isinstance(node, Predicate):
+#         #     holes.append(camel_case_to_words)
+#         # else:
+#         #     holes.append(str(node))
+#         holes.append(camel_case_to_words(str(node)))
+#     return holes
 
 
 def ask_for_hole_expl(holes):
@@ -650,32 +653,32 @@ def make_text_query(query, env, examples, tags):
     example_progs = [
         (
             "Every person is next to a cat",
-            "ForAll x.(Exists y.((Is(y, cat)) And ((Is(x, person)) -> (IsNextTo(x, y)))))",
+            "ForAll x.Exists y.Is(y, cat) And Is(x, person) -> IsNextTo(x, y)",
         ),
         (
             "The image contains a face that is smiling, and has their eyes open",
-            "Exists x.((Is(x, smilingFace)) And (Is(x, eyesOpenFace)))",
+            "Exists x.Is(x, smilingFace) And Is(x, eyesOpenFace)",
         ),
         (
             "Alice is in the image and everyone is smiling",
-            "Exists x.(ForAll y.((Is(x, Alice)) And ((Is(y, face)) -> (Is(y, smilingFace)))))",
+            "Exists x.ForAll y.Is(x, Alice) And Is(y, face) -> Is(y, smilingFace)",
         ),
         (
             "The image contains a cat inside a box.",
-            "Exists x.(Exists y.((Is(y, cat) And ((Is(x, box)) And (IsInside(y, x))))))",
+            "Exists x.Exists y.Is(y, cat) And Is(x, box) And IsInside(y, x)",
         ),
-        ("There is a tree in the image.", "Exists x.(Is(x, Tree))"),
+        ("There is a tree in the image.", "Exists x.Is(x, Tree)"),
         (
             "The image contains a chair and a table",
-            "Exists x.(Exists y.((Is(x, chair)) And (Is(y, table))))",
+            "Exists x.Exists y.Is(x, chair) And Is(y, table)",
         ),
         (
             "The image contains a chair to the left of a table",
-            "Exists x.(Exists y.((Is(x, chair)) And ((Is(y, table)) And (IsLeft(x, y)))))",
+            "Exists x.Exists y.Is(x, chair) And Is(y, table) And IsLeft(x, y)",
         ),
         (
             "All faces do not have eyes open",
-            "ForAll x.((Is(x, face)) -> (Not (Is(x, eyesOpenFace))))",
+            "ForAll x.Is(x, face) -> Not Is(x, eyesOpenFace)",
         ),
     ]
     message_text = ""
@@ -697,7 +700,7 @@ def make_text_query(query, env, examples, tags):
         tree = Tree()
         gpt_text = choice["message"]["content"].strip()
         # We only take the progs that parse
-        res, holes = parse_formula2(gpt_text, tree, objects, [])
+        res, holes = parse_formula(gpt_text, tree, objects, [])
         if res:
             output_trees.append((tree, gpt_text, holes))
 
@@ -852,44 +855,44 @@ def gpt_experiment2():
     progs = [
         (
             "Every person in the image is riding a bicycle",
-            "ForAll x.((Is(x, person)) -> (IsAbove(x, bicycle)))",
+            "ForAll x.Is(x, person) -> IsAbove(x, bicycle)",
         ),
         (
             "The image contains a face that is smiling, and has their eyes open",
-            "Exists x.((Is(x, smilingFace)) And (Is(x, eyesOpenFace)))",
+            "Exists x.Is(x, smilingFace) And Is(x, eyesOpenFace)",
         ),
         (
             "Alice is in the image and everyone is smiling",
-            "Exists x.(ForAll y.((Is(x, Alice)) And ((Is(y, face)) -> (Is(y, smilingFace)))))",
+            "Exists x.ForAll y.Is(x, Alice) And Is(y, face) -> Is(y, smilingFace)",
         ),
         (
             "The image contains a face that is not smiling",
-            "Exists x.((Is(x, face)) And (Not (Is(x, smilingFace))))",
+            "Exists x.(Is(x, face) And Not Is(x, smilingFace)",
         ),
         (
             "Every bicycle in the image is being ridden by a person",
-            "ForAll x.((Is(x, bicycle)) -> (IsAbove(person, x)))",
+            "ForAll x.Is(x, bicycle) -> IsAbove(person, x)",
         ),
         (
             "The image contains a car with a person inside",
-            "Exists x.((Is(x, car)) And (IsInside(x, person)))",
+            "Exists x.Is(x, car) And IsInside(x, person)",
         ),
         (
             "In the image, Alice is to the right of Bob",
-            "Exists x.((Is(x, Alice)) And (IsRight(x, Bob)))",
+            "Exists x.Is(x, Alice) And IsRight(x, Bob)",
         ),
-        ("Alice is in the image", "Exists x.(Is(x, Alice))"),
+        ("Alice is in the image", "Exists x.Is(x, Alice)"),
         (
             "The image contains Alice and Bob",
-            "Exists x.(Exists y.((Is(x, Alice)) And (Is(y, Bob))))",
+            "Exists x.Exists y.Is(x, Alice) And Is(y, Bob)",
         ),
         (
             "Alice and Bob are next to each other",
-            "Exists x.((Is(x, Alice)) And (IsNextTo(x, Bob)))",
+            "Exists x.Is(x, Alice) And IsNextTo(x, Bob)",
         ),
         (
             "All faces are not smiling",
-            "ForAll x.((Is(x, face)) -> (Not (Is(x, smilingFace))))",
+            "ForAll x.Is(x, face) -> Not Is(x, smilingFace)",
         ),
     ]
     message_text = intro_text
@@ -920,56 +923,6 @@ def gpt_experiment2():
             fw.writerow(row)
 
 
-def parse_formula(formula):
-    formulas = [
-        ("^ForAll (\w*).\((.*)\)$", ForAll),
-        ("^Exists (\w*).\((.*)\)$", Exists),
-    ]
-    one_param_subformulas = [
-        ("^Not \((.*)\)$", Not),
-    ]
-    two_param_subformulas = [
-        ("(?<=^\((.*)\)) -> (?=\((.*)\)$)", IfThen),
-        ("(?<=^\((.*)\)) And (?=\((.*)\)$)", And),
-    ]
-    predicates = [
-        ("^Is\((\w*), (\w*)\)$", Is),
-        ("^IsAbove\((\w*), (\w*)\)$", IsAbove),
-        ("^IsLeft\((\w*), (\w*)\)$", IsLeft),
-        ("^IsNextTo\((\w*), (\w*)\)$", IsNextTo),
-        ("^IsInside\((\w*), (\w*)\)$", IsInside),
-    ]
-    for regex, f in formulas:
-        m = re.search(regex, formula)
-        if m is not None:
-            var = m.group(1)
-            subformula = m.group(2)
-            parsed_subformula = parse_formula(subformula)
-            if parsed_subformula is not None:
-                return f(var, parsed_subformula)
-    for regex, f in one_param_subformulas:
-        m = re.search(regex, formula)
-        if m is not None:
-            subformula = m.group(1)
-            parsed_subformula = parse_formula(subformula)
-            if parsed_subformula is not None:
-                return f(parsed_subformula)
-    for regex, f in two_param_subformulas:
-        m = re.findall(regex, formula)
-        for subformula1, subformula2 in m:
-            parsed_subformula1, parsed_subformula2 = parse_formula(
-                subformula1
-            ), parse_formula(subformula2)
-            if parsed_subformula1 is not None and parsed_subformula2 is not None:
-                return f(parsed_subformula1, parsed_subformula2)
-    for regex, f in predicates:
-        m = re.search(regex, formula)
-        if m is not None:
-            var1, var2 = m.group(1), m.group(2)
-            return f(var1, var2)
-    return None
-
-
 str_to_pred = {
     "Is": Is,
     "IsAbove": IsAbove,
@@ -979,17 +932,17 @@ str_to_pred = {
 }
 
 
-def parse_formula2(formula, tree, objects, holes, parent_node_num=None, used_vars=[]):
+def parse_formula(formula, tree, objects, holes, parent_node_num=None, used_vars=[]):
     formulas = [
-        ("^ForAll (\w*).\((.*)\)$", ForAll),
-        ("^Exists (\w*).\((.*)\)$", Exists),
+        ("^ForAll (\w*).(.*)$", ForAll),
+        ("^Exists (\w*).(.*)$", Exists),
     ]
     one_param_subformulas = [
-        ("^Not \((.*)\)$", Not),
+        ("^Not (.*)$", Not),
     ]
     two_param_subformulas = [
-        ("(?<=^\((.*)\)) -> (?=\((.*)\)$)", IfThen),
-        ("(?<=^\((.*)\)) And (?=\((.*)\)$)", And),
+        ("(?<=^(.*)) -> (?=(.*)$)", IfThen),
+        ("(?<=^(.*)) And (?=(.*)$)", And),
     ]
     predicate = "^(Is\w*)\((\w*), (\w*)\)$"
     new_node_num = len(tree.nodes)
@@ -1002,7 +955,7 @@ def parse_formula2(formula, tree, objects, holes, parent_node_num=None, used_var
             new_node = f(var, None)
             tree.nodes[new_node_num] = new_node
             tree.to_children[new_node_num] = []
-            successful_parse, _ = parse_formula2(
+            successful_parse, _ = parse_formula(
                 subformula, tree, objects, holes, new_node_num, used_vars
             )
             if successful_parse:
@@ -1017,7 +970,7 @@ def parse_formula2(formula, tree, objects, holes, parent_node_num=None, used_var
             new_node = f(None)
             tree.nodes[new_node_num] = new_node
             tree.to_children[new_node_num] = []
-            successful_parse, _ = parse_formula2(
+            successful_parse, _ = parse_formula(
                 subformula, tree, objects, holes, new_node_num, used_vars
             )
             if successful_parse:
@@ -1031,11 +984,9 @@ def parse_formula2(formula, tree, objects, holes, parent_node_num=None, used_var
             new_node = f(None, None)
             tree.nodes[new_node_num] = new_node
             tree.to_children[new_node_num] = []
-            (successful_parse1, _), (successful_parse2, _) = parse_formula2(
+            (successful_parse1, _), (successful_parse2, _) = parse_formula(
                 subformula1, tree, objects, holes, new_node_num, used_vars
-            ), parse_formula2(
-                subformula2, tree, objects, holes, new_node_num, used_vars
-            )
+            ), parse_formula(subformula2, tree, objects, holes, new_node_num, used_vars)
             if successful_parse1 and successful_parse2:
                 if parent_node_num is not None:
                     tree.to_parent[new_node_num] = parent_node_num
@@ -1065,7 +1016,7 @@ def parse_formula2(formula, tree, objects, holes, parent_node_num=None, used_var
                 new_child_node = var
             else:
                 new_child_node = Hole("var", var)
-                holes.append('"' + var + '"')
+                holes.append('"' + camel_case_to_words(var) + '"')
                 tree.var_nodes.append(new_child_node_num)
             tree.nodes[new_child_node_num] = new_child_node
             tree.to_children[new_node_num].append(new_child_node_num)
@@ -1080,7 +1031,7 @@ def parse_formula2(formula, tree, objects, holes, parent_node_num=None, used_var
 def test_parser():
     tests = [
         (
-            "Exists x.(Exists y.((Is(y, cat)) And ((Is(x, box)) And (IsInside(y, x)))))",
+            "Exists x.Exists y.Is(y, cat) And Is(x, box) And IsInside(y, x)",
             Exists(
                 "x",
                 Exists(
@@ -1090,22 +1041,22 @@ def test_parser():
             ["cat", "box"],
         ),
         (
-            "ForAll x.((Is(x, person)) -> (IsAbove(x, bicycle)))",
+            "ForAll x.Is(x, person) -> IsAbove(x, bicycle)",
             ForAll("x", IfThen(Is("x", "person"), IsAbove("x", "bicycle"))),
             ["person", "bicycle"],
         ),
         (
-            "ForAll x.((Is(x, person)) -> (IsAbove(x, bike)))",
+            "ForAll x.Is(x, person) -> IsAbove(x, bike)",
             ForAll("x", IfThen(Is("x", "person"), IsAbove("x", Hole("var")))),
             ["person", "bicycle"],
         ),
         (
-            "Exists x.((Is(x, smilingFace)) And (Is(x, eyesOpenFace)))",
+            "Exists x.Is(x, smilingFace) And Is(x, eyesOpenFace)",
             Exists("x", And(Is("x", "smilingFace"), Is("x", "eyesOpenFace"))),
             ["smilingFace", "eyesOpenFace"],
         ),
         (
-            "Exists x.(ForAll y.((Is(x, Alice)) And ((Is(y, face)) -> (Is(y, smilingFace)))))",
+            "Exists x.ForAll y.Is(x, Alice) And Is(y, face) -> Is(y, smilingFace)",
             Exists(
                 "x",
                 ForAll(
@@ -1116,53 +1067,53 @@ def test_parser():
                     ),
                 ),
             ),
-            ["Alice", "face", "smilingFace"],
+            ["alice", "face", "smilingFace"],
         ),
         (
-            "Exists x.((Is(x, face)) And (Not (Is(x, smilingFace))))",
+            "Exists x.Is(x, face) And Not Is(x, smilingFace)",
             Exists("x", And(Is("x", "face"), Not(Is("x", "smilingFace")))),
             ["face", "smilingFace"],
         ),
         (
-            "ForAll x.((Is(x, bicycle)) -> (IsAbove(person, x)))",
+            "ForAll x.Is(x, bicycle) -> IsAbove(person, x)",
             ForAll("x", IfThen(Is("x", "bicycle"), IsAbove("person", "x"))),
             ["bicycle", "person"],
         ),
         (
-            "ForAll x.((Is(x, bicycle)) -> (IsRiding(person, x)))",
+            "ForAll x.Is(x, bicycle) -> IsRiding(person, x)",
             ForAll("x", IfThen(Is("x", "bicycle"), Hole("relation"))),
             ["bicycle", "person"],
         ),
         (
-            "Exists x.((Is(x, car)) And (IsInside(x, person)))",
+            "Exists x.Is(x, car) And IsInside(x, person)",
             Exists("x", And(Is("x", "car"), IsInside("x", "person"))),
             ["car", "person"],
         ),
         (
-            "Exists x.((Is(x, Alice)) And (IsLeft(Bob, x)))",
+            "Exists x.Is(x, Alice) And IsLeft(Bob, x)",
             Exists("x", And(Is("x", Hole("var")), IsLeft(Hole("var"), "x"))),
             [],
         ),
-        ("Exists x.(Is(x, Alice))", Exists("x", Is("x", "Alice")), ["Alice"]),
+        ("Exists x.Is(x, Alice)", Exists("x", Is("x", "Alice")), ["alice"]),
         (
-            "Exists x.(Exists y.((Is(x, Alice)) And (Is(y, Bob))))",
+            "Exists x.Exists y.Is(x, Alice) And Is(y, Bob)",
             Exists("x", Exists("y", And(Is("x", "Alice"), Is("y", "Bob")))),
-            ["Alice", "Bob"],
+            ["alice", "bob"],
         ),
         (
-            "Exists x.((Is(x, Alice)) And (IsNextTo(x, Bob)))",
+            "Exists x.Is(x, Alice) And IsNextTo(x, Bob)",
             Exists("x", And(Is("x", "Alice"), IsNextTo("x", "Bob"))),
-            ["Alice", "Bob"],
+            ["alice", "bob"],
         ),
         (
-            "ForAll x.((Is(x, face)) -> (Not (Is(x, smilingFace))))",
+            "ForAll x.Is(x, face) -> Not Is(x, smilingFace)",
             ForAll("x", IfThen(Is("x", "face"), Not(Is("x", "smilingFace")))),
             ["face", "smilingFace"],
         ),
     ]
     for test in tests:
         tree = Tree()
-        parse_formula2(test[0], tree, test[2], None)
+        parse_formula(test[0], tree, test[2], [])
         prog = construct_prog_from_tree(tree)
         if str(prog) != str(test[1]):
             print("FAIL")
@@ -1202,7 +1153,7 @@ def test_synthesizer():
     ]
     for test in tests:
         tree = Tree()
-        res = parse_formula2(test[0], tree, ["person", "bicycle"])
+        res = parse_formula(test[0], tree, ["person", "bicycle"], [])
         if not res:
             print("PARSING FAILED")
             raise TypeError

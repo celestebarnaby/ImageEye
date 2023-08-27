@@ -38,6 +38,8 @@ def tag_image():
     for env in img_to_environment.values():
         env = env["environment"]
         for obj in env.values():
+            if "Index" not in obj:
+                continue
             if str(obj["Index"]) in tags:
                 obj["Tag"] = tags[str(obj["Index"])]["text"]
             elif "Tag" in obj:
