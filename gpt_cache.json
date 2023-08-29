@@ -1,0 +1,30 @@
+{
+    "progs": {
+        "Alice next to Bob holding flowers": [
+            "Exists x.Exists y.Exists z.Exists w.Is(x, Alice) And Is(y, Bob) And Is(z, flowers) And Is(w, person) And IsNextTo(x, y) And IsHolding(w, z)",
+            "Exists x.Exists y.Exists z.Is(x, Alice) And Is(y, Bob) And Is(z, flowers) And IsNextTo(x, y) And Holding(x, z)",
+            "Exists x.Exists y.Exists z.Exists w.Is(x, Alice) And Is(y, Bob) And Is(z, flowers) And Is(w, person) And IsNextTo(x, y) And Holds(w, z)",
+            "Exists x.Exists y.Exists z.Is(x, Alice) And Is(y, Bob) And Is(z, flowers) And IsNextTo(x, y) And Holding(x, z)",
+            "Exists x.Exists y.Exists z.Is(x, Alice) And Is(y, Bob) And Is(z, flowers) And IsNextTo(x, y) And IsHolding(x, z)",
+            "Exists x.Exists y.Exists z.ForAll w.Is(x, Alice) And Is(y, Bob) And Is(z, flowers) -> IsNextTo(x, y) And IsHolding(x, z)",
+            "Exists x.Exists y.Is(x, Alice) And Is(y, Bob) And Exists z.Is(z, flower) And IsNextTo(x, y) And Holds(x, z)",
+            "Exists x.Exists y.Exists z.Is(x, Alice) And Is(y, Bob) And Is(z, flowers) And IsNextTo(x, y) And IsHolding(y, z)",
+            "Exists x.Exists y.Exists z.Is(x, Alice) And Is(y, Bob) And Is(z, flowers) And IsNextTo(x, y) And IsHolding(x, z)",
+            "Exists x.Exists y.Exists z.Is(x, Alice) And Is(y, Bob) And Is(z, flowers) And IsNextTo(x, y) And IsHolding(x, z)",
+            "Exists x.Exists y. Exists z. Is(x, Alice) And Is(y, Bob) And Is(z, flowers) And IsNextTo(x, y) And IsHolding(x, z)",
+            "Exists x.Exists y.Exists z.Is(x, Alice) And Is(y, Bob) And Is(z, flowers) And IsNextTo(x, y) And Holding(x, z)",
+            "Exists x.Exists y.Exists z. Is(x, Alice) And Is(y, Bob) And Is(z, flowers) And IsNextTo(x, y) And IsHolding(x, z)",
+            "Exists x.Exists y.Exists z.Is(x, Alice) And Is(y, Bob) And Is(z, flowers) And IsNextTo(x, y) And IsHolding(y, z)",
+            "Exists x.Exists y.Exists z.Is(x, Alice) And Is(y, Bob) And Is(z, flowers) And IsNextTo(x, y) And IsHolding(x, z)",
+            "Exists x.Exists y.Exists z.Is(x, Alice) And Is(y, Bob) And Is(z, flowers) And IsNextTo(x, y) And Holding(x, z)",
+            "Exists x.Exists y.Exists z.Is(x, Alice) And Is(y, Bob) And Is(z, flowers) And IsNextTo(x, y) And IsHolding(x, z)",
+            "Exists x.Exists y.Exists z.Is(x, Alice) And Is(y, Bob) And Is(z, flowers) And IsNextTo(x, y) And IsHolding(x, z)",
+            "Exists x.Is(x, Alice) And Exists y.Is(y, Bob) And IsNextTo(x, y) And Exists z.Is(z, flower) And IsHolding(y, z)",
+            "Exists x.Exists y.Exists z.Is(x, Alice) And Is(y, Bob) And Is(z, flowers) And IsNextTo(x, y) And Holding(x, z)"
+        ]
+    },
+    "expls": {
+        "Exists x.(Exists y.(Exists z.((Is(x,Alice)) And ((Is(y,Bob)) And ((Is(z,flowers)) And ((IsNextTo(x,y)) And (IsAbove(x,z))))))))": "I found all images where Alice is next to Bob and Alice is above the flowers.",
+        "Exists x.(Exists y.(Exists z.(Exists w.((Is(x,Alice)) And ((Is(y,Bob)) And ((Is(z,flowers)) And ((Is(w,person)) And ((IsNextTo(x,y)) And (IsAbove(w,z))))))))))": "I found all images where there is an Alice next to Bob, and a person above flowers."
+    }
+}

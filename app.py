@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify
+import json
 from utils import *
 from synthesizer import *
 import torch
@@ -16,6 +17,9 @@ app.config["CORS_HEADERS"] = "Content-Type"
 img_to_environment = {}
 img_to_embedding = {}
 logged_info = {}
+
+with open("gpt_cache.json") as f:
+    cache = json.load(f)
 
 
 # Set the device
@@ -70,6 +74,7 @@ def text_query():
     global img_to_environment
     global logged_info
     global img_to_embedding
+    global cache
 
     body = request.get_json()
     text_query = body["text_query"]
@@ -84,6 +89,8 @@ def text_query():
             img_to_environment,
             list(examples.items()),
             tags,
+            cache["progs"],
+            cache["expls"],
         )
     except TimeoutError:
         results = []

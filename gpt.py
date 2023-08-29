@@ -649,63 +649,71 @@ def prog_to_expl(prog):
         return "{} is inside {}".format(prog.var1, prog.var2)
 
 
-def make_text_query(query, env, examples, tags):
-    example_progs = [
-        (
-            "Every person is next to a cat",
-            "ForAll x.Exists y.Is(y, cat) And Is(x, person) -> IsNextTo(x, y)",
-        ),
-        (
-            "The image contains a face that is smiling, and has their eyes open",
-            "Exists x.Is(x, smilingFace) And Is(x, eyesOpenFace)",
-        ),
-        (
-            "Alice is in the image and everyone is smiling",
-            "Exists x.ForAll y.Is(x, Alice) And Is(y, face) -> Is(y, smilingFace)",
-        ),
-        (
-            "The image contains a cat inside a box.",
-            "Exists x.Exists y.Is(y, cat) And Is(x, box) And IsInside(y, x)",
-        ),
-        ("There is a tree in the image.", "Exists x.Is(x, Tree)"),
-        (
-            "The image contains a chair and a table",
-            "Exists x.Exists y.Is(x, chair) And Is(y, table)",
-        ),
-        (
-            "The image contains a chair to the left of a table",
-            "Exists x.Exists y.Is(x, chair) And Is(y, table) And IsLeft(x, y)",
-        ),
-        (
-            "All faces do not have eyes open",
-            "ForAll x.Is(x, face) -> Not Is(x, eyesOpenFace)",
-        ),
-    ]
-    message_text = ""
-    for prog in example_progs:
-        message_text += "task: {}\nprogram:{}\n\n".format(prog[0], prog[1])
-    query_content = "task: {}\nprogram: ".format(query)
-    message = {"role": "system", "content": message_text + query_content}
-    try:
-        gpt_output = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo", temperature=0.9, messages=[message], n=20
-        )
-    except:
-        return ([], "There was a server error. Try again!", "", None)
+def make_text_query(query, env, examples, tags, cache, expl_cache):
     objects = get_objects(env)
     objects = objects.union(tags)
-    print(objects)
     output_trees = []
-    for choice in gpt_output["choices"]:
+    print(objects)
+    if query in cache:
+        print("hi")
+        texts = cache[query]
+    else:
+        example_progs = [
+            (
+                "Every person is next to a cat",
+                "ForAll x.Exists y.Is(y, cat) And Is(x, person) -> IsNextTo(x, y)",
+            ),
+            (
+                "The image contains a face that is smiling, and has their eyes open",
+                "Exists x.Is(x, smilingFace) And Is(x, eyesOpenFace)",
+            ),
+            (
+                "Alice is in the image and everyone is smiling",
+                "Exists x.ForAll y.Is(x, Alice) And Is(y, face) -> Is(y, smilingFace)",
+            ),
+            (
+                "The image contains a cat inside a box.",
+                "Exists x.Exists y.Is(y, cat) And Is(x, box) And IsInside(y, x)",
+            ),
+            ("There is a tree in the image.", "Exists x.Is(x, Tree)"),
+            (
+                "The image contains a chair and a table",
+                "Exists x.Exists y.Is(x, chair) And Is(y, table)",
+            ),
+            (
+                "The image contains a chair to the left of a table",
+                "Exists x.Exists y.Is(x, chair) And Is(y, table) And IsLeft(x, y)",
+            ),
+            (
+                "All faces do not have eyes open",
+                "ForAll x.Is(x, face) -> Not Is(x, eyesOpenFace)",
+            ),
+        ]
+        message_text = ""
+        for prog in example_progs:
+            message_text += "task: {}\nprogram:{}\n\n".format(prog[0], prog[1])
+        query_content = "task: {}\nprogram: ".format(query)
+        message = {"role": "system", "content": message_text + query_content}
+        try:
+            gpt_output = openai.ChatCompletion.create(
+                model="gpt-3.5-turbo", temperature=0.9, messages=[message], n=20
+            )
+        except:
+            return ([], "There was a server error. Try again!", "", None)
+        output_trees = []
+        texts = [
+            choice["message"]["content"].strip() for choice in gpt_output["choices"]
+        ]
+        cache[query] = texts
+    for text in texts:
         tree = Tree()
-        gpt_text = choice["message"]["content"].strip()
         # We only take the progs that parse
-        res, holes = parse_formula(gpt_text, tree, objects, [])
+        res, holes = parse_formula(text, tree, objects, [])
         if res:
-            output_trees.append((tree, gpt_text, holes))
+            output_trees.append((tree, text, holes))
 
     print("GPT output:")
-    print([choice["message"]["content"] for choice in gpt_output["choices"]])
+    print(texts)
     print("Num outputs parsed: {}".format(str(len(output_trees))))
     print()
 
@@ -717,7 +725,7 @@ def make_text_query(query, env, examples, tags):
     example_imgs = [tup[0] for tup in examples]
     env_objects = get_objects(env, example_imgs)
     holes_to_vals = None
-    for tree, gpt_text, holes in output_trees:
+    for tree, _, holes in output_trees:
         # prog = construct_prog_from_tree(tree)
         # print(prog)
         if len(tree.var_nodes) > 0:
@@ -763,80 +771,59 @@ def make_text_query(query, env, examples, tags):
         if eval_prog(top_prog, img_env["environment"]):
             matching_imgs.append(img)
     print(len(matching_imgs))
-    # expl_query = "Write this formula in plain english: {}".format(str(top_gpt_text))
-    # expl_query = """
-    # input: ForAll x.(Exists y.((Is(y, cat)) And ((Is(x, person)) -> (IsNextTo(x, y)))))
-    # output: I found all images where every person I can see is next to a cat.
 
-    # input: Exists x.((Is(x, smilingFace)) And (Is(x, eyesOpenFace)))
-    # output: I found all images where I can see a face that is smiling, and has their eyes open.
+    if str(top_prog) in expl_cache:
+        expl = expl_cache[str(top_prog)]
+    else:
+        expl_query = """
+        input: For each object x that I can see in the image, I can see an object y in the image such that if y is cat and x is person, then x is next to y.
+        output: I found all images where every person I can see is next to a cat.
 
-    # input: Exists x.(ForAll y.((Is(x, Alice)) And ((Is(y, face)) -> (Is(y, smilingFace)))))
-    # output: I found all images where I see Alice and everyone I can see is smiling.
+        input: I can see an object x in the image such that x is smilingFace and x is eyesOpenFace.
+        output: I found all images where I can see a face that is smiling, and has their eyes open.
 
-    # input: Exists x.(Exists y.((Is(y, cat) And ((Is(x, box)) And (IsInside(y, x))))))
-    # output: I found all images where I can see a cat inside a box.
+        input: I can see an object x in the image such that for each object y that I can see in the image, x is id23 and if y is face, then y is smiling face.
+        output: I found all images where I see face #23 and everyone I can see is smiling.
 
-    # input: Exists x.(Exists y.((Is(x, chair)) And (Is(y, table))))
-    # output: I found all images where I can see a chair and a table,
+        input: I can see an object x in the image such that I can see an object y in the image such that x is id57 and y is id6.
+        output: I found all images where I see face #57 and face #5.
 
-    # input: ForAll x.((Is(x, face)) -> (Not (Is(x, smilingFace))))
-    # output: I found all images where no faces that I can see are smiling.
+        input: I can see an object x in the image such that I can see an object y in the image such that y is cat and x is box and y is inside x.  
+        output: I found all images where I can see a cat inside a box.
 
-    # input: {}
-    # output:
-    # """.format(
-    #     str(top_prog)
-    # )
+        input: I can see an object x in the image such that I can see an object y in the image such that x is chair and y is table.
+        output: I found all images where I can see a chair and a table.
 
-    expl_query2 = """
-    input: For each object x that I can see in the image, I can see an object y in the image such that if y is cat and x is person, then x is next to y.
-    output: I found all images where every person I can see is next to a cat.
+        input: For each object x that I can see in the image, if x is face then it is not that case that x is smilingFace.
+        output:  I found all images where no faces that I can see are smiling.
 
-    input: I can see an object x in the image such that x is smilingFace and x is eyesOpenFace.
-    output: I found all images where I can see a face that is smiling, and has their eyes open.
+        input: I can see an object x in the image such that x is a cat and x is a box
+        output: I found all images where there is a cat that is a box.
 
-    input: I can see an object x in the image such that for each object y that I can see in the image, x is id23 and if y is face, then y is smiling face.
-    output: I found all images where I see face #23 and everyone I can see is smiling.
+        input: I can see an object x in the image such that if x is person then x is person
+        output: I found all images where there is a person who is a person.
 
-    input: I can see an object x in the image such that I can see an object y in the image such that x is id57 and y is id6.
-    output: I found all images where I see face #57 and face #5.
-
-    input: I can see an object x in the image such that I can see an object y in the image such that y is cat and x is box and y is inside x.  
-    output: I found all images where I can see a cat inside a box.
-
-    input: I can see an object x in the image such that I can see an object y in the image such that x is chair and y is table.
-    output: I found all images where I can see a chair and a table.
-
-    input: For each object x that I can see in the image, if x is face then it is not that case that x is smilingFace.
-    output:  I found all images where no faces that I can see are smiling.
-
-    input: I can see an object x in the image such that x is a cat and x is a box
-    output: I found all images where there is a cat that is a box.
-
-    input: I can see an object x in the image such that if x is person then x is person
-    output: I found all images where there is a person who is a person.
-
-    input: {}
-    output:
-""".format(
-        prog_to_expl(top_prog)
-    )
-
-    expl_message = {"role": "system", "content": expl_query2}
-    try:
-        expl_output = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo", messages=[expl_message]
+        input: {}
+        output:
+    """.format(
+            prog_to_expl(top_prog)
         )
-    except:
-        return [], "There was a server error. Try again!", "", None
+
+        expl_message = {"role": "system", "content": expl_query}
+        try:
+            expl_output = openai.ChatCompletion.create(
+                model="gpt-3.5-turbo", messages=[expl_message]
+            )
+            expl = (expl_output["choices"][0]["message"]["content"],)
+        except:
+            return [], "There was a server error. Try again!", "", None
     if holes_to_vals:
         hole_expl = get_hole_expl_for_top_prog(holes_to_vals)
     else:
         hole_expl = ""
     return (
         matching_imgs,
-        expl_output["choices"][0]["message"]["content"],
+        expl,
         hole_expl,
         str(top_prog),
     )
