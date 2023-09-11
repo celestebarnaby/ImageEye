@@ -8,6 +8,7 @@ from statistics import mean, median
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.stats as stats
+import json
 
 csv.field_size_limit(sys.maxsize)
 
@@ -60,6 +61,20 @@ def get_f1_score(imgs, task_id):
     gt_labels = [filename in gt for filename in all_files]
     pred_labels = [filename in imgs for filename in all_files]
     return f1_score(gt_labels, pred_labels)
+
+
+def get_gt_sizes():
+    for task in [1, 2, 4, 5]:
+        img_dir = "image-eye-web/public/images/{}/".format(tasks[task]["dataset"])
+        all_files = os.listdir(img_dir)
+        all_files = [img_dir + file for file in all_files]
+        gt_name = tasks[task]["gt"]
+        gt = os.listdir("image-eye-web/public/images/ground_truths/{}".format(gt_name))
+        gt = [img_dir + file for file in gt]
+        # gt_labels = [filename in gt for filename in all_files]
+        print(task)
+        print(len(gt))
+        print()
 
 
 def get_study_results():
@@ -183,7 +198,12 @@ def get_study_results():
                         "ImageEye",
                         results["Dataset"],
                         len(ast.literal_eval(results["Text Queries"])),
-                        len(ast.literal_eval(results["Example Images"])),
+                        mean(
+                            [
+                                len(x)
+                                for x in (ast.literal_eval(results["Example Images"]))
+                            ]
+                        ),
                         results["Synthesized Program per Query"],
                         f1,
                         f1_per_query,
@@ -385,18 +405,30 @@ def get_study_results():
         for row in overall_rows:
             fw.writerow(row)
 
-    make_line_plot(rows)
-    # do_ttest(rows)
+    # make_line_plot(rows)
+    do_ttest(rows)
 
 
 def do_ttest(rows):
-    for task in [1, 2, 4, 5]:
-        imageeye_scores = [
-            row[8] for row in rows if row[0] == task and row[3] == "ImageEye"
-        ]
-        baseline_scores = [
-            row[8] for row in rows if row[0] == task and row[3] == "Baseline"
-        ]
+    for task in [1, 2, 4, 5, "overall"]:
+        if task == "overall":
+            imageeye_scores = [
+                row[11] + row[12] + row[6] for row in rows if row[3] == "ImageEye"
+            ]
+            baseline_scores = [
+                row[11] + row[12] for row in rows if row[3] == "Baseline"
+            ]
+        else:
+            imageeye_scores = [
+                row[11] + row[12] + row[6]
+                for row in rows
+                if row[0] == task and row[3] == "ImageEye"
+            ]
+            baseline_scores = [
+                row[11] + row[12]
+                for row in rows
+                if row[0] == task and row[3] == "Baseline"
+            ]
         imageeye_group = np.array(imageeye_scores)
         baseline_group = np.array(baseline_scores)
         print()
@@ -555,7 +587,7 @@ def analyze_qual_data():
         fw = csv.writer(f)
         for row in rows:
             fw.writerow(row)
-    make_bar_plot(data, 2)
+    make_bar_plot(data, 1)
 
 
 def make_bar_plot(data, n):
@@ -566,6 +598,28 @@ def make_bar_plot(data, n):
         "Bride Left\n of Groom",
         "Bride and\n Not Groom",
     ]
+
+    imageeye_data = {
+        task: [
+            float(item[task * 3 + n])
+            for item in data
+            if item[task * 3 + 3] == "B" and item[task * 3 + n] != "N/A"
+        ]
+        for task in [0, 1, 2, 3]
+    }
+    baseline_data = {
+        task: [
+            float(item[task * 3 + n])
+            for item in data
+            if item[task * 3 + 3] == "A" and item[task * 3 + n] != "N/A"
+        ]
+        for task in [0, 1, 2, 3]
+    }
+    print(imageeye_data)
+    print(baseline_data)
+    output_data = {"PhotoScout": imageeye_data, "Baseline": baseline_data}
+    with open("ease_of_use.json", "w") as outfile:
+        json.dump(output_data, outfile)
 
     X_axis = np.arange(len(tasks))
     imageeye_data = [
@@ -620,6 +674,30 @@ def make_bar_plot(data, n):
     plt.savefig("confidence.jpeg", dpi=300)
 
 
+def analyze_qs():
+    with open("confidence.json") as f:
+        data = json.load(f)
+    for task in ["0", "1", "2", "3"]:
+        tool_res = np.array(data["PhotoScout"][task])
+        baseline_res = np.array(data["Baseline"][task])
+        print()
+        print(task)
+        print("Variance: {}, {}".format(np.var(tool_res), np.var(baseline_res)))
+        print(stats.ranksums(tool_res, baseline_res))
+        print()
+
+    # tool_avg = mean(
+    #     sum([data["PhotoScout"][task] for task in ["0", "1", "2", "3"]], [])
+    # )
+    # baseline_avg = mean(
+    #     sum([data["Baseline"][task] for task in ["0", "1", "2", "3"]], [])
+    # )
+    # print(tool_avg)
+    # print(baseline_avg)
+
+
 if __name__ == "__main__":
-    get_study_results()
+    # get_study_results()
     # analyze_qual_data()
+    # get_gt_sizes()
+    analyze_qs()
